@@ -1,0 +1,128 @@
+.hero {
+  min-height: 550px;
+  background-image: url('/hero-bg-new.png');
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  margin: var(--space-md);
+  border-radius: 32px;
+  padding: 40px 20px;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.1) 100%);
+  z-index: 1;
+}
+
+.hero-container {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+}
+
+.hero-content {
+  max-width: 650px;
+  color: white;
+}
+
+.hero-tag {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  color: var(--primary-yellow);
+  margin-bottom: var(--space-sm);
+}
+
+.hero-title {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  line-height: 1.1;
+  margin-bottom: var(--space-md);
+}
+
+.hero-title .highlight {
+  color: var(--primary-yellow);
+}
+
+.hero-description {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin-bottom: var(--space-lg);
+  max-width: 500px;
+}
+
+.hero-btns {
+  display: flex;
+  gap: var(--space-md);
+}
+
+.btn {
+  padding: 1rem 2.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all var(--transition-normal);
+}
+
+.btn-primary {
+  background-color: var(--primary-yellow);
+  color: var(--primary-dark);
+}
+
+.btn-primary:hover {
+  background-color: #ffd700;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(245, 196, 0, 0.4);
+}
+
+.btn-secondary {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .hero {
+    height: 60vh; /* Giảm chiều cao một chút */
+    margin: var(--space-sm);
+    border-radius: 20px;
+  }
+  
+  .hero-content {
+    text-align: center;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+  
+  .hero-title {
+    font-size: 2rem; /* Giảm font để không bị lẻ chữ */
+    line-height: 1.2;
+  }
+
+  .hero-description {
+    font-size: 0.95rem;
+    margin: 0 auto var(--space-md);
+  }
+  
+  .hero-btns {
+    justify-content: center;
+  }
+  
+  .hero-overlay {
+    background: rgba(0,0,0,0.5);
+  }
+}

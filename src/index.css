@@ -1,0 +1,133 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;700&display=swap');
+
+:root {
+  /* Colors */
+  --primary-yellow: #F5C400;
+  --primary-dark: #0A0C10;
+  --bg-light: #F5F5F5;
+  --bg-white: #FFFFFF;
+  --text-main: #0A0C10;
+  --text-muted: #64748B;
+  --text-light: #94A3B8;
+  --accent-blue: #3B82F6;
+  
+  /* Card & Surface */
+  --card-bg: #FFFFFF;
+  --card-border: #F1F5F9;
+  --card-hover: #FAFAFA;
+  --input-bg: #FFFFFF;
+  --input-border: #E2E8F0;
+  --navbar-bg: rgba(255, 255, 255, 0.95);
+  --footer-bg: #0A0C10;
+  --footer-text: #CBD5E1;
+  --modal-overlay: rgba(0, 0, 0, 0.5);
+  --divider: #E2E8F0;
+  --badge-bg: #FEF3C7;
+  --badge-text: #92400E;
+  
+  /* Spacing */
+  --space-xs: 0.5rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 4rem;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  
+  /* Transitions */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+}
+
+/* 🌙 Dark Mode - Gold/Navy Theme */
+[data-theme="dark"] {
+  --primary-yellow: #F5C400;
+  --primary-dark: #F1F5F9;
+  --bg-light: #0B1120;
+  --bg-white: #111827;
+  --text-main: #F1F5F9;
+  --text-muted: #94A3B8;
+  --text-light: #64748B;
+  --accent-blue: #60A5FA;
+  
+  --card-bg: #1A2332;
+  --card-border: #2A3544;
+  --card-hover: #1E293B;
+  --input-bg: #1A2332;
+  --input-border: #334155;
+  --navbar-bg: rgba(11, 17, 32, 0.95);
+  --footer-bg: #060A14;
+  --footer-text: #94A3B8;
+  --modal-overlay: rgba(0, 0, 0, 0.7);
+  --divider: #2A3544;
+  --badge-bg: #422006;
+  --badge-text: #FCD34D;
+  
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-light);
+  color: var(--text-main);
+  line-height: 1.5;
+  overflow-x: hidden;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+@media (min-width: 1200px) {
+  body {
+    zoom: 0.85; /* Giảm nhẹ tỉ lệ để giao diện trông thoáng và chuyên nghiệp hơn trên màn hình rộng */
+  }
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: var(--transition-fast);
+}
+
+ul {
+  list-style: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  background: none;
+  font-family: inherit;
+  transition: var(--transition-normal);
+}
+
+.container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 var(--space-md);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}

@@ -1,0 +1,10 @@
+[
+  {
+    "session_id": "SESS_DEMO_01",
+    "user_email": "nbt1024@gmail.com",
+    "last_topic": "Báo cáo doanh thu tháng 3",
+    "context_summary": "Người dùng đã xem báo cáo doanh thu và đang quan tâm đến cách để lên hạng đại lý Bạc.",
+    "hot_lead_score": 0.9,
+    "next_steps": ["Gửi tài liệu chiết khấu Silver", "Nhắc lịch đặt hàng đầu tháng 4"]
+  }
+]

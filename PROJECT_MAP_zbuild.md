@@ -1,0 +1,245 @@
+# 🧭 Zbuild - Project Roadmap & Status
+
+Dưới đây là sơ đồ chi tiết về tiến độ dự án Zbuild. Bạn có thể sử dụng file này để theo dõi những gì đã hoàn thành và những bước tiếp theo cần thực hiện.
+
+## 🏗️ Công nghệ sử dụng (Tech Stack)
+- **Frontend**: React (Vite)
+- **Styling**: Vanilla CSS (Luxe Design System)
+- **Database**: Firebase Firestore
+- **Auth**: Firebase Authentication (Email/Password + Google Sign-In)
+- **Storage**: Cloudinary (Image Upload)
+- **AI Models**: DeepSeek-V3 (Advisor), Groq/Llama (Fallback)
+- **Search**: Fuse.js (Fuzzy search trong Knowledge Base)
+- **Icons**: Lucide-inspired SVG, Font Awesome
+
+## ✅ Tính năng đã hoàn thành (Completed)
+
+### 1. 🏠 Giao diện người dùng (Storefront)
+- [x] **Home Page**: Hero section, danh mục sản phẩm, banner khuyến mãi và lưới sản phẩm.
+- [x] **Product Detail**: Xem chi tiết sản phẩm, chọn cấu hình, xem mô tả và specs.
+- [x] **Shopping Cart**: UI giỏ hàng (⚠️ dữ liệu hardcode, cần kết nối thực).
+- [x] **Checkout**: Form thông tin thanh toán (⚠️ chưa lưu Firestore, chưa tích hợp payment gateway).
+- [x] **Order Confirmation**: Trang thông báo đặt hàng thành công (⚠️ dữ liệu tạm).
+- [x] **Order History**: UI xem lại danh sách đơn hàng (⚠️ dữ liệu hardcode, chưa đọc từ Firestore).
+- [x] **User Profile**: Quản lý thông tin cá nhân, cập nhật Profile & Mật khẩu (Firebase Firestore).
+- [x] **Login / Sign Up**: Đăng nhập/Đăng ký tích hợp Firebase Auth (Email + Google).
+- [x] **Product Grid**: Hiển thị sản phẩm từ Firestore, tìm kiếm, lọc theo danh mục.
+- [x] **Category Section**: Nhóm ngành kinh doanh (Vật liệu xây dựng, Phần mềm, v.v.).
+
+### 2. 🛡️ Quản trị viên (Admin Panel)
+- [x] **Admin Sidebar**: Menu điều hướng riêng cho quản trị viên.
+- [x] **Product List**: Quản lý danh sách sản phẩm, CRUD cơ bản.
+- [x] **Add/Edit Product**: Form thêm/sửa sản phẩm tích hợp Cloudinary, Biến thể (Variants), AI Content Generator.
+- [x] **AI Knowledge Base**: Quản lý 4 file JSON cho AI (Products, Promos, Analytics, ChatMemories).
+- [x] **Admin Role System**: Phân quyền Admin/User dựa trên email trong Firestore.
+- [x] **Responsive Admin**: Tối ưu hóa giao diện quản trị cho máy tính bảng và điện thoại.
+
+### 3. 🤖 AI Advisor (DeepSeek)
+- [x] **Full AI Advisor Page**: Giao diện toàn trang với sidebar phiên hội thoại.
+- [x] **RAG Knowledge Base**: Tìm kiếm Fuzzy trong JSON, inject context vào prompt.
+- [x] **Data Board System**: AI render bảng dữ liệu, biểu đồ cột (HTML tables & bar charts).
+- [x] **Markdown Rendering**: Hiển thị phản hồi AI bằng react-markdown + remark-gfm.
+- [x] **Quick Suggestions**: Gợi ý sản phẩm nhanh cho user (fetch từ Firestore, expand/collapse).
+- [x] **B2B Sales Persona**: AI hoạt động như Trưởng phòng Kinh doanh B2B, phân tích chiết khấu, đối thủ.
+- [x] **Anti-Hallucination**: Ngăn AI bịa dữ liệu, chỉ trả lời dựa trên knowledge base.
+- [x] **ChatBot Widget**: Bong bóng chat rút gọn trên trang storefront.
+
+### 4. 🔧 Hạ tầng & UX
+- [x] **Firebase Auth Guard**: Bảo vệ Checkout, Profile, ChatBot bằng yêu cầu đăng nhập.
+- [x] **Toast Notification System**: Thông báo khi thêm giỏ hàng, đăng nhập, đăng xuất, v.v.
+- [x] **Search & Filter**: Tìm sản phẩm theo tên, mô tả, danh mục.
+- [x] **Mobile Bottom Nav**: Thanh điều hướng dưới cho mobile (user + admin mode).
+- [x] **Product Reviews UI**: Giao diện đánh giá sao và nhận xét (⚠️ chưa lưu Firestore).
+
+---
+
+## 🔴 VẤN ĐỀ HIỆN TẠI (Critical Issues)
+
+> Các vấn đề nghiêm trọng cần xử lý trước khi website có thể vận hành thực tế.
+
+### ✅ ~~Cart & Checkout Flow bị Fake hoàn toàn~~ (ĐÃ SỬA)
+- ~~Giỏ hàng hardcode 2 sản phẩm fake~~ → Cart rỗng mặc định, lưu localStorage.
+- ~~Checkout không lưu Firestore~~ → Lưu vào collection `orders` với đầy đủ dữ liệu.
+- ~~Không có validation~~ → Form validation cho email, phone, address.
+
+### ✅ ~~Order History hoàn toàn Hardcode~~ (ĐÃ SỬA)
+- ~~5 đơn hàng mẫu fake~~ → Đọc từ Firestore, filter theo userId.
+
+### ✅ ~~Navbar Badge giỏ hàng luôn hiện "5"~~ (ĐÃ SỬA)
+- ~~Badge hardcode = 5~~ → Hiện cartItems.length thực, ẩn khi giỏ rỗng.
+
+### ✅ ~~Footer & PromoBanner nội dung Tiếng Anh sai ngữ cảnh~~ (ĐÃ SỬA)
+- ~~Footer: "Electronics", "Fashion", "Sustainability"~~ → Đã thay bằng tiếng Việt phù hợp.
+- ~~PromoBanner: "thiết bị điện tử và thời trang"~~ → "Duraflex, vật tư xây dựng và phần mềm quản lý".
+- ~~Footer tagline~~ → "Giải pháp vật liệu xây dựng & công nghệ quản lý bán hàng".
+
+### ✅ ~~ProductDetail chứa dữ liệu USD~~ (ĐÃ SỬA)
+- ~~"$500"~~ → "500.000₫".
+- ~~Rating giả~~ → "Chưa có đánh giá".
+
+---
+
+## 📋 ROADMAP CẬP NHẬT (Có ưu tiên & phân loại)
+
+### 🔴 Phase 1: SỬA LỖI CƠ BẢN - Website vận hành thực tế (Ưu tiên tối cao)
+
+> **Mục tiêu**: Website hoạt động end-to-end, từ xem sản phẩm → thêm giỏ → thanh toán → lưu đơn hàng.
+
+#### 1.1 Giỏ hàng thực (Real Cart System)
+- [x] Xóa dữ liệu hardcode `cartItems` trong App.jsx (2 sản phẩm fake).
+- [x] Mặc định giỏ hàng rỗng `useState([])`.
+- [x] Lưu giỏ hàng vào localStorage để giữ qua refresh.
+- [x] Badge giỏ hàng trên Navbar phản ánh `cartItems.length` thực.
+- [x] Xử lý "Thêm vào giỏ" từ ProductGrid và ProductDetail đúng cách (giá VNĐ).
+
+#### 1.2 Checkout thực (Real Checkout Flow)
+- [x] Lưu đơn hàng vào Firestore collection `orders` khi đặt hàng.
+- [x] Cấu trúc document: `{ userId, items[], shippingAddress, total, status, createdAt, paymentMethod }`.
+- [x] Validate form trước khi submit (email, address, phone bắt buộc).
+- [x] Xóa giỏ hàng sau khi đặt hàng thành công.
+- [x] Gửi email xác nhận đơn hàng (Google Apps Script Web App).
+
+#### 1.3 Lịch sử đơn hàng thực (Real Order History)
+- [x] Đọc đơn hàng từ Firestore `orders` collection, filter theo `userId`.
+- [x] Hiển thị trạng thái đơn hàng thực (`pending`, `confirmed`, `shipping`, `delivered`, `cancelled`).
+- [x] Xem chi tiết từng đơn hàng (trang Order Detail).
+- [x] Cho phép hủy đơn hàng (nếu trạng thái = `pending`).
+
+#### 1.4 Fix nội dung sai ngữ cảnh
+- [x] Cập nhật Footer: Thay nội dung tiếng Anh bằng tiếng Việt phù hợp ngành VLXD.
+- [x] Cập nhật PromoBanner: Nội dung về vật liệu xây dựng, không phải "điện tử & thời trang".
+- [x] Fix ProductDetail: Thay "$500" bằng "500.000₫", xóa rating giả.
+- [x] Cập nhật Navbar badge hiển thị đúng số lượng giỏ hàng.
+- [x] Fix OrderConfirmation: Thay thông tin thẻ giả 4242 bằng dynamic payment method.
+
+---
+
+### 🟡 Phase 2: NÂNG CẤP TRẢI NGHIỆM (Ưu tiên cao)
+
+> **Mục tiêu**: Website trở nên professional, dễ dùng và hấp dẫn người dùng.
+
+#### 2.1 AI Tích hợp sâu vào mua sắm (AI-Powered Shopping)
+- [ ] **AI Product Q&A**: Nút "Hỏi AI về sản phẩm này" trên trang ProductDetail → mở AI Advisor với context sản phẩm.
+- [ ] **AI Compare Products**: So sánh 2+ sản phẩm bằng AI (bảng so sánh tự động).
+- [ ] **AI Price Estimator**: Ước tính giá dựa trên khối lượng/diện tích công trình.
+- [ ] **AI-Powered Search**: Tìm kiếm bằng ngôn ngữ tự nhiên (ví dụ: "tấm chống ẩm cho phòng tắm").
+- [ ] **Smart Recommendation**: AI gợi ý sản phẩm liên quan dựa trên lịch sử xem/mua.
+
+#### 2.2 Quản trị đơn hàng (Admin Order Management)
+- [x] Trang quản lý đơn hàng cho Admin. ✅ `AdminOrderManagement.jsx`
+- [x] Cập nhật trạng thái đơn hàng (Xác nhận → Đang giao → Đã giao). ✅ Status flow + bulk update
+- [x] Xuất hóa đơn CSV. ✅ Export CSV với đầy đủ thông tin
+- [x] Bộ lọc: theo trạng thái, theo ngày, theo khách hàng. ✅ Tabs + Date filter + Search
+
+#### 2.3 Dashboard thống kê (Admin Dashboard)
+- [x] Tổng doanh thu, số đơn hàng, số khách hàng mới. ✅ KPI Cards
+- [x] Biểu đồ doanh thu theo ngày/tuần/tháng. ✅ Canvas chart (7/30/90 ngày)
+- [x] Top sản phẩm bán chạy. ✅ Top 5 ranked list
+- [x] Phân bổ đơn hàng theo trạng thái. ✅ Progress bars + Quick stats
+
+#### 2.4 Quản lý khách hàng (Customer Management)
+- [x] Danh sách khách hàng đã đăng ký (Admin view). ✅ `AdminCustomerManagement.jsx`
+- [x] Xem lịch sử mua hàng của từng khách. ✅ Detail panel + order history
+- [x] Phân hạng khách hàng (Bronze, Silver, Gold, Platinum). ✅ Auto-tier based on spend
+- [x] Tier stat cards + search + filter. ✅ Full CRM view
+
+---
+
+### 🟢 Phase 3: TÍCH HỢP AI NÂNG CAO (Ưu tiên trung bình)
+
+> **Mục tiêu**: AI trở thành core differentiator của Zbuild, giúp tự động hóa vận hành.
+
+#### 3.1 Function Calling cho AI Advisor
+- [x] AI tự truy vấn Firestore: đếm sản phẩm, tra giá, kiểm tồn kho. ✅ `aiFunctions.js` (7 functions)
+- [x] AI tự tạo báo giá dựa trên yêu cầu khách hàng. ✅ `generate_quotation` function
+- [x] AI trả lời câu hỏi về đơn hàng (trạng thái, dự kiến giao). ✅ `check_order_status` + `get_order_history`
+
+#### 3.2 AI Auto-Admin
+- [x] AI tự động tóm tắt đơn hàng mới cho Admin mỗi ngày. ✅ `AdminAIInsights.jsx` - KPI cards + order summary
+- [x] AI cảnh báo khi sản phẩm hết hàng hoặc sắp hết. ✅ Low stock alerts (critical/warning/info)
+- [x] AI đề xuất giá bán tối ưu dựa trên thị trường. ✅ Business tips (no sales, low/high margin)
+
+#### 3.3 AI Chatbot trên Storefront nâng cấp
+- [x] ChatBot widget hỗ trợ khách hàng real-time (trả lời FAQ). ✅ `StorefrontChatBot.jsx`
+- [x] Kết nối ChatBot với sản phẩm: "Tìm sản phẩm chống ẩm" → hiện danh sách. ✅ Product cards in chat
+- [x] ChatBot gợi ý upsell/cross-sell khi khách đang checkout. ✅ `handleAddToCartWithUpsell` + cart context
+
+---
+
+### 🔵 Phase 4: TÍNH NĂNG MỞ RỘNG
+
+> **Mục tiêu**: Mở rộng hệ sinh thái, tăng trải nghiệm và retention.
+
+#### 4.1 Trải nghiệm người dùng (UX Enhancements)
+- [x] **Wishlist**: Danh sách yêu thích, lưu localStorage + Firestore sync. ✅ `WishlistContext.jsx` + `Wishlist.jsx`
+- [ ] **Product Compare**: So sánh sản phẩm cạnh nhau (manual + AI). *(Ưu tiên thấp — cần chuẩn hóa specs trước)*
+- [x] **Dark Mode**: Giao diện nền tối sang trọng (Gold/Navy theme). ✅ `ThemeContext.jsx` + CSS variables
+- [ ] **Đa ngôn ngữ (i18n)**: Hỗ trợ Tiếng Việt & Tiếng Anh. *(Ưu tiên thấp)*
+- [ ] **PWA (Progressive Web App)**: Cài đặt app trên điện thoại, offline browsing.
+
+#### 4.2 Hệ thống thông báo (Notification System)
+- [x] Push notification (Firebase Cloud Messaging).
+- [x] Email notification khi có đơn hàng mới (cho Admin).
+- [x] In-app notification cho user (đơn hàng cập nhật trạng thái).
+
+#### 4.3 Hệ thống đánh giá thực (Reviews System)
+- [ ] Lưu đánh giá sản phẩm vào Firestore.
+- [ ] Chỉ cho phép đánh giá nếu đã mua sản phẩm.
+- [ ] AI tổng hợp đánh giá: "85% khách hàng đánh giá tốt về độ bền".
+
+---
+
+### 🔥 Phase 5: ƯU TIÊN CAO — TẠO GIÁ TRỊ NGAY (Đang thực hiện)
+
+> **Mục tiêu**: Nâng cấp hạ tầng cốt lõi & tính năng business-critical cho vận hành thực tế.
+
+#### 5.1 React Router (URL-based Routing) ✅ HOÀN THÀNH (20/03/2026)
+- [x] Cài đặt `react-router-dom`, cấu hình `BrowserRouter` trong `main.jsx`.
+- [x] Chuyển toàn bộ `view` state → URL routes (`/`, `/product/:id`, `/cart`, `/checkout`, v.v.).
+- [x] Deep link sản phẩm: share link `/product/abc123` → auto fetch từ Firestore, mở đúng sản phẩm.
+- [x] `ScrollToTop` component cho smooth scroll khi chuyển trang.
+- [x] 404 `NotFound` page cho đường dẫn không tồn tại.
+- [x] `setView` bridge function giữ backward compatibility với components cũ.
+- [x] Admin routes: `/admin/dashboard`, `/admin/products`, `/admin/orders`, `/admin/customers`, v.v.
+- [x] `ProductDetail` tự fetch product từ Firestore khi truy cập bằng URL trực tiếp.
+
+#### 5.2 QR Code Thanh toán (Bank Transfer) ✅ HOÀN THÀNH (21/03/2026)
+- [x] Thêm phương thức thanh toán "Chuyển khoản ngân hàng".
+- [x] Tích hợp API VietQR (img.vietqr.io) để tạo mã QR động.
+- [x] Thiết lập quy trình checkout 2 bước (Thông tin -> Quét mã QR).
+- [x] Hiển thị thông tin chuyển khoản chi tiết (Số TK, Tên chủ TK, Nội dung đơn hàng).
+- [x] Xử lý logic nút bấm linh hoạt (Tiếp tục thanh toán -> Xác nhận thanh toán).
+- [x] Tự động tạo nội dung chuyển khoản theo mã đơn hàng.
+- [x] UI: Mã QR động đẹp và box thông tin ngân hàng rõ ràng.
+
+#### 5.3 Mã giảm giá / Coupon System 🎫
+- [x] Admin tạo/quản lý mã giảm giá (Firestore collection `coupons`).
+- [x] Loại coupon: Giảm %, giảm tiền cố định, miễn ship.
+- [x] Validate: giới hạn lần dùng, ngày hết hạn, đơn tối thiểu.
+- [x] UI nhập mã trong Checkout page + hiện discount.
+
+#### 5.4 SEO & Performance
+- [x] Meta tags, Open Graph, sitemap.xml.
+- [x] Lazy loading images & components.
+- [x] SSR/SSG (Next.js migration) nếu cần SEO mạnh.
+
+---
+
+## 💡 Đề xuất từ Antigravity (Assistant Proposals)
+
+### Đề xuất chiến lược
+1. **Phase 1 trước tiên**: Fix Cart → Checkout → Order History là **bắt buộc** trước khi đi live. Không có flow mua hàng thực = website chưa dùng được.
+2. **AI là USP**: Zbuild có lợi thế AI keys sẵn sàng. Tích hợp AI vào mọi touchpoint (tư vấn, search, báo giá, dashboard) sẽ tạo sự khác biệt lớn so với đối thủ.
+3. **B2B Focus**: Khách hàng B2B (đại lý, nhà thầu) cần báo giá nhanh, chiết khấu theo số lượng, lịch sử mua hàng. Đây nên là trọng tâm UX.
+4. **Mobile-first**: Thầu thợ thường dùng điện thoại tại công trường. Đảm bảo mọi tính năng hoạt động mượt trên mobile.
+5. **Phase 5 ưu tiên cao**: React Router → QR Payment → Coupon. Ba tính năng này tạo giá trị thực tế ngay lập tức cho business.
+
+### Đề xuất kỹ thuật
+1. **React Router**: Hiện tại dùng `view` state → không có URL routing → không bookmark được, refresh mất trang. **→ ĐANG TRIỂN KHAI Phase 5.1**
+2. **State Management**: Cart, User state nên dùng Context API hoặc Zustand để tránh prop drilling quá sâu.
+3. **Error Boundaries**: Thêm React Error Boundary để trang không crash trắng khi có lỗi.
+4. **Skeleton Loading**: Thay "Đang tải..." bằng Skeleton screens để UX mượt hơn.
+
+---
+*Cập nhật lần cuối: 20/03/2026 — Phase 5 khởi động*
+

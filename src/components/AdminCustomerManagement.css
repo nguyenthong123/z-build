@@ -1,0 +1,419 @@
+/* ============================================
+   ADMIN CUSTOMER MANAGEMENT
+   Phase 2.4 - Customer CRM Module
+   ============================================ */
+
+/* Tier Stats Row */
+.acm-tier-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  padding: 0 28px;
+  margin-bottom: 20px;
+}
+
+.acm-tier-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  border: 2px solid #f0f0f0;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.acm-tier-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+.acm-tier-card.total {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: none;
+  cursor: default;
+}
+
+.acm-tier-card.total .acm-tier-value,
+.acm-tier-card.total .acm-tier-label {
+  color: #fff;
+}
+
+.acm-tier-card.total .acm-tier-label {
+  opacity: 0.7;
+}
+
+.acm-tier-icon {
+  font-size: 24px;
+}
+
+.acm-tier-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #1a1a2e;
+}
+
+.acm-tier-label {
+  font-size: 0.78rem;
+  color: #888;
+  font-weight: 500;
+}
+
+/* Table */
+.acm-customer-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.acm-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.acm-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.acm-phone {
+  font-size: 0.78rem;
+  color: #999;
+}
+
+.acm-tier-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.acm-tier-badge.lg {
+  font-size: 0.88rem;
+  padding: 6px 16px;
+}
+
+.acm-order-count {
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.acm-date {
+  font-size: 0.82rem;
+  color: #888;
+}
+
+.acm-detail-btn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid #1a1a2e;
+  background: #1a1a2e;
+  color: #fff;
+  transition: all 0.15s;
+}
+
+.acm-detail-btn:hover {
+  background: #16213e;
+  transform: translateY(-1px);
+}
+
+.acm-table tr.selected {
+  background: #f0f4ff;
+}
+
+/* Detail Panel */
+.acm-detail-panel {
+  background: #fff;
+  border-radius: 14px;
+  padding: 24px;
+  border: 1px solid #e8e8e8;
+  margin-top: 20px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.acm-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.acm-detail-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.acm-detail-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.acm-detail-info h3 {
+  font-size: 1.1rem;
+  margin: 0;
+  color: #1a1a2e;
+}
+
+.acm-detail-info span {
+  font-size: 0.82rem;
+  color: #999;
+}
+
+.acm-close-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #f5f5f5;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.acm-close-btn:hover {
+  background: #eee;
+  color: #333;
+}
+
+.acm-detail-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.acm-ds-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px;
+  background: #fafbfc;
+  border-radius: 10px;
+}
+
+.acm-ds-val {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.acm-ds-label {
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.acm-detail-panel h4 {
+  font-size: 0.95rem;
+  color: #333;
+  margin: 0 0 12px;
+}
+
+.acm-order-history {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.acm-oh-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #fafbfc;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.acm-oh-row:hover {
+  background: #f0f4ff;
+}
+
+.acm-oh-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.acm-oh-id {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #1a1a2e;
+}
+
+.acm-oh-date {
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.acm-oh-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.acm-oh-amount {
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+.acm-oh-status {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 10px;
+}
+
+/* Empty */
+.acm-empty {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.acm-empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.acm-empty h3 {
+  font-size: 1.1rem;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.acm-empty p {
+  color: #999;
+  font-size: 0.88rem;
+}
+
+/* Mobile Cards */
+.acm-mobile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.acm-mobile-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px;
+  border: 1px solid #f0f0f0;
+  cursor: pointer;
+}
+
+.acm-mc-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.acm-mc-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.acm-avatar-sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.acm-mc-info strong {
+  font-size: 0.9rem;
+  display: block;
+}
+
+.acm-mc-email {
+  font-size: 0.75rem;
+  color: #999;
+  display: block;
+}
+
+.acm-mc-bottom {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: #666;
+}
+
+.acm-mc-spent {
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .acm-tier-stats {
+    grid-template-columns: repeat(3, 1fr);
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .acm-tier-card {
+    padding: 12px;
+  }
+
+  .acm-tier-value {
+    font-size: 1.2rem;
+  }
+
+  .acm-detail-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .acm-detail-panel {
+    padding: 16px;
+  }
+}

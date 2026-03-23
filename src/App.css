@@ -1,0 +1,31 @@
+/* Main App Layout Styles */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}
+
+/* Base Responsive adjustments */
+@media (max-width: 1024px) {
+  .container {
+    padding: 0 var(--space-sm);
+  }
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: flex;
+  }
+  
+  main {
+    padding-bottom: 70px; /* Space for bottom nav */
+  }
+  
+  .footer {
+    padding-bottom: 90px;
+  }
+}

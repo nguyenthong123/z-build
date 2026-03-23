@@ -1,0 +1,49 @@
+{
+  "discount_policy_2026": {
+    "retail_customer": {
+      "description": "Dành cho khách mua lẻ trực tiếp tại cửa hàng hoặc app",
+      "tiers": [
+        { "min_value": 0, "discount": "0%" },
+        { "min_value": 10000000, "discount": "5%" },
+        { "min_value": 50000000, "discount": "8%" }
+      ]
+    },
+    "agency_tier": {
+      "description": "Chính sách ưu đãi dành cho đại lý phân phối dựa trên doanh số năm",
+      "tiers": {
+        "BRONZE": { 
+          "discount": "10%", 
+          "min_annual_revenue": 500000000, 
+          "benefits": ["Hỗ trợ biển hiệu", "Vận chuyển miễn phí nội tỉnh"] 
+        },
+        "SILVER": { 
+          "discount": "15%", 
+          "min_annual_revenue": 1000000000, 
+          "benefits": ["Tặng quà lễ tết", "Chính sách nợ gối đầu 15 ngày"] 
+        },
+        "GOLD": { 
+          "discount": "22%", 
+          "min_annual_revenue": 2000000000, 
+          "benefits": ["Chuyên gia tư vấn riêng", "Nợ gối đầu 30 ngày", "Hỗ trợ makerting 2%"] 
+        }
+      }
+    }
+  },
+  "current_promotions": [
+    { 
+      "id": "SPRING_2026", 
+      "title": "Chương trình Xuân Khởi Sắc",
+      "content": "Tặng ngay 50 bao keo dán gạch khi nhập 100 tấm DuraFlex bất kỳ.", 
+      "start_date": "2026-03-01",
+      "expiry": "2026-05-01",
+      "target": "Tất cả đại lý"
+    },
+    {
+      "id": "LOYALTY_BONUS",
+      "title": "Chiết khấu thanh toán nhanh",
+      "content": "Giảm thêm 1.5% nếu thanh toán ngay trong vòng 24h kể từ khi nhận hàng.",
+      "target": "Đại lý Gold & Silver"
+    }
+  ],
+  "annual_rebate": "Thưởng cuối năm 2-5% nếu đạt vượt mức chỉ tiêu doanh số cam kết."
+}

@@ -1,0 +1,489 @@
+/* ============================================
+   ADMIN ORDER MANAGEMENT 
+   Phase 2.2 - Professional Order Dashboard
+   ============================================ */
+
+/* Stats Cards */
+.aom-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 0 28px;
+  margin-bottom: 20px;
+}
+
+.aom-stat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  border: 1px solid #f0f0f0;
+  transition: all 0.2s ease;
+}
+
+.aom-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.aom-stat-revenue {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: none;
+}
+
+.aom-stat-revenue .aom-stat-value,
+.aom-stat-revenue .aom-stat-label {
+  color: #fff !important;
+}
+
+.aom-stat-revenue .aom-stat-label {
+  opacity: 0.75;
+}
+
+.aom-stat-icon {
+  font-size: 28px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.aom-stat-revenue .aom-stat-icon {
+  background: rgba(255,255,255,0.15);
+}
+
+.aom-stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aom-stat-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  line-height: 1.2;
+}
+
+.aom-stat-label {
+  font-size: 0.78rem;
+  color: #888;
+  letter-spacing: 0.02em;
+}
+
+/* Toolbar (tabs + date filter) */
+.aom-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.aom-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+
+.aom-tab {
+  padding: 8px 16px;
+  border: 1px solid #e8e8e8;
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #666;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.aom-tab:hover {
+  background: #f5f5ff;
+  border-color: #ccc;
+}
+
+.aom-tab.active {
+  background: #1a1a2e;
+  color: #fff;
+  border-color: #1a1a2e;
+}
+
+.aom-tab-count {
+  font-size: 0.72rem;
+  background: rgba(0,0,0,0.08);
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.aom-tab.active .aom-tab-count {
+  background: rgba(255,255,255,0.2);
+}
+
+.aom-date-filter select {
+  padding: 8px 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  background: #fff;
+  cursor: pointer;
+  color: #444;
+}
+
+/* Bulk Actions Bar */
+.aom-bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+  border: 1px solid #c4d7f2;
+  padding: 10px 16px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  font-size: 0.88rem;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.aom-bulk-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.aom-bulk-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+
+.aom-bulk-btn.confirm { background: #2196F3; color: #fff; }
+.aom-bulk-btn.ship { background: #9C27B0; color: #fff; }
+.aom-bulk-btn.deliver { background: #4CAF50; color: #fff; }
+.aom-bulk-btn.cancel { background: #eee; color: #666; }
+.aom-bulk-btn:hover { opacity: 0.85; transform: scale(1.02); }
+
+/* Table adjustments */
+.aom-table th, .aom-table td {
+  vertical-align: middle;
+}
+
+.th-check, .td-check {
+  width: 40px;
+  text-align: center;
+}
+
+.aom-order-id {
+  font-weight: 700;
+  color: #1a1a2e;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.aom-order-id:hover {
+  color: #4361ee;
+  text-decoration: underline;
+}
+
+.aom-customer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aom-customer strong {
+  font-size: 0.88rem;
+}
+
+.aom-customer span {
+  font-size: 0.78rem;
+  color: #999;
+}
+
+.aom-items-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 250px;
+}
+
+.aom-item-tag {
+  font-size: 0.75rem;
+  background: #f0f4ff;
+  color: #4361ee;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aom-item-more {
+  font-size: 0.72rem;
+  color: #999;
+  font-weight: 500;
+}
+
+.aom-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.aom-date {
+  font-size: 0.82rem;
+  color: #888;
+  white-space: nowrap;
+}
+
+.aom-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.aom-action-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid #eee;
+  background: #fff;
+  color: #666;
+  transition: all 0.15s;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.aom-action-btn.primary {
+  background: #1a1a2e;
+  color: #fff;
+  border-color: #1a1a2e;
+}
+
+.aom-action-btn.primary:hover {
+  background: #16213e;
+  transform: translateY(-1px);
+}
+
+.aom-action-btn.view {
+  padding: 6px 8px;
+}
+
+.aom-action-btn.view:hover {
+  background: #f5f5ff;
+  border-color: #4361ee;
+  color: #4361ee;
+}
+
+.aom-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Empty State */
+.aom-empty {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.aom-empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.aom-empty h3 {
+  font-size: 1.1rem;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.aom-empty p {
+  font-size: 0.88rem;
+  color: #999;
+}
+
+/* Export button */
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  color: #555;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.export-btn:hover {
+  background: #f5f5ff;
+  border-color: #4361ee;
+  color: #4361ee;
+}
+
+/* Selected row */
+.aom-table tr.selected {
+  background-color: #f0f4ff;
+}
+
+/* ========================
+   MOBILE 
+   ======================== */
+.aom-mobile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.aom-mobile-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px;
+  border: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.aom-mobile-card:active {
+  transform: scale(0.98);
+}
+
+.aom-mc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.aom-mc-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.aom-mc-id {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #1a1a2e;
+}
+
+.aom-mc-date {
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.aom-mc-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.aom-mc-customer {
+  display: flex;
+  flex-direction: column;
+}
+
+.aom-mc-customer strong {
+  font-size: 0.88rem;
+}
+
+.aom-mc-customer span {
+  font-size: 0.78rem;
+  color: #999;
+}
+
+.aom-mc-total {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #1a1a2e;
+}
+
+.aom-mc-actions {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.aom-action-btn.full {
+  width: 100%;
+  justify-content: center;
+  padding: 10px;
+  font-size: 0.88rem;
+}
+
+@media (max-width: 768px) {
+  .aom-stats {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 0 12px;
+    gap: 10px;
+  }
+
+  .aom-stat-card {
+    padding: 14px;
+  }
+
+  .aom-stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+  }
+
+  .aom-stat-value {
+    font-size: 1.1rem;
+  }
+
+  .aom-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .aom-tabs {
+    width: 100%;
+  }
+
+  .aom-date-filter {
+    width: 100%;
+  }
+
+  .aom-date-filter select {
+    width: 100%;
+  }
+
+  .aom-bulk-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "agency_id": "ZB-AG-001",
+    "email": "nbt1024@gmail.com",
+    "name": "Đại lý Xuân Quỳnh (Admin Demo)",
+    "stats": {
+      "curr_revenue_ytd": 850000000,
+      "target_revenue_annual": 1200000000,
+      "current_tier": "BRONZE",
+      "distance_to_silver": 150000000,
+      "growth_rate": "15%"
+    },
+    "recent_orders": [
+      { "id": "ZB100245", "date": "15/03/2026", "value": 45000000, "status": "Đã giao" },
+      { "id": "ZB100298", "date": "18/03/2026", "value": 72000000, "status": "Đang xử lý" }
+    ],
+    "credit_limit": 200000000,
+    "available_credit": 128000000
+  }
+]

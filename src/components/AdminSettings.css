@@ -1,0 +1,267 @@
+.settings-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+  color: #64748B;
+  font-size: 1rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #E2E8F0;
+  border-top: 3px solid #1a1a2e;
+  border-radius: 50%;
+  animation: s-spin 0.8s linear infinite;
+}
+
+@keyframes s-spin {
+  to { transform: rotate(360deg); }
+}
+
+.settings-panel {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #E2E8F0;
+  overflow: hidden;
+  max-width: 800px;
+}
+
+.settings-section {
+  padding: 30px;
+  background: white;
+}
+
+.settings-section-header {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.settings-section-header h3 {
+  font-size: 1.25rem;
+  color: #1a1a2e;
+  margin: 0 0 8px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-section-header p {
+  color: #64748B;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.settings-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.setting-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.setting-field label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.setting-field input {
+  padding: 12px 16px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #1A2130;
+  transition: all 0.2s;
+  background: #F8FAFC;
+}
+
+.setting-field input:focus {
+  outline: none;
+  border-color: #3B82F6;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.settings-toast {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: white;
+  color: #1A2130;
+  padding: 14px 24px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 9999;
+}
+
+.settings-toast.success { border-left: 4px solid #10B981; }
+.settings-toast.error { border-left: 4px solid #EF4444; }
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@media (max-width: 768px) {
+  .settings-section {
+    padding: 20px;
+  }
+}
+
+/* Roles Management Styles */
+.roles-management {
+  margin-top: 20px;
+}
+
+.add-role-group {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.add-role-group input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.add-role-group input:focus {
+  outline: none;
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.btn-add-role {
+  padding: 0 20px;
+  background-color: #F8FAFC;
+  color: #0F172A;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-add-role:hover {
+  background-color: #F1F5F9;
+  border-color: #CBD5E1;
+}
+
+.roles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.role-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.role-item:hover {
+  border-color: #CBD5E1;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.role-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.role-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3B82F6, #60A5FA);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.role-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.role-email {
+  font-weight: 500;
+  color: #1E293B;
+  font-size: 0.95rem;
+}
+
+.role-badge {
+  font-size: 0.75rem;
+  background-color: #EFF6FF;
+  color: #2563EB;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  align-self: flex-start;
+}
+
+.role-root-badge {
+  font-size: 0.8rem;
+  background-color: #F1F5F9;
+  color: #64748B;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.btn-remove-role {
+  background: none;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-remove-role:hover {
+  background-color: #FEF2F2;
+  color: #EF4444;
+}
+
+@media (max-width: 600px) {
+  .add-role-group {
+    flex-direction: column;
+  }
+  
+  .btn-add-role {
+    padding: 12px;
+  }
+}

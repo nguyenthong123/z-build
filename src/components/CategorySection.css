@@ -1,0 +1,111 @@
+.categories {
+  padding: var(--space-xl) var(--space-md);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: var(--space-lg);
+}
+
+.section-header h2 {
+  font-size: 2rem;
+  color: var(--text-main);
+}
+
+.view-all {
+  font-weight: 600;
+  color: var(--primary-dark);
+  border-bottom: 2px solid var(--primary-yellow);
+  padding-bottom: 2px;
+}
+
+.category-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 30px;
+}
+
+.category-item {
+  width: 150px; /* Cố định chiều rộng item cho đồng nhất */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  text-align: center;
+}
+
+.category-img-wrapper {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-normal);
+}
+
+.category-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.5s ease;
+}
+
+.category-item span {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-main);
+  transition: color 0.3s ease;
+}
+
+.category-item.active .category-img-wrapper {
+  border: 3px solid var(--primary-yellow);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+}
+
+.category-item.active span {
+  color: var(--primary-dark);
+}
+
+.category-item:hover .category-img-wrapper {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-yellow);
+}
+
+.category-item:hover img {
+  transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+  .section-header h2 {
+    font-size: 1.3rem; /* Make header smaller to fit screen */
+  }
+
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+  }
+  
+  .category-item {
+    width: 100%;
+    gap: 8px;
+  }
+  
+  .category-img-wrapper {
+    width: 70px;
+    height: 70px;
+  }
+
+  .category-item span {
+    font-size: 0.75rem;
+    line-height: 1.3;
+  }
+}

@@ -1,0 +1,37 @@
+[
+  {
+    "product_id": "DURA-FLEX-6MM",
+    "name": "Tấm DuraFlex 6mm",
+    "category": "Vật liệu xây dựng",
+    "technical_specs": {
+      "thickness": "6mm",
+      "durability": "Chịu nước, chống cháy, chống mối mọt",
+      "application": "Làm trần, vách ngăn chống ẩm, lót mái",
+      "weight": "6.5 kg/m2",
+      "density": "1260 kg/m3"
+    },
+    "competitive_advantage": "Trọng lượng nhẹ hơn 20% so với đối thủ, dễ thi công, bảo hành 50 năm không mối mọt",
+    "use_cases": ["Nhà lắp ghép", "Cải tạo nhà cũ", "Vách ngăn văn phòng"],
+    "faq": [
+      { "q": "Có dùng được ngoài trời không?", "a": "Hoàn toàn được nếu có lớp sơn bảo vệ hoặc xử lý chống thấm cạnh." },
+      { "q": "Có thể uốn cong không?", "a": "Có thể uốn cong theo bán kính khuyến cáo (khoảng 2m cho tấm 6mm)." }
+    ]
+  },
+  {
+    "product_id": "DURA-FLEX-8MM",
+    "name": "Tấm DuraFlex 8mm",
+    "category": "Vật liệu xây dựng",
+    "technical_specs": {
+      "thickness": "8mm",
+      "durability": "Chịu lực cao, chống cháy A1",
+      "application": "Làm sàn nhẹ, vách ngăn ngoài trời, biển quảng cáo",
+      "weight": "8.7 kg/m2",
+      "density": "1280 kg/m3"
+    },
+    "competitive_advantage": "Độ bền uốn cao, bề mặt láng mịn dễ sơn phủ, chịu va đập cực tốt",
+    "use_cases": ["Sàn gác lửng", "Vách bao ngoài trời", "Hàng rào trang trí"],
+    "faq": [
+      { "q": "Lát gạch lên tấm 8mm được không?", "a": "Được, nên sử dụng keo dán gạch chuyên dụng." }
+    ]
+  }
+]
