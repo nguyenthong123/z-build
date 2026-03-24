@@ -11,13 +11,39 @@
   --text-light: #94A3B8;
   --accent-blue: #3B82F6;
   
+  /* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-light);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--divider);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-light);
+}
+
+/* Admin Global Transitions */
+.admin-content-header {
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s;
+}
+
+.admin-content-header.header-hidden {
+  transform: translateY(-100%);
+}
   /* Card & Surface */
   --card-bg: #FFFFFF;
   --card-border: #F1F5F9;
   --card-hover: #FAFAFA;
   --input-bg: #FFFFFF;
   --input-border: #E2E8F0;
-  --navbar-bg: rgba(255, 255, 255, 0.95);
+  --navbar-bg: #FFFFFF;
   --footer-bg: #0A0C10;
   --footer-text: #CBD5E1;
   --modal-overlay: rgba(0, 0, 0, 0.5);
@@ -58,7 +84,7 @@
   --card-hover: #1E293B;
   --input-bg: #1A2332;
   --input-border: #334155;
-  --navbar-bg: rgba(11, 17, 32, 0.95);
+  --navbar-bg: #111827;
   --footer-bg: #060A14;
   --footer-text: #94A3B8;
   --modal-overlay: rgba(0, 0, 0, 0.7);

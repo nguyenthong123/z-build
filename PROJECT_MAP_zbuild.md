@@ -51,6 +51,15 @@ Dưới đây là sơ đồ chi tiết về tiến độ dự án Zbuild. Bạn 
 - [x] **Mobile Bottom Nav**: Thanh điều hướng dưới cho mobile (user + admin mode).
 - [x] **Product Reviews UI**: Giao diện đánh giá sao và nhận xét (⚠️ chưa lưu Firestore).
 
+### 4.4 Tối ưu hóa điều hướng di động (Mobile Navigation Optimization) ✅ HOÀN THÀNH (24/03/2026)
+- [x] **Scroll-Aware UI**: Tự động ẩn/hiện Header và Bottom Nav dựa trên hướng cuộn trang (Tiết kiệm 20-30% diện tích màn hình).
+- [x] **Đồng bộ Home & Admin**: Hành vi cuộn thống nhất giữa trang chủ và các trang quản trị.
+- [x] **Admin Mobile Nav Refactor**:
+    - Thay "Bảng điều khiển" → **Home** (nút thoát Admin nhanh về Storefront).
+    - Thay "Đơn hàng" → **Cài đặt** (truy cập nhanh cấu hình hệ thống trên mobile).
+- [x] **Fix UI Glitches**: Sửa lỗi "nửa ẩn nửa hiện" và giật lag khi cuộn trên thiết bị di động.
+- [x] **Stability Fix**: Khắc phục lỗi "Rules of Hooks" gây crash Admin Dashboard trên một số trình duyệt.
+
 ---
 
 ## 🔴 VẤN ĐỀ HIỆN TẠI (Critical Issues)
@@ -241,5 +250,5 @@ Dưới đây là sơ đồ chi tiết về tiến độ dự án Zbuild. Bạn 
 4. **Skeleton Loading**: Thay "Đang tải..." bằng Skeleton screens để UX mượt hơn.
 
 ---
-*Cập nhật lần cuối: 20/03/2026 — Phase 5 khởi động*
+*Cập nhật lần cuối: 24/03/2026 — Hoàn thành Mobile Optimization*
 

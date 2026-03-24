@@ -1,7 +1,26 @@
-/* ============================================
-   ADMIN ORDER MANAGEMENT 
-   Phase 2.2 - Professional Order Dashboard
-   ============================================ */
+/* Layout */
+.admin-product-page {
+  display: flex;
+  background-color: #f6f8fb;
+  min-height: 100vh;
+}
+
+.admin-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.admin-content-header {
+  background: white;
+  padding: 1.5rem 2.5rem;
+  border-bottom: 1px solid #edf2f7;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+}
 
 /* Stats Cards */
 .aom-stats {
@@ -10,6 +29,10 @@
   gap: 16px;
   padding: 0 28px;
   margin-bottom: 20px;
+}
+
+.admin-content-body {
+  padding-bottom: 100px;
 }
 
 .aom-stat-card {
@@ -445,6 +468,10 @@
 }
 
 @media (max-width: 768px) {
+  .admin-content-header {
+    padding: 1.5rem;
+  }
+
   .aom-stats {
     grid-template-columns: repeat(2, 1fr);
     padding: 0 12px;
@@ -468,10 +495,13 @@
   .aom-toolbar {
     flex-direction: column;
     align-items: flex-start;
+    gap: 10px;
+    padding: 0 12px;
   }
 
   .aom-tabs {
     width: 100%;
+    padding-bottom: 8px;
   }
 
   .aom-date-filter {
@@ -485,5 +515,14 @@
   .aom-bulk-bar {
     flex-direction: column;
     align-items: flex-start;
+    margin: 0 12px 14px;
+  }
+
+  .admin-content-body {
+    padding: 0 0 120px;
+  }
+
+  .aom-mobile-list {
+    padding: 0 12px;
   }
 }

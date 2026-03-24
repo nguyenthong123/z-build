@@ -118,8 +118,16 @@
 }
 
 @media (max-width: 768px) {
+  .admin-content-header {
+    padding: 1.5rem;
+  }
+
   .settings-section {
     padding: 20px;
+  }
+
+  .admin-content-body {
+    padding: 1rem 12px 120px;
   }
 }
 

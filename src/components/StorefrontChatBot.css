@@ -452,25 +452,56 @@
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .sfcb-panel {
-    bottom: 75px; /* Avoid mobile nav */
+    bottom: 0 !important;
+    top: 0 !important;
     right: 0;
     left: 0;
     width: 100%;
-    height: calc(100vh - 75px);
-    border-radius: 20px 20px 0 0;
-    z-index: 10001;
-  }
-
-  @keyframes sfcb-slideUp-mobile {
-    from { opacity: 0; transform: translateY(100%); }
-    to { opacity: 1; transform: translateY(0); }
+    height: 100dvh !important;
+    border-radius: 0;
+    z-index: 100001;
   }
 
   .sfcb-toggle {
-    bottom: 90px; /* Above the mobile nav */
+    bottom: 85px; /* Above the mobile nav */
     right: 16px;
-    width: 50px;
-    height: 50px;
-    z-index: 10002;
+    width: 54px;
+    height: 54px;
+    z-index: 100000;
   }
+
+  /* Hide the floating toggle button completely on mobile when opened */
+  .sfcb-toggle.open {
+    display: none !important;
+  }
+
+  /* Dedicated close button inside full-screen panel */
+  .sfcb-mobile-close {
+    display: flex !important;
+  }
+}
+
+/* Base styles for the new mobile close button (Hidden on desktop) */
+.sfcb-mobile-close {
+  display: none;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: #E11D48;
+  color: white;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(225, 29, 72, 0.4);
+  z-index: 100002;
+  cursor: pointer;
+  pointer-events: auto !important;
+  transition: all 0.2s;
+}
+
+.sfcb-mobile-close:active {
+  transform: scale(0.9);
 }

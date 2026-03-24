@@ -37,6 +37,7 @@ const AdminSidebar = lazy(() => import('./components/AdminSidebar'));
 const AdminProductDetailsForm = lazy(() => import('./components/AdminProductDetailsForm'));
 const AdminAIInsights = lazy(() => import('./components/AdminAIInsights'));
 const AdminCouponManagement = lazy(() => import('./components/AdminCouponManagement'));
+const AdminAffiliateManagement = lazy(() => import('./components/AdminAffiliateManagement'));
 
 // ScrollToTop - cuộn lên đầu khi chuyển trang
 function ScrollToTop() {
@@ -129,6 +130,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isChatBotOpen, setIsChatBotOpen] = useState(false);
+  const [detailProduct, setDetailProduct] = useState(null);
   
   // Admin sidebar navigation
   useEffect(() => {
@@ -139,7 +141,7 @@ function App() {
         'products': '/admin/products',
         'orders': '/admin/orders',
         'coupons': '/admin/coupons',
-        'customers': '/admin/customers',
+        'affiliates': '/admin/affiliates',
         'dashboard': '/admin/dashboard',
         'ai_insights': '/admin/ai-insights',
         'settings': '/admin/settings'
@@ -395,10 +397,11 @@ function App() {
       'admin-add-product': '/admin/add-product',
       'admin-orders': '/admin/orders',
       'admin-order-detail': '/admin/order-detail',
-      'admin-customers': '/admin/customers',
+      'admin-affiliates': '/admin/affiliates',
       'admin-ai-knowledge': '/admin/ai-knowledge',
       'admin-ai-insights': '/admin/ai-insights',
       'admin-coupons': '/admin/coupons',
+      'admin-settings': '/admin/settings',
     };
     navigate(viewToRoute[viewName] || '/');
   };
@@ -441,6 +444,7 @@ function App() {
               isLoggedIn={!!user}
               onLoginRequired={() => handleLoginRequired(location.pathname)}
               onProductSelect={(product) => navigate(`/product/${product.id}`)}
+              setGlobalProduct={setDetailProduct}
             />
           } />
           <Route path="/cart" element={
@@ -556,6 +560,7 @@ function App() {
               }}
             />
           } />
+          <Route path="/admin/affiliates" element={isAdmin ? <AdminAffiliateManagement onBack={() => navigate('/admin/dashboard')} /> : <Navigate to="/" />} />
           <Route path="/admin/customers" element={
             <AdminCustomerManagement onBack={() => navigate('/')} />
           } />
@@ -616,13 +621,18 @@ function App() {
             view.startsWith('admin') ? (
               view === 'admin-products' ? 'products' : 
               view === 'admin-ai-knowledge' ? 'ai_knowledge' : 
-              view === 'admin-add-product' ? 'add_product' : 'dashboard'
+              view === 'admin-add-product' ? 'add_product' : 
+              view === 'admin-affiliates' ? 'affiliates' :
+              view === 'admin-orders' ? 'orders' : 'dashboard'
             ) : view
           }
           user={user}
+          isAdminUser={isAdmin}
           setView={setView}
           onNavigate={(target) => setView(target)}
           handleLoginRequired={handleLoginRequired}
+          detailProduct={detailProduct}
+          onAddToCart={handleAddToCart}
           onToggleChatBot={() => {
             if (user) {
               setIsChatBotOpen(!isChatBotOpen);

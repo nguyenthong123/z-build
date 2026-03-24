@@ -4,7 +4,7 @@ import './ProductDetail.css';
 import ProductReview from './ProductReview';
 import SEOHead from './SEOHead';
 
-const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, onLoginRequired, onProductSelect }) => {
+const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, onLoginRequired, onProductSelect, setGlobalProduct }) => {
   const { productId } = useParams();
   const navigate = useNavigate();
   const [fetchedProduct, setFetchedProduct] = useState(null);
@@ -59,7 +59,12 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
       });
       setSelectedVariants(initialVariants);
     }
-  }, [product]);
+    
+    if (product) {
+      setGlobalProduct?.(product);
+    }
+    return () => setGlobalProduct?.(null);
+  }, [product, setGlobalProduct]);
 
   useEffect(() => {
     const fetchRelated = async () => {
@@ -457,7 +462,8 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
       </div>
 
       {/* Sticky Mobile Add to Cart Bar */}
-      <div className="mobile-cta-sticky">
+      {/* Hide original sticky bar on mobile as it's now in MobileNav */}
+      <div className="mobile-cta-sticky" style={{ display: 'none' }}>
         <div className="mobile-quantity">
           <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>-</button>
           <span>{quantity}</span>

@@ -13,7 +13,12 @@
   align-items: center;
   z-index: 10000;
   padding: 0 5px 12px; /* Extra bottom padding for home indicator */
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s;
   box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
+}
+
+.mobile-bottom-nav.nav-hidden {
+  transform: translateY(150%);
 }
 
 .mobile-bottom-nav .nav-item {

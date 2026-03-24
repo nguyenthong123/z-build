@@ -6,6 +6,23 @@ import './Navbar.css';
 const Navbar = ({ user, onLogoClick, onCartClick, onWishlistClick, onProfileClick, onLogout, isLoggedIn, view, onSearch, cartCount = 0, wishlistCount = 0 }) => {
   const [searchValue, setSearchValue] = React.useState('');
   const { isDark, toggleTheme } = useTheme();
+  const [isNavVisible, setIsNavVisible] = React.useState(true);
+  const [lastScrollY, setLastScrollY] = React.useState(0);
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY && currentScrollY > 70) {
+        setIsNavVisible(false); // Scrolling down - hiding
+      } else {
+        setIsNavVisible(true); // Scrolling up - showing
+      }
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   const handleSearchChange = (e) => {
     const val = e.target.value;
@@ -20,7 +37,7 @@ const Navbar = ({ user, onLogoClick, onCartClick, onWishlistClick, onProfileClic
   };
 
   return (
-    <nav className={`navbar ${view === 'product-detail' ? 'product-view' : ''} ${view === 'cart' ? 'cart-view' : ''} ${(view === 'order-history' || view === 'profile') ? 'profile-view' : ''}`}>
+    <nav className={`navbar ${view === 'product-detail' ? 'product-view' : ''} ${view === 'cart' ? 'cart-view' : ''} ${(view === 'order-history' || view === 'profile') ? 'profile-view' : ''} ${!isNavVisible ? 'nav-hidden' : ''}`}>
       <div className="container nav-content">
         <div className="logo" onClick={onLogoClick} style={{ cursor: 'pointer' }}>
           <div className="logo-icon">

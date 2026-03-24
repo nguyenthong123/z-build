@@ -1,0 +1,329 @@
+.affiliate-management {
+  padding: 24px;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.affiliate-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 32px;
+  background: #fff;
+  padding: 8px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  width: fit-content;
+}
+
+.affiliate-tabs button {
+  padding: 10px 24px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.affiliate-tabs button.active {
+  background: #1a1a2e;
+  color: #fff;
+}
+
+.stats-row {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  flex: 1;
+  background: #fff;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-card .label {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.stat-card .count {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.management-grid {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 32px;
+}
+
+.form-card, .list-card {
+  background: #fff;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.form-card h3, .list-card h3 {
+  margin: 0 0 20px 0;
+  color: #1e293b;
+  font-size: 18px;
+}
+
+.input-group {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.input-group input, .input-group select {
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.readonly-input {
+  background-color: #f1f5f9;
+  cursor: not-allowed;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  background: #1a1a2e;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.admin-header {
+  padding: 30px 40px;
+  background: white;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.header-nav {
+  margin-bottom: 15px;
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: #1a1a2e;
+}
+
+.header-title h1 {
+  font-size: 28px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+/* Table Styles */
+.table-container {
+  overflow-x: auto;
+}
+
+.affiliate-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.affiliate-table th {
+  text-align: left;
+  padding: 12px 16px;
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 600;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.affiliate-table td {
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+}
+
+.affiliate-table tr:hover {
+  background: #f8fafc;
+}
+
+.col-product {
+  max-width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.col-amount {
+  font-weight: 700;
+  color: #16a34a;
+}
+
+.col-note {
+  font-size: 12px;
+  color: #94a3b8;
+  max-width: 200px;
+}
+
+/* Old List Styles (Keep for other sections if needed) */
+.aff-item, .history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.aff-item:hover {
+  background: #f8fafc;
+}
+
+.aff-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.aff-name {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.aff-email {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.aff-stats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.rev-badge {
+  background: #f0fdf4;
+  color: #166534;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #94a3b8;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.history-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hist-user {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.hist-note {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.history-amount {
+  font-weight: 700;
+  color: #16a34a;
+}
+
+@media (max-width: 1024px) {
+  .management-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-row {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-content-header {
+    padding: 1.5rem;
+  }
+
+  .admin-affiliate-management {
+    padding-bottom: 120px;
+  }
+
+  .stats-row {
+    gap: 12px;
+  }
+
+  .stat-card {
+    padding: 1.25rem;
+  }
+
+  .tabs-nav {
+    overflow-x: auto;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab-btn {
+    white-space: nowrap;
+  }
+
+  .admin-content-body {
+    padding: 1rem 12px 120px;
+  }
+}

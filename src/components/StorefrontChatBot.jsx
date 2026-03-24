@@ -35,6 +35,28 @@ const StorefrontChatBot = ({ isOpen, setIsOpen, isLoggedIn, onLoginRequired }) =
           visibility: isOpen ? 'visible' : 'hidden'
         }}
       >
+        {/* Dedicated mobile close button inside panel wrapper */}
+        <button 
+          className="sfcb-mobile-close"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsOpen(false);
+          }}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsOpen(false);
+          }}
+          onTouchStart={(e) => {
+            // Support for Safari mobile
+            e.stopPropagation();
+            setIsOpen(false);
+          }}
+          aria-label="Đóng Chat"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
         {isLoggedIn && (
           <iframe 
             src="https://script.google.com/macros/s/AKfycbziFF8dRd2heOGZ-WnZ90d3u6fcJy7o4cExHhbC1ad_VYWqH0g8b8g0VILFZY3Wxdly/exec" 

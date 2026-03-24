@@ -1,7 +1,30 @@
-/* ============================================
-   ADMIN DASHBOARD
-   Phase 2.3 - Analytics & KPI Overview
-   ============================================ */
+/* Layout */
+.admin-product-page {
+  display: flex;
+  background-color: #f6f8fb;
+  min-height: 100vh;
+}
+
+.admin-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.admin-content-header {
+  background: white;
+  padding: 1.5rem 2.5rem;
+  border-bottom: 1px solid #edf2f7;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s;
+}
+
+.admin-content-header.header-hidden {
+  transform: translateY(-100%);
+}
 
 /* KPI Cards Row */
 .dash-kpis {
@@ -10,6 +33,10 @@
   gap: 16px;
   padding: 0 28px;
   margin-bottom: 20px;
+}
+
+.admin-content-body {
+  padding-bottom: 100px;
 }
 
 .dash-kpi-card {
@@ -386,6 +413,10 @@
 }
 
 @media (max-width: 768px) {
+  .admin-content-header {
+    padding: 1.5rem;
+  }
+
   .dash-kpis {
     grid-template-columns: repeat(2, 1fr);
     padding: 0 12px;
@@ -426,5 +457,9 @@
   .dash-status-label {
     min-width: 90px;
     font-size: 0.78rem;
+  }
+
+  .admin-content-body {
+    padding: 1rem 12px 120px;
   }
 }

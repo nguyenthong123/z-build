@@ -290,6 +290,10 @@
 
 /* Mobile */
 @media (max-width: 768px) {
+  .admin-content-header {
+    padding: 1.5rem;
+  }
+
   .form-row { grid-template-columns: 1fr; }
   .coupon-form { padding: 24px; }
 
@@ -297,4 +301,8 @@
     overflow-x: auto;
   }
   .admin-table { min-width: 800px; }
+
+  .admin-content-body {
+    padding: 1rem 12px 120px;
+  }
 }

@@ -95,12 +95,6 @@ const ProductGrid = ({ onProductClick, onAddToCart, searchQuery, category }) => 
                   </svg>
                 </button>
                 <img src={product.img} alt={product.name} loading="lazy" />
-                <div className="product-actions">
-                  <button className="add-to-cart" onClick={(e) => {
-                    e.stopPropagation();
-                    onAddToCart(product);
-                  }}>Thêm vào giỏ</button>
-                </div>
               </div>
               <div className="product-info">
                 <h3>{product.name}</h3>

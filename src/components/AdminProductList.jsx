@@ -57,9 +57,28 @@ const AdminProductList = ({ onBack, onAddProduct, onEditProduct, onPreviewProduc
     }
   };
 
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        setIsHeaderVisible(false);
+      } else {
+        setIsHeaderVisible(true);
+      }
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
   const filteredProducts = products.filter(p => {
     const matchesTab = activeTab === 'All' || p.status === activeTab;
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.sku.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (p.sku || '').toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTab && matchesSearch;
   });
 
@@ -68,7 +87,7 @@ const AdminProductList = ({ onBack, onAddProduct, onEditProduct, onPreviewProduc
       <AdminSidebar activePage="products" />
       
       <div className="admin-main-content">
-        <header className="admin-content-header">
+        <header className={`admin-content-header ${!isHeaderVisible ? 'header-hidden' : ''}`}>
           <nav className="breadcrumb desktop-only">Quản trị / <span className="active">Sản phẩm</span></nav>
           
           <div className="header-main-row">

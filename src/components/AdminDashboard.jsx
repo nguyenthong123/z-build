@@ -5,6 +5,24 @@ import AdminSidebar from './AdminSidebar';
 import './AdminDashboard.css';
 
 const AdminDashboard = ({ onBack }) => {
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        setIsHeaderVisible(false); // Scrolling down
+      } else {
+        setIsHeaderVisible(true); // Scrolling up
+      }
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,25 +63,34 @@ const AdminDashboard = ({ onBack }) => {
   };
 
   // KPI Calculations
-  const totalRevenue = orders.filter(o => o.status === 'delivered').reduce((s, o) => s + (o.total || 0), 0);
+  // Total Revenue includes all non-cancelled orders for chart consistency
+  const totalRevenue = orders.filter(o => o?.status && o.status !== 'cancelled').reduce((s, o) => s + (Number(o?.total) || 0), 0);
   const totalOrders = orders.length;
-  const pendingOrders = orders.filter(o => o.status === 'pending').length;
-  const deliveredOrders = orders.filter(o => o.status === 'delivered').length;
-  const cancelledOrders = orders.filter(o => o.status === 'cancelled').length;
-  const avgOrderValue = totalOrders > 0 ? Math.round(orders.reduce((s, o) => s + (o.total || 0), 0) / totalOrders) : 0;
+  const pendingOrders = orders.filter(o => o?.status === 'pending').length;
+  const deliveredOrders = orders.filter(o => o?.status === 'delivered').length;
+  const cancelledOrders = orders.filter(o => o?.status === 'cancelled').length;
+  const avgOrderValue = totalOrders > 0 ? Math.round(orders.reduce((s, o) => s + (Number(o?.total) || 0), 0) / totalOrders) : 0;
   
   // Unique customers
-  const uniqueCustomers = new Set(orders.map(o => o.userEmail).filter(Boolean)).size;
+  const uniqueCustomers = new Set(orders.map(o => o?.userEmail).filter(Boolean)).size;
 
   // Top selling products
+  const activeProductTitles = new Set(products.map(p => (p.title || p.name || '').trim().toLowerCase()));
+  
   const productSales = {};
   orders.forEach(o => {
-    if (o.status !== 'cancelled') {
+    if (o?.status && o.status !== 'cancelled') {
       (o.items || []).forEach(item => {
-        const key = item.name || 'Unknown';
-        if (!productSales[key]) productSales[key] = { name: key, quantity: 0, revenue: 0, image: item.image };
-        productSales[key].quantity += (item.quantity || 1);
-        productSales[key].revenue += (item.price || 0) * (item.quantity || 1);
+        if (!item) return;
+        const rawTitle = item.name || 'Unknown';
+        const normalizedTitle = rawTitle.trim().toLowerCase();
+        
+        // Only show if the product still exists in our current product list
+        if (!activeProductTitles.has(normalizedTitle)) return;
+        
+        if (!productSales[rawTitle]) productSales[rawTitle] = { name: rawTitle, quantity: 0, revenue: 0, image: item.image };
+        productSales[rawTitle].quantity += (Number(item.quantity) || 1);
+        productSales[rawTitle].revenue += (Number(item.price) || 0) * (Number(item.quantity) || 1);
       });
     }
   });
@@ -119,20 +146,25 @@ const AdminDashboard = ({ onBack }) => {
     const now = new Date();
     const labels = [];
     const values = [];
-    const orderCounts = [];
+    
+    // Group orders by date first for performance O(N) instead of O(days * N)
+    const revenueByDay = {};
+    orders.forEach(o => {
+      if (o.status === 'cancelled' || !o.createdAt) return;
+      try {
+        const dateKey = o.createdAt.toISOString().split('T')[0];
+        revenueByDay[dateKey] = (revenueByDay[dateKey] || 0) + (o.total || 0);
+      } catch (e) {
+        console.warn('Invalid order date:', o.id);
+      }
+    });
 
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      const key = d.toISOString().split('T')[0];
+      const isoKey = d.toISOString().split('T')[0];
       labels.push(d.getDate() + '/' + (d.getMonth() + 1));
-      
-      const dayOrders = orders.filter(o => {
-        const od = o.createdAt;
-        return od.toISOString().split('T')[0] === key && o.status !== 'cancelled';
-      });
-      values.push(dayOrders.reduce((s, o) => s + (o.total || 0), 0));
-      orderCounts.push(dayOrders.length);
+      values.push(revenueByDay[isoKey] || 0);
     }
 
     const maxVal = Math.max(...values, 1);
@@ -237,9 +269,8 @@ const AdminDashboard = ({ onBack }) => {
   return (
     <div className="admin-product-page">
       <AdminSidebar activePage="dashboard" />
-
       <div className="admin-main-content">
-        <header className="admin-content-header">
+        <header className={`admin-content-header ${!isHeaderVisible ? 'header-hidden' : ''}`}>
           <nav className="breadcrumb desktop-only">Quản trị / <span className="active">Dashboard</span></nav>
           <div className="header-main-row">
             <div className="title-group">
@@ -256,6 +287,7 @@ const AdminDashboard = ({ onBack }) => {
           </div>
         </header>
 
+        <div className="admin-content-body">
         {/* KPI Cards */}
         <div className="dash-kpis">
           <div className="dash-kpi-card revenue">
@@ -407,7 +439,8 @@ const AdminDashboard = ({ onBack }) => {
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 };
 
 export default AdminDashboard;
