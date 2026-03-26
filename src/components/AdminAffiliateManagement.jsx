@@ -13,6 +13,7 @@ import {
   serverTimestamp,
   orderBy
 } from 'firebase/firestore';
+import AdminSidebar from './AdminSidebar';
 import './AdminAffiliateManagement.css';
 
 const AdminAffiliateManagement = () => {
