@@ -33,7 +33,7 @@ const AdminSettings = ({ onBack }) => {
         if (adminSnap.exists() && adminSnap.data().emails) {
           setAdminEmails(adminSnap.data().emails);
         } else {
-          setAdminEmails(['nbt1024@gmail.com']);
+          setAdminEmails((import.meta.env.VITE_ADMIN_EMAILS || 'nbt1024@gmail.com').split(','));
         }
       } catch (err) {
         console.error('Lỗi khi tải cài đặt:', err);

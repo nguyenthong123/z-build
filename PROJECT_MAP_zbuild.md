@@ -230,7 +230,14 @@ Dưới đây là sơ đồ chi tiết về tiến độ dự án Zbuild. Bạn 
 #### 5.4 SEO & Performance
 - [x] Meta tags, Open Graph, sitemap.xml.
 - [x] Lazy loading images & components.
-- [x] SSR/SSG (Next.js migration) nếu cần SEO mạnh.
+- [ ] SSR/SSG (Next.js migration) nếu cần SEO mạnh.
+
+#### 5.5 Bảo mật & Bảo vệ API Key (Security & Key Protection) ✅ HOÀN THÀNH (26/03/2026)
+- [x] **Centralized .env**: Di chuyển toàn bộ API Key (Firebase, DeepSeek, Groq, Cloudinary) vào `.env.local`.
+- [x] **Service Worker Security**: Tách cấu hình Firebase SW ra file `firebase-config.js` riêng biệt và đưa vào `.gitignore` để tránh rò rỉ lên GitHub.
+- [x] **Admin Identity Protection**: Chuyển danh sách email admin từ mã cứng sang biến môi trường `VITE_ADMIN_EMAILS`.
+- [x] **FCM VAPID Configuration**: Chuẩn hóa việc sử dụng VAPID Key qua biến môi trường để hỗ trợ Push Notification an toàn.
+- [x] **Environment Templates**: Cập nhật `.env.example` đầy đủ các biến cần thiết cho việc triển khai dự án mới.
 
 ---
 
@@ -250,5 +257,5 @@ Dưới đây là sơ đồ chi tiết về tiến độ dự án Zbuild. Bạn 
 4. **Skeleton Loading**: Thay "Đang tải..." bằng Skeleton screens để UX mượt hơn.
 
 ---
-*Cập nhật lần cuối: 24/03/2026 — Hoàn thành Mobile Optimization*
+*Cập nhật lần cuối: 26/03/2026 — Hoàn thành Security Audit & Key Protection*
 

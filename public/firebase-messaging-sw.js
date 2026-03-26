@@ -2,17 +2,13 @@
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDFDyDOZlplNltgcYA3VydZT0WA4ogOIMo",
-  authDomain: "z-build-dunvex.firebaseapp.com",
-  projectId: "z-build-dunvex",
-  storageBucket: "z-build-dunvex.firebasestorage.app",
-  messagingSenderId: "1057831056165",
-  appId: "1:1057831056165:web:60f13cee942d02ba7220cc"
-};
+// TODO: Điền thông tin Firebase thực vào các biến .env hoặc dùng build script để tự động thay thế
+// Tải cấu hình Firebase từ file config riêng (file này sẽ được sinh ra từ .env)
+importScripts('/firebase-config.js');
 
-// Khởi tạo Firebase app trong service worker
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
 
 // Khởi tạo Messaging
 const messaging = firebase.messaging();

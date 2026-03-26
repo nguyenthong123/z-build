@@ -122,7 +122,7 @@ function App() {
   const location = useLocation();
   
   const [user, setUser] = useState(null);
-  const [adminEmails, setAdminEmails] = useState(['nbt1024@gmail.com']);
+  const [adminEmails, setAdminEmails] = useState((import.meta.env.VITE_ADMIN_EMAILS || 'nbt1024@gmail.com').split(','));
   const [intendedDestination, setIntendedDestination] = useState(null);
   const [orderData, setOrderData] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
