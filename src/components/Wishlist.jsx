@@ -53,7 +53,7 @@ const Wishlist = ({ onNavigate }) => {
               key={product.id}
               style={{ animationDelay: `${index * 0.05}s` }}
             >
-              <div className="wl-card-image" onClick={() => onNavigate('product', product.id)}>
+              <div className="wl-card-image" onClick={() => onNavigate('product', product.id, product)}>
                 <img src={product.image} alt={product.title} loading="lazy" />
                 <div className="wl-card-overlay">
                   <span>Xem chi tiết →</span>
@@ -63,7 +63,7 @@ const Wishlist = ({ onNavigate }) => {
                 <span className="wl-category">{product.category}</span>
                 <h3 
                   className="wl-title" 
-                  onClick={() => onNavigate('product', product.id)}
+                  onClick={() => onNavigate('product', product.id, product)}
                 >
                   {product.title}
                 </h3>

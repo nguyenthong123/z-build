@@ -5,10 +5,12 @@ import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import './AdminAddProduct.css';
 import AdminSidebar from './AdminSidebar';
+import { slugify } from '../utils/slugify';
 
 const AdminAddProduct = ({ onBack, onSave, editData }) => {
   const [product, setProduct] = useState({
     title: '',
+    slug: '',
     description: '',
     status: 'Active',
     category: 'Electronics',
@@ -169,10 +171,17 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setProduct(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    setProduct(prev => {
+      const newState = {
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      };
+      // Auto-generate slug if title changes and slug hasn't been manually edited much
+      if (name === 'title' && !editData) {
+        newState.slug = slugify(value);
+      }
+      return newState;
+    });
   };
 
   const handleImageChange = (e) => {
@@ -247,6 +256,7 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
         const { id, ...updateData } = product; // Remove id if present in state
         await updateDoc(productRef, {
           ...updateData,
+          slug: product.slug || slugify(product.title),
           image: imageUrl,
           extraImages: extraUrls,
           updatedAt: new Date().toISOString()
@@ -254,6 +264,7 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
       } else {
         await addDoc(collection(db, "products"), {
           ...product,
+          slug: product.slug || slugify(product.title),
           image: imageUrl,
           extraImages: extraUrls,
           createdBy: auth.currentUser?.email || 'Hệ thống',
@@ -311,6 +322,22 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
                   value={product.title}
                   onChange={handleChange}
                 />
+              </div>
+              <div className="form-group">
+                <label>Slug (URL thân thiện - tự động tạo)</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="text" 
+                    name="slug"
+                    placeholder="tai-nghe-khong-day-cao-cap" 
+                    value={product.slug}
+                    onChange={handleChange}
+                    style={{ background: '#f5f5f5', color: '#666' }}
+                  />
+                  <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: '#999' }}>
+                    .click/product/<strong>{product.slug || '...'}</strong>
+                  </div>
+                </div>
               </div>
               <div className="form-group">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
@@ -384,7 +411,7 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
                   <div className="upload-placeholder">
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FFB800" strokeWidth="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                     <p>Kéo thả hình ảnh vào đây, hoặc <span>chọn từ máy tính</span></p>
-                    <span style={{ color: '#FFB800', fontWeight: 'bold' }}>Kích thước khuyên dùng: 1000 x 1100 px (Dọc)</span>
+                    <span style={{ color: '#FFB800', fontWeight: 'bold' }}>Kích thước khuyên dùng: 1000 x 1000 px (Hình vuông)</span>
                     <span>Hỗ trợ: JPG, PNG, WEBP (Tối đa 5MB)</span>
                   </div>
                 )}
@@ -399,7 +426,7 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
                       style={{ 
                         border: '2px dashed #e0e4e9', 
                         borderRadius: '12px', 
-                        aspectRatio: '16/9',
+                        aspectRatio: '1/1',
                         width: '100%',
                         display: 'flex', 
                         alignItems: 'center', 
@@ -413,12 +440,12 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
                     >
                       <input type="file" id={`extraImage${index}`} style={{ display: 'none' }} accept="image/*" onChange={(e) => handleExtraImageChange(e, index)} />
                       {extraPreviews[index] ? (
-                        <img src={extraPreviews[index]} alt="Sub" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#f5f5f5' }} />
+                        <img src={extraPreviews[index]} alt="Sub" style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#f5f5f5' }} />
                       ) : (
                         <div style={{ textAlign: 'center', color: '#999' }}>
                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFB800" strokeWidth="1.5"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                          <p style={{ fontSize: '11px', margin: '4px 0 0', fontWeight: '500' }}>Ảnh phụ {index + 1} (16:9)</p>
-                          <p style={{ fontSize: '9px', opacity: 0.7 }}>Khuyên dùng: 1280x720px</p>
+                          <p style={{ fontSize: '11px', margin: '4px 0 0', fontWeight: '500' }}>Ảnh phụ {index + 1} (1:1)</p>
+                          <p style={{ fontSize: '9px', opacity: 0.7 }}>Khuyên dùng: 1000x1000px</p>
                         </div>
                       )}
                     </div>

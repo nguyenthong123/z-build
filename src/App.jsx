@@ -108,7 +108,7 @@ function HomePage({ onCategorySelect, selectedCategory, searchQuery, handleAddTo
       <CategorySection onCategorySelect={onCategorySelect} activeCategory={selectedCategory} />
       <PromoBanner />
       <ProductGrid 
-        onProductClick={(product) => navigate(`/product/${product.id}`)} 
+        onProductClick={(product) => navigate(`/product/${product.slug || product.id}`)} 
         onAddToCart={handleAddToCart} 
         searchQuery={searchQuery}
         category={selectedCategory}
@@ -443,7 +443,7 @@ function App() {
               onAddToCart={(product, qty) => handleAddToCart(product, qty)} 
               isLoggedIn={!!user}
               onLoginRequired={() => handleLoginRequired(location.pathname)}
-              onProductSelect={(product) => navigate(`/product/${product.id}`)}
+              onProductSelect={(product) => navigate(`/product/${product.slug || product.id}`)}
               setGlobalProduct={setDetailProduct}
             />
           } />
@@ -474,9 +474,9 @@ function App() {
             />
           } />
           <Route path="/wishlist" element={
-            <Wishlist onNavigate={(target, id) => {
-              if (target === 'product' && id) {
-                navigate(`/product/${id}`);
+            <Wishlist onNavigate={(target, id, product) => {
+              if (target === 'product' && (product?.slug || id)) {
+                navigate(`/product/${product?.slug || id}`);
               } else {
                 navigate('/');
               }
@@ -533,7 +533,7 @@ function App() {
               onBack={() => navigate('/')} 
               onAddProduct={() => { setEditingProduct(null); navigate('/admin/add-product'); }} 
               onEditProduct={(product) => { setEditingProduct(product); navigate('/admin/add-product'); }}
-              onPreviewProduct={(product) => navigate(`/product/${product.id}`)}
+              onPreviewProduct={(product) => navigate(`/product/${product.slug || product.id}`)}
             />
           } />
           <Route path="/admin/add-product" element={
@@ -585,7 +585,7 @@ function App() {
       {/* Admin Toggle Button */}
       {isAdmin && (
         <div 
-          className={`admin-toggle-container ${view === 'product-detail' ? 'shifted' : ''}`}
+          className={`admin-toggle-container desktop-only ${view === 'product-detail' ? 'shifted' : ''}`}
           style={{ 
             position: 'fixed', 
             zIndex: 9999, 

@@ -26,14 +26,27 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
       
       setLoading(true);
       try {
-        const { doc, getDoc } = await import('firebase/firestore');
+        const { doc, getDoc, collection, query, where, getDocs } = await import('firebase/firestore');
         const { db } = await import('../firebase');
+        
+        // 1. Try fetching as standard document ID
         const docRef = doc(db, 'products', idToFetch);
         const docSnap = await getDoc(docRef);
+        
         if (docSnap.exists()) {
           setFetchedProduct({ id: docSnap.id, ...docSnap.data() });
         } else {
-          setFetchedProduct(null);
+          // 2. Fallback: Search as a slug
+          const productsRef = collection(db, "products");
+          const q = query(productsRef, where("slug", "==", idToFetch));
+          const querySnap = await getDocs(q);
+          
+          if (!querySnap.empty) {
+            const firstDoc = querySnap.docs[0];
+            setFetchedProduct({ id: firstDoc.id, ...firstDoc.data() });
+          } else {
+            setFetchedProduct(null);
+          }
         }
       } catch (error) {
         console.error('Error fetching product:', error);
@@ -96,7 +109,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
 
   const handleRelatedClick = (p) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    navigate(`/product/${p.id}`);
+    navigate(`/product/${p.slug || p.id}`);
   };
 
   // === EARLY RETURNS (must be after ALL hooks) ===
@@ -181,7 +194,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
     },
     "offers": {
       "@type": "Offer",
-      "url": `https://zbuild.vn/product/${product.id}`,
+      "url": `https://zbuild.vn/product/${product.slug || product.id}`,
       "priceCurrency": "VND",
       "price": product.pricingType === 'subscription' ? (product.monthlyPrice || 0) : (product.discountPrice || product.basePrice || 0),
       "priceValidUntil": new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
@@ -200,7 +213,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
         title={`${product.title} | Zbuild`} 
         description={product.description?.replace(/<[^>]+>/g, '').substring(0, 150) || product.title}
         ogImage={images[0]}
-        canonical={`/product/${product.id}`}
+        canonical={`/product/${product.slug || product.id}`}
         schemaData={productSchema}
       />
       {/* Mobile Special Header */}

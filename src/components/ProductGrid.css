@@ -27,7 +27,7 @@
 
 .product-img-wrapper {
   position: relative;
-  aspect-ratio: 1 / 1.1; /* Tỉ lệ hơi dọc một chút cho cảm giác cao cấp */
+  aspect-ratio: 1 / 1; /* Cập nhật thành hình vuông theo yêu cầu */
   overflow: hidden;
   background: linear-gradient(135deg, var(--card-bg) 0%, var(--bg-light) 100%);
   display: flex;
@@ -38,8 +38,8 @@
 .product-img-wrapper img {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* Xem toàn bộ sản phẩm, không bị cắt */
-  background-color: transparent;
+  object-fit: cover; /* Lấp đầy khung hình vuông để giao diện đồng bộ, chuyên nghiệp hơn */
+  background-color: var(--bg-light);
   image-rendering: -webkit-optimize-contrast;
   transition: transform 0.8s cubic-bezier(0.2, 1, 0.3, 1);
 }
@@ -225,7 +225,7 @@
   }
 
   .product-img-wrapper {
-    aspect-ratio: 1 / 1.1;
+    aspect-ratio: 1 / 1;
   }
 
   .product-tag {

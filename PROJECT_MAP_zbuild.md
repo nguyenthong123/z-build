@@ -239,6 +239,17 @@ Dưới đây là sơ đồ chi tiết về tiến độ dự án Zbuild. Bạn 
 - [x] **FCM VAPID Configuration**: Chuẩn hóa việc sử dụng VAPID Key qua biến môi trường để hỗ trợ Push Notification an toàn.
 - [x] **Environment Templates**: Cập nhật `.env.example` đầy đủ các biến cần thiết cho việc triển khai dự án mới.
 
+#### 5.6 Tối ưu hóa SEO & URL (URL-based Slugs) ✅ HOÀN THÀNH (26/03/2026)
+- [x] **Slug Utility**: Triển khai bộ lọc `slugify` tiếng Việt để tạo URL không dấu, thân thiện với SEO.
+- [x] **Auto-Slug Admin**: Tích hợp tự động tạo và lưu `slug` khi thêm/sửa sản phẩm trong Admin.
+- [x] **Dual-Path Routing**: Nâng cấp trang chi tiết sản phẩm hỗ trợ truy vấn đồng thời bằng `ID` và `Slug`.
+- [x] **SEO Canonicalization**: Cập nhật thẻ `canonical` và `schema.org` ưu tiên URL theo `slug` để tránh trùng lặp nội dung.
+
+#### 5.7 Tối ưu hóa hình ảnh (Square Image Optimization) ✅ HOÀN THÀNH (26/03/2026)
+- [x] **Square Preview Admin**: Cập nhật UI Admin khuyến khích và hiển thị ảnh sản phẩm tỷ lệ 1:1 chuẩn xác.
+- [x] **Universal Aspect Ratio**: Áp dụng `aspect-ratio: 1/1` và `object-fit: cover` cho toàn bộ ảnh sản phẩm trên Grid, Detail, Cart và Wishlist.
+- [x] **Mobile Visual Sync**: Đồng bộ hiển thị ảnh vuông trên thiết bị di động, tạo giao diện ngay ngắn và hiện đại.
+
 ---
 
 ## 💡 Đề xuất từ Antigravity (Assistant Proposals)
@@ -257,5 +268,5 @@ Dưới đây là sơ đồ chi tiết về tiến độ dự án Zbuild. Bạn 
 4. **Skeleton Loading**: Thay "Đang tải..." bằng Skeleton screens để UX mượt hơn.
 
 ---
-*Cập nhật lần cuối: 26/03/2026 — Hoàn thành Security Audit & Key Protection*
+*Cập nhật lần cuối: 26/03/2026 — Hoàn thành SEO Slugs & Square Image Optimization*
 
