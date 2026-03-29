@@ -250,6 +250,11 @@ Dưới đây là sơ đồ chi tiết về tiến độ dự án Zbuild. Bạn 
 - [x] **Universal Aspect Ratio**: Áp dụng `aspect-ratio: 1/1` và `object-fit: cover` cho toàn bộ ảnh sản phẩm trên Grid, Detail, Cart và Wishlist.
 - [x] **Mobile Visual Sync**: Đồng bộ hiển thị ảnh vuông trên thiết bị di động, tạo giao diện ngay ngắn và hiện đại.
 
+#### 5.8 Tối ưu hóa ChatBot Mobile ✅ HOÀN THÀNH (29/03/2026)
+- [x] **Smooth Scrolling**: Khắc phục hiện tượng "đơ" và khó cuộn tin nhắn trong chatbot trên điện thoại (đặc biệt là iOS).
+- [x] **Iframe Touch-scrolling**: Triển khai wrapper với `-webkit-overflow-scrolling: touch` giúp thao tác lướt mượt mà 60fps.
+- [x] **Responsive Layout Fix**: Đảm bảo cửa sổ chat phủ toàn màn hình chuẩn xác trên các thiết bị di động có tai thỏ.
+
 ---
 
 ## 💡 Đề xuất từ Antigravity (Assistant Proposals)

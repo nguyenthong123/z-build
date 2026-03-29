@@ -505,3 +505,20 @@
 .sfcb-mobile-close:active {
   transform: scale(0.9);
 }
+
+/* Fix iframe scrolling on iOS */
+.sfcb-iframe-wrapper {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* Essential for smooth scrolling on iOS */
+  position: relative;
+}
+
+.sfcb-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  position: relative;
+}
