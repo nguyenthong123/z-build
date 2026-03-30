@@ -60,7 +60,7 @@ const StorefrontChatBot = ({ isOpen, setIsOpen, isLoggedIn, onLoginRequired }) =
         {isLoggedIn && (
           <div className="sfcb-iframe-wrapper">
             <iframe 
-              src="https://script.google.com/macros/s/AKfycbziFF8dRd2heOGZ-WnZ90d3u6fcJy7o4cExHhbC1ad_VYWqH0g8b8g0VILFZY3Wxdly/exec" 
+              src="https://script.google.com/macros/s/AKfycbyRWdR_2xyMRAtnm8FPNUPep2mLCGviANSrwqZsxOXZVvoQO9BPgISYHLb5GnfveOks/exec" 
               className="sfcb-iframe"
               title="Z-BUILD Assistant"
             />
