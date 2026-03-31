@@ -68,32 +68,52 @@ const Navbar = ({ user, onLogoClick, onCartClick, onWishlistClick, onProfileClic
         </ul>
 
         <div className="nav-actions">
-          <button className="icon-btn theme-toggle" onClick={toggleTheme} title={isDark ? 'Light Mode' : 'Dark Mode'}>
+          <button 
+            className="icon-btn theme-toggle" 
+            onClick={toggleTheme} 
+            title={isDark ? 'Light Mode' : 'Dark Mode'}
+            aria-label={isDark ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
+          >
             {isDark ? (
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
             ) : (
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
             )}
           </button>
-          <button className={`icon-btn badge-btn ${view === 'wishlist' ? 'active' : ''}`} onClick={onWishlistClick} title="Yêu thích">
+          <button 
+            className={`icon-btn badge-btn ${view === 'wishlist' ? 'active' : ''}`} 
+            onClick={onWishlistClick} 
+            title="Yêu thích"
+            aria-label={`Danh sách yêu thích (${wishlistCount})`}
+          >
             <svg width="22" height="22" viewBox="0 0 24 24" fill={view === 'wishlist' ? '#EF4444' : 'none'} stroke={view === 'wishlist' ? '#EF4444' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
             </svg>
             {wishlistCount > 0 && <span className="nav-badge wishlist-badge">{wishlistCount > 99 ? '99+' : wishlistCount}</span>}
           </button>
           {isLoggedIn && <NotificationBell user={user} />}
-          <button className={`icon-btn ${(view === 'order-history' || view === 'profile') ? 'active' : ''}`} onClick={onProfileClick} title={isLoggedIn ? 'Profile' : 'Login'}>
+          <button 
+            className={`icon-btn ${(view === 'order-history' || view === 'profile') ? 'active' : ''}`} 
+            onClick={onProfileClick} 
+            title={isLoggedIn ? 'Profile' : 'Login'}
+            aria-label={isLoggedIn ? 'Trang cá nhân' : 'Đăng nhập'}
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
             </svg>
           </button>
           {isLoggedIn && (
-            <button className="icon-btn logout-btn" onClick={onLogout} title="Logout">
+            <button className="icon-btn logout-btn" onClick={onLogout} title="Logout" aria-label="Đăng xuất">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             </button>
           )}
-          <button className={`icon-btn badge-btn ${view === 'cart' ? 'active' : ''}`} onClick={onCartClick}>
+          <button 
+            className={`icon-btn badge-btn ${view === 'cart' ? 'active' : ''}`} 
+            onClick={onCartClick}
+            title="Giỏ hàng"
+            aria-label={`Giỏ hàng của bạn (${cartCount})`}
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
             </svg>

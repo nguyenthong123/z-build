@@ -15,7 +15,7 @@ const CategorySection = ({ onCategorySelect, activeCategory }) => {
     <section className="categories container">
       <div className="section-header">
         <h2>Nhóm ngành kinh doanh</h2>
-        <a href="#" className="view-all" onClick={(e) => { e.preventDefault(); onCategorySelect(null); }}>Tất cả</a>
+        <a href="#" className="view-all" onClick={(e) => { e.preventDefault(); onCategorySelect(null); }} aria-label="Xem tất cả nhóm ngành kinh doanh">Tất cả</a>
       </div>
       <div className="category-grid">
         {categories.map(cat => (
@@ -23,9 +23,11 @@ const CategorySection = ({ onCategorySelect, activeCategory }) => {
             key={cat.id} 
             className={`category-item ${activeCategory === cat.name ? 'active' : ''}`}
             onClick={() => onCategorySelect(cat.name)}
+            role="button"
+            aria-label={`Chọn ngành: ${cat.name}`}
           >
             <div className="category-img-wrapper">
-              <img src={cat.img} alt={cat.name} />
+              <img src={cat.img} alt={cat.name} loading="lazy" />
             </div>
             <span>{cat.name}</span>
           </div>

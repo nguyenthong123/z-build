@@ -49,6 +49,7 @@ const AdminSidebar = ({ activePage = 'products' }) => {
             key={item.id}
             className={`admin-nav-link ${activePage === item.id ? 'active' : ''}`}
             onClick={() => window.dispatchEvent(new CustomEvent('admin-nav', { detail: item.id }))}
+            aria-label={item.label}
           >
             <span className="icon">{item.icon}</span>
             <span className="label">{item.label}</span>
@@ -64,7 +65,7 @@ const AdminSidebar = ({ activePage = 'products' }) => {
             <span>Quản trị viên cấp cao</span>
           </div>
         </div>
-        <button className="admin-logout">
+        <button className="admin-logout" aria-label="Đăng xuất khỏi trang quản trị">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
         </button>
       </div>

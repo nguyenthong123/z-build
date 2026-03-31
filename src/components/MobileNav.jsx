@@ -81,6 +81,7 @@ const MobileNav = ({ mode, activePage, onNavigate, user, isAdminUser, handleLogi
           key={tab.id}
           className={`nav-item ${tab.isSpecial ? 'special-btn' : ''} ${activePage === tab.id ? 'active' : ''}`}
           onClick={tab.action}
+          aria-label={tab.label}
         >
           {tab.isSpecial ? (
             <div className="special-icon-box">{tab.icon}</div>

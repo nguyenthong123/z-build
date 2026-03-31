@@ -57,6 +57,7 @@ const AccountSidebar = ({ user, activeView, onViewChange, onLogout }) => {
             key={item.id}
             className={`nav-link ${activeView === item.id ? 'active' : ''}`}
             onClick={() => onViewChange(item.id)}
+            aria-label={item.label}
           >
             {item.icon} {item.label}
           </button>

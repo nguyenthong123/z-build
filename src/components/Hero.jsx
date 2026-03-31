@@ -15,8 +15,8 @@ const Hero = () => {
             chúng tôi mang tới giải pháp toàn diện để tối ưu hóa mọi công trình và doanh nghiệp.
           </p>
           <div className="hero-btns">
-            <button className="btn btn-primary">Khám phá ngay</button>
-            <button className="btn btn-secondary">Tư vấn giải pháp</button>
+            <button className="btn btn-primary" aria-label="Khám phá ngay các giải pháp xây dựng">Khám phá ngay</button>
+            <button className="btn btn-secondary" aria-label="Tư vấn giải pháp xây dựng và công nghệ">Tư vấn giải pháp</button>
           </div>
         </div>
       </div>

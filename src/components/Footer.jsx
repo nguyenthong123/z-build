@@ -45,7 +45,7 @@ const Footer = () => {
           <p>Nhận thông tin khuyến mãi và cập nhật sản phẩm mới nhất.</p>
           <div className="newsletter-form">
             <input type="email" placeholder="Nhập email của bạn" />
-            <button>Đăng ký</button>
+            <button aria-label="Đăng ký nhận bản tin email">Đăng ký</button>
           </div>
         </div>
       </div>

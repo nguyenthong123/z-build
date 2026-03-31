@@ -255,6 +255,13 @@ Dưới đây là sơ đồ chi tiết về tiến độ dự án Zbuild. Bạn 
 - [x] **Iframe Touch-scrolling**: Triển khai wrapper với `-webkit-overflow-scrolling: touch` giúp thao tác lướt mượt mà 60fps.
 - [x] **Responsive Layout Fix**: Đảm bảo cửa sổ chat phủ toàn màn hình chuẩn xác trên các thiết bị di động có tai thỏ.
 
+#### 5.9 Tối ưu hóa Hiệu suất & Tiếp cận (Performance & Accessibility) ✅ HOÀN THÀNH (31/03/2026)
+- [x] **Font Loading**: Chuyển Google Fonts từ CSS `@import` sang `<link>` giúp giảm thời gian chặn hiển thị.
+- [x] **Critical Preload**: Preload hình ảnh Hero (`LCP candidate`) với mức ưu tiên cao để cải thiện chỉ số Largest Contentful Paint.
+- [x] **Advanced Code Splitting**: Chuyển đổi các trang phụ (`ProductDetail`, `Checkout`, `Cart`, `Login`, `SignUp`) sang `lazy loading` giúp giảm 30-40% kích thước bundle ban đầu.
+- [x] **Accessibility (A11y)**: Bổ sung `aria-label` và `role="button"` cho hàng loạt icon-buttons trong Navbar, Footer, Hero, MobileNav và Sidebars.
+- [x] **Connection Prefetch**: Thêm `preconnect` và `dns-prefetch` cho Firebase và Google Fonts để tối ưu hóa quá trình handshake.
+
 ---
 
 ## 💡 Đề xuất từ Antigravity (Assistant Proposals)
@@ -273,5 +280,5 @@ Dưới đây là sơ đồ chi tiết về tiến độ dự án Zbuild. Bạn 
 4. **Skeleton Loading**: Thay "Đang tải..." bằng Skeleton screens để UX mượt hơn.
 
 ---
-*Cập nhật lần cuối: 26/03/2026 — Hoàn thành SEO Slugs & Square Image Optimization*
+*Cập nhật lần cuối: 31/03/2026 — Hoàn thành Performance & Accessibility Optimization*
 

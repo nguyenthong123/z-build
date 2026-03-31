@@ -53,7 +53,7 @@ const PromoBanner = () => {
           </div>
         </div>
 
-        <button className="claim-btn">Nhận ngay</button>
+        <button className="claim-btn" aria-label="Nhận ưu đãi giảm giá ngay">Nhận ngay</button>
       </div>
     </section>
   );
