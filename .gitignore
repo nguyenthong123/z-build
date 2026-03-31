@@ -18,7 +18,7 @@ dist-ssr
 !.env.example
 
 # Service Worker config (contains keys)
-public/firebase-config.js
+# Removed public/firebase-config.js explicitly from here because Firebase Config is conceptually a public key and needs to be deployed to production so the service worker doesn't fail.
 
 # Editor directories and files
 .vscode/*
