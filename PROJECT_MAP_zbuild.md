@@ -262,6 +262,11 @@ Dưới đây là sơ đồ chi tiết về tiến độ dự án Zbuild. Bạn 
 - [x] **Accessibility (A11y)**: Bổ sung `aria-label` và `role="button"` cho hàng loạt icon-buttons trong Navbar, Footer, Hero, MobileNav và Sidebars.
 - [x] **Connection Prefetch**: Thêm `preconnect` và `dns-prefetch` cho Firebase và Google Fonts để tối ưu hóa quá trình handshake.
 
+#### 5.10 Khắc phục Service Worker & Firebase Config ✅ HOÀN THÀNH (31/03/2026)
+- [x] **Git Unignore**: Gỡ bỏ `public/firebase-config.js` khỏi `.gitignore` để đảm bảo Service Worker có đủ file cấu hình khi chạy trên môi trường thực tế.
+- [x] **SW Evaluation Fix**: Khắc phục lỗi "ServiceWorker script evaluation failed" gây ra bởi việc thiếu file cấu hình Firebase.
+- [x] **Iframe Lazy Loading**: Chế độ tải chậm cho Chatbot Iframe giúp giảm đáng kể tài nguyên ban đầu.
+
 ---
 
 ## 💡 Đề xuất từ Antigravity (Assistant Proposals)

@@ -32,13 +32,18 @@
     <link rel="preload" as="image" href="/hero-bg-new.png" fetchpriority="high" />
     
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZPSJ6V3TQY"></script>
+    <script defer src="https://www.googletagmanager.com/gtag/js?id=G-ZPSJ6V3TQY"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
 
-      gtag('config', 'G-ZPSJ6V3TQY');
+      // Wrap in setTimeout or requestIdleCallback to defer execution
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          gtag('config', 'G-ZPSJ6V3TQY');
+        }, 1000);
+      });
     </script>
     
     <title>Zbuild - Giải pháp Vật liệu Xây dựng & Công nghệ</title>

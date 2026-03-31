@@ -2,6 +2,14 @@ import React, { useState } from 'react';
 import './StorefrontChatBot.css';
 const StorefrontChatBot = ({ isOpen, setIsOpen, isLoggedIn, onLoginRequired }) => {
 
+  const [hasOpened, setHasOpened] = useState(false);
+
+  React.useEffect(() => {
+    if (isOpen && !hasOpened) {
+      setHasOpened(true);
+    }
+  }, [isOpen, hasOpened]);
+
   const handleToggle = () => {
     if (!isLoggedIn) {
       onLoginRequired();
@@ -57,12 +65,13 @@ const StorefrontChatBot = ({ isOpen, setIsOpen, isLoggedIn, onLoginRequired }) =
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
-        {isLoggedIn && (
+        {isLoggedIn && hasOpened && (
           <div className="sfcb-iframe-wrapper">
             <iframe 
               src="https://script.google.com/macros/s/AKfycbyRWdR_2xyMRAtnm8FPNUPep2mLCGviANSrwqZsxOXZVvoQO9BPgISYHLb5GnfveOks/exec" 
               className="sfcb-iframe"
               title="Z-BUILD Assistant"
+              loading="lazy"
             />
           </div>
         )}
