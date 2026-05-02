@@ -246,12 +246,12 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
                 <iframe 
                   width="100%" 
                   height="100%" 
-                  src={`${getYoutubeEmbedUrl(videos[activeMedia.index])}?autoplay=1`} 
+                  src={getYoutubeEmbedUrl(videos[activeMedia.index]) ? `${getYoutubeEmbedUrl(videos[activeMedia.index])}?autoplay=1` : ''} 
                   title="YouTube video player" 
                   frameBorder="0" 
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                   allowFullScreen
-                  style={{ borderRadius: '12px', aspectRatio: '1/1' }}
+                  style={{ borderRadius: '12px', aspectRatio: '1/1', display: getYoutubeEmbedUrl(videos[activeMedia.index]) ? 'block' : 'none' }}
                 ></iframe>
               ) : (
                 <img src={images[activeMedia.index]} alt={product.title} />
@@ -279,7 +279,13 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
                   <div className="video-overlay">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                   </div>
-                  <img src={`https://img.youtube.com/vi/${getYoutubeId(vid)}/0.jpg`} alt={`Video ${idx}`} />
+                  {getYoutubeId(vid) ? (
+                    <img src={`https://img.youtube.com/vi/${getYoutubeId(vid)}/0.jpg`} alt={`Video ${idx}`} />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', background: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25a29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

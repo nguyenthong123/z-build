@@ -316,6 +316,32 @@ Cú pháp JSON (ĐÂY CHỈ LÀ CẤU TRÚC MẪU. KHÔNG ĐƯỢC COPY. TUYỆT
 }]]`;
 
       const botResult = await (async () => {
+        const openClawUrl = import.meta.env.VITE_OPENCLAW_API_URL;
+        
+        // Try OpenClaw API first
+        if (openClawUrl) {
+          try {
+            console.log("🚀 Calling OpenClaw API:", openClawUrl);
+            const ocRes = await fetch(openClawUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                user_id: auth.currentUser?.uid || "zbuild_web_user",
+                message: msgText
+              })
+            });
+            
+            if (ocRes.ok) {
+              const data = await ocRes.json();
+              setActiveModel('OpenClaw Intelligence');
+              return data.response;
+            }
+            console.warn("OpenClaw API unreachable or error, falling back to legacy...");
+          } catch (err) {
+            console.warn("OpenClaw Connection Failed:", err);
+          }
+        }
+
         const dsApiKey = import.meta.env.VITE_DEEPSEEK_ADVISOR_KEY;
         const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
         
@@ -458,6 +484,7 @@ Cú pháp JSON (ĐÂY CHỈ LÀ CẤU TRÚC MẪU. KHÔNG ĐƯỢC COPY. TUYỆT
         }
       }
     } catch (error) {
+      console.error("handleSend Error:", error);
       setIsTyping(false);
     }
   };

@@ -11,6 +11,9 @@ const AdminSettings = ({ onBack }) => {
     accountNumber: '',
     accountName: ''
   });
+  const [openClawConfig, setOpenClawConfig] = useState({
+    apiUrl: ''
+  });
   const [adminEmails, setAdminEmails] = useState([]);
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -26,6 +29,12 @@ const AdminSettings = ({ onBack }) => {
           setBankInfo(docSnap.data().bankInfo);
         } else {
           setBankInfo({ bankCode: 'vcb', bankName: 'Vietcombank', accountNumber: '1014845876', accountName: 'NGUYEN BA TRUNG' });
+        }
+
+        if (docSnap.exists() && docSnap.data().openClawConfig) {
+          setOpenClawConfig(docSnap.data().openClawConfig);
+        } else {
+          setOpenClawConfig({ apiUrl: import.meta.env.VITE_OPENCLAW_API_URL || 'http://localhost:8000/chat' });
         }
 
         const adminDocRef = doc(db, 'settings', 'admins');
@@ -53,7 +62,7 @@ const AdminSettings = ({ onBack }) => {
     setIsSaving(true);
     try {
       const docRef = doc(db, 'storeSettings', 'main');
-      await setDoc(docRef, { bankInfo }, { merge: true });
+      await setDoc(docRef, { bankInfo, openClawConfig }, { merge: true });
 
       const adminDocRef = doc(db, 'settings', 'admins');
       await setDoc(adminDocRef, { emails: adminEmails }, { merge: true });
@@ -158,6 +167,30 @@ const AdminSettings = ({ onBack }) => {
                       placeholder="NGUYEN VAN A"
                     />
                   </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="settings-panel" style={{ marginTop: '24px' }}>
+              <div className="settings-section">
+                <div className="settings-section-header">
+                  <h3>🤖 Cấu hình OpenClaw Bot</h3>
+                  <p>Thiết lập kết nối với AI Advisor chạy trên Termux hoặc Server riêng.</p>
+                </div>
+                <div className="setting-field" style={{ maxWidth: '100%' }}>
+                  <label>API Endpoint (URL Chat)</label>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <input 
+                      type="text" 
+                      value={openClawConfig.apiUrl} 
+                      onChange={(e) => setOpenClawConfig({ ...openClawConfig, apiUrl: e.target.value })} 
+                      placeholder="http://localhost:8000/chat hoặc ngrok url..."
+                      style={{ flex: 1 }}
+                    />
+                  </div>
+                  <p className="field-hint" style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
+                    * Lưu ý: Nếu trang web chạy HTTPS, API Endpoint cũng <strong>PHẢI</strong> là HTTPS (sử dụng Ngrok hoặc Cloudflare Tunnel).
+                  </p>
                 </div>
               </div>
             </div>

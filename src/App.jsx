@@ -26,6 +26,7 @@ const Checkout = lazy(() => import('./components/Checkout'));
 const Login = lazy(() => import('./components/Login'));
 const SignUp = lazy(() => import('./components/SignUp'));
 const OrderConfirmation = lazy(() => import('./components/OrderConfirmation'));
+const AIAdvisor = lazy(() => import('./components/AIAdvisor'));
 
 const AdminProductList = lazy(() => import('./components/AdminProductList'));
 const AdminAddProduct = lazy(() => import('./components/AdminAddProduct'));
@@ -389,7 +390,7 @@ function App() {
       'order-confirmation': '/order-confirmation',
       'profile': '/profile',
       'wishlist': '/wishlist',
-      // Removed ai-advisor
+      'ai-advisor': '/advisor',
       'admin-dashboard': '/admin/dashboard',
       'admin-products': '/admin/products',
       'admin-add-product': '/admin/add-product',
@@ -518,6 +519,9 @@ function App() {
           } />
           <Route path="/profile" element={
             <Profile user={user} onBack={() => navigate('/')} onNavigate={setView} onLogout={handleLogout} />
+          } />
+          <Route path="/advisor" element={
+            <AIAdvisor onNavigate={(target) => navigate(target === 'home' ? '/' : `/${target}`)} />
           } />
 
 

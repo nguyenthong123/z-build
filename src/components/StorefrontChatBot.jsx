@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import './StorefrontChatBot.css';
-const StorefrontChatBot = ({ isOpen, setIsOpen, isLoggedIn, onLoginRequired }) => {
+import OpenClawChatWidget from './OpenClawChatWidget';
+
+const StorefrontChatBot = ({ isOpen, setIsOpen, isLoggedIn, onLoginRequired, user }) => {
 
   const [hasOpened, setHasOpened] = useState(false);
 
@@ -66,14 +68,7 @@ const StorefrontChatBot = ({ isOpen, setIsOpen, isLoggedIn, onLoginRequired }) =
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
         {isLoggedIn && hasOpened && (
-          <div className="sfcb-iframe-wrapper">
-            <iframe 
-              src="https://script.google.com/macros/s/AKfycbyRWdR_2xyMRAtnm8FPNUPep2mLCGviANSrwqZsxOXZVvoQO9BPgISYHLb5GnfveOks/exec" 
-              className="sfcb-iframe"
-              title="Z-BUILD Assistant"
-              loading="lazy"
-            />
-          </div>
+          <OpenClawChatWidget isLoggedIn={isLoggedIn} user={user} />
         )}
       </div>
     </>

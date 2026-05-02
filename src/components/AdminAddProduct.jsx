@@ -164,7 +164,7 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
 
     try {
       const cloudName = getEnv('VITE_CLOUDINARY_CLOUD_NAME', 'dtdgrcznj');
-      const uploadPreset = getEnv('VITE_CLOUDINARY_UPLOAD_PRESET', 'my_react_app');
+      const uploadPreset = getEnv('VITE_CLOUDINARY_UPLOAD_PRESET', 'zbuild');
       
       // Upload main image if changed
       if (imageFile) {
@@ -230,11 +230,11 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
         });
       }
 
-      setIsSaving(false);
       onSave();
     } catch (e) {
       console.error("Save failed:", e);
       alert(`Lỗi: ${e.message}`);
+    } finally {
       setIsSaving(false);
     }
   };
