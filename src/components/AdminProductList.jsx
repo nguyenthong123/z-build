@@ -22,9 +22,9 @@ const AdminProductList = ({ onBack, onAddProduct, onEditProduct, onPreviewProduc
       const productData = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-        price: doc.data().discountPrice 
-                ? Number(doc.data().discountPrice).toLocaleString('vi-VN') + '₫' 
-                : Number(doc.data().basePrice).toLocaleString('vi-VN') + '₫',
+        price: (doc.data().discountPrice || doc.data().basePrice) 
+                ? Number(doc.data().discountPrice || doc.data().basePrice).toLocaleString('vi-VN') + '₫' 
+                : 'Liên hệ',
         name: doc.data().title,
         sku: doc.data().sku || doc.id.substring(0, 8).toUpperCase()
       }));
@@ -143,7 +143,7 @@ const AdminProductList = ({ onBack, onAddProduct, onEditProduct, onPreviewProduc
                       <tr key={product.id} onClick={() => onPreviewProduct(product)}>
                         <td>
                           <div className="product-cell">
-                            <img src={product.image || 'https://via.placeholder.com/100'} alt="" />
+                            <img src={product.image || 'https://placehold.co/100'} alt="" />
                             <div className="info">
                               <strong>{product.name}</strong>
                               <span>{product.sku}</span>
@@ -178,7 +178,7 @@ const AdminProductList = ({ onBack, onAddProduct, onEditProduct, onPreviewProduc
                 {filteredProducts.map(product => (
                   <div className="mobile-card" key={product.id} onClick={() => onPreviewProduct(product)}>
                     <div className="card-header">
-                      <img src={product.image || 'https://via.placeholder.com/100'} alt="" />
+                      <img src={product.image || 'https://placehold.co/100'} alt="" />
                       <div className="card-title-info">
                         <strong>{product.name}</strong>
                         <span className="card-extra">{product.sku} • {product.category}</span>

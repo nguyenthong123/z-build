@@ -33,5 +33,23 @@
     "faq": [
       { "q": "Lát gạch lên tấm 8mm được không?", "a": "Được, nên sử dụng keo dán gạch chuyên dụng." }
     ]
+  },
+  {
+    "product_id": "ZBUILD-AI-ENTERPRISE",
+    "name": "Zbuild AI Enterprise",
+    "category": "Giải pháp AI",
+    "technical_specs": {
+      "model": "DeepSeek-V3 / Llama-3 (Fallback)",
+      "integration": "API REST, Webhook, Firestore Sync",
+      "features": "RAG Knowledge Base, Automated Quotation, Inventory Alerts, 24/7 B2B Advisor",
+      "support": "Ưu tiên kỹ thuật 24/7",
+      "security": "Mã hóa dữ liệu đầu cuối, Private Knowledge Base"
+    },
+    "competitive_advantage": "Tích hợp sâu vào hệ thống quản lý kho và đơn hàng, phản hồi dưới 2 giây, am hiểu sâu về ngành vật liệu xây dựng Việt Nam",
+    "use_cases": ["Đại lý phân phối lớn", "Chuỗi cửa hàng VLXD", "Công ty thầu thợ chuyên nghiệp"],
+    "faq": [
+      { "q": "AI có thể tự tạo đơn hàng không?", "a": "Có, AI có thể dự thảo đơn hàng dựa trên hội thoại và chờ Admin xác nhận." },
+      { "q": "Dữ liệu khách hàng có an toàn không?", "a": "Hoàn toàn an toàn, mỗi doanh nghiệp sở hữu một Knowledge Base riêng biệt." }
+    ]
   }
 ]

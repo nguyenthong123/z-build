@@ -35,7 +35,6 @@ const AdminCustomerManagement = lazy(() => import('./components/AdminCustomerMan
 const AdminSettings = lazy(() => import('./components/AdminSettings'));
 const AdminSidebar = lazy(() => import('./components/AdminSidebar'));
 const AdminProductDetailsForm = lazy(() => import('./components/AdminProductDetailsForm'));
-const AdminAIInsights = lazy(() => import('./components/AdminAIInsights'));
 const AdminCouponManagement = lazy(() => import('./components/AdminCouponManagement'));
 const AdminAffiliateManagement = lazy(() => import('./components/AdminAffiliateManagement'));
 
@@ -143,7 +142,6 @@ function App() {
         'coupons': '/admin/coupons',
         'affiliates': '/admin/affiliates',
         'dashboard': '/admin/dashboard',
-        'ai_insights': '/admin/ai-insights',
         'settings': '/admin/settings'
       };
       if (adminRoutes[page]) navigate(adminRoutes[page]);
@@ -399,7 +397,6 @@ function App() {
       'admin-order-detail': '/admin/order-detail',
       'admin-affiliates': '/admin/affiliates',
       'admin-ai-knowledge': '/admin/ai-knowledge',
-      'admin-ai-insights': '/admin/ai-insights',
       'admin-coupons': '/admin/coupons',
       'admin-settings': '/admin/settings',
     };
@@ -537,11 +534,13 @@ function App() {
             />
           } />
           <Route path="/admin/add-product" element={
-            <AdminAddProduct 
-              onBack={() => navigate('/admin/products')} 
-              editData={editingProduct}
-              onSave={() => { setEditingProduct(null); navigate('/admin/products'); }} 
-            />
+            isAdmin ? (
+              <AdminAddProduct 
+                onBack={() => navigate('/admin/products')} 
+                editData={editingProduct}
+                onSave={() => { setEditingProduct(null); navigate('/admin/products'); }} 
+              />
+            ) : <Navigate to="/login" state={{ from: '/admin/add-product' }} replace />
           } />
           <Route path="/admin/orders" element={
             <AdminOrderManagement
@@ -564,9 +563,7 @@ function App() {
           <Route path="/admin/customers" element={
             <AdminCustomerManagement onBack={() => navigate('/')} />
           } />
-          <Route path="/admin/ai-insights" element={
-            <AdminAIInsights onBack={() => navigate('/admin/dashboard')} />
-          } />
+
           <Route path="/admin/coupons" element={
             <AdminCouponManagement onBack={() => navigate('/admin/dashboard')} />
           } />

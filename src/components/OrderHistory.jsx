@@ -35,7 +35,7 @@ const OrderHistory = ({ user, onBack, onViewDetails, onNavigate, onLogout }) => 
             itemCount: data.items?.length || 0,
             items: (data.items || []).map(item => ({
               name: item.name,
-              image: item.image || 'https://via.placeholder.com/200',
+              image: item.image || 'https://placehold.co/200',
               price: item.price,
               quantity: item.quantity
             })),
@@ -144,7 +144,7 @@ const OrderHistory = ({ user, onBack, onViewDetails, onNavigate, onLogout }) => 
                 <div key={order.id} className="order-card">
                   <div className="order-card-main">
                     <div className="order-thumbnail">
-                      <img src={order.items[0]?.image || 'https://via.placeholder.com/200'} alt={order.items[0]?.name || 'Sản phẩm'} />
+                      <img src={order.items[0]?.image || 'https://placehold.co/200'} alt={order.items[0]?.name || 'Sản phẩm'} />
                     </div>
                     
                     <div className="order-info">

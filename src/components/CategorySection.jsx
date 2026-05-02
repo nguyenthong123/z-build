@@ -2,12 +2,13 @@ import React from 'react';
 import './CategorySection.css';
 
 const categories = [
-  { id: 1, name: 'Vật liệu xây dựng', img: '/vat-lieu-xay-dung.png' },
-  { id: 2, name: 'Phần mềm & Dịch vụ', img: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=400&h=400&auto=format&fit=crop' },
-  { id: 3, name: 'Thi công & Lắp đặt', img: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=400&h=400&auto=format&fit=crop' },
-  { id: 4, name: 'Trang trí nội thất', img: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=400&h=400&auto=format&fit=crop' },
-  { id: 5, name: 'Điện & Nước', img: '/dien-nuoc.png' },
-  { id: 6, name: 'Máy móc thiết bị', img: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?q=80&w=400&h=400&auto=format&fit=crop' },
+  { id: 1, name: 'Giải pháp AI', img: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=400&h=400&auto=format&fit=crop' },
+  { id: 2, name: 'Vật liệu xây dựng', img: '/vat-lieu-xay-dung.png' },
+  { id: 3, name: 'Phần mềm & Dịch vụ', img: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=400&h=400&auto=format&fit=crop' },
+  { id: 4, name: 'Thi công & Lắp đặt', img: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=400&h=400&auto=format&fit=crop' },
+  { id: 5, name: 'Trang trí nội thất', img: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=400&h=400&auto=format&fit=crop' },
+  { id: 6, name: 'Điện & Nước', img: '/dien-nuoc.png' },
+  { id: 7, name: 'Máy móc thiết bị', img: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?q=80&w=400&h=400&auto=format&fit=crop' },
 ];
 
 const CategorySection = ({ onCategorySelect, activeCategory }) => {

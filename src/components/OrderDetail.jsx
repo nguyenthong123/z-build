@@ -131,7 +131,7 @@ const OrderDetail = ({ order, onBack, onCancelSuccess }) => {
               {(order.items || []).map((item, idx) => (
                 <div key={idx} className="od-item">
                   <div className="od-item-img">
-                    <img src={item.image || 'https://via.placeholder.com/80'} alt={item.name} />
+                    <img src={item.image || 'https://placehold.co/80'} alt={item.name} />
                   </div>
                   <div className="od-item-info">
                     <h4>{item.name}</h4>

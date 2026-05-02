@@ -163,10 +163,10 @@ Dưới đây là sơ đồ chi tiết về tiến độ dự án Zbuild. Bạn 
 - [x] AI tự tạo báo giá dựa trên yêu cầu khách hàng. ✅ `generate_quotation` function
 - [x] AI trả lời câu hỏi về đơn hàng (trạng thái, dự kiến giao). ✅ `check_order_status` + `get_order_history`
 
-#### 3.2 AI Auto-Admin
-- [x] AI tự động tóm tắt đơn hàng mới cho Admin mỗi ngày. ✅ `AdminAIInsights.jsx` - KPI cards + order summary
-- [x] AI cảnh báo khi sản phẩm hết hàng hoặc sắp hết. ✅ Low stock alerts (critical/warning/info)
-- [x] AI đề xuất giá bán tối ưu dựa trên thị trường. ✅ Business tips (no sales, low/high margin)
+#### 3.2 ~~AI Auto-Admin~~ (ĐÃ GỠ BỎ THEO YÊU CẦU)
+- [x] ~~AI tự động tóm tắt đơn hàng mới cho Admin mỗi ngày.~~
+- [x] ~~AI cảnh báo khi sản phẩm hết hàng hoặc sắp hết.~~
+- [x] ~~AI đề xuất giá bán tối ưu dựa trên thị trường.~~
 
 #### 3.3 AI Chatbot trên Storefront nâng cấp
 - [x] ChatBot widget hỗ trợ khách hàng real-time (trả lời FAQ). ✅ `StorefrontChatBot.jsx`

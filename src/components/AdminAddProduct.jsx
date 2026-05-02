@@ -23,7 +23,7 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
       { id: 1, type: 'Size', values: ['S', 'M', 'L'] },
       { id: 2, type: 'Color', values: ['Black', 'Silver'] }
     ],
-    extraImages: ['', ''],
+    extraImages: [],
     videoUrl: '',
     extraVideoUrl: '',
     demoUrl: '',
@@ -36,10 +36,9 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
 
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [extraFiles, setExtraFiles] = useState([null, null]);
-  const [extraPreviews, setExtraPreviews] = useState([null, null]);
+  const [extraFiles, setExtraFiles] = useState([]);
+  const [extraPreviews, setExtraPreviews] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     if (editData) {
@@ -54,15 +53,29 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
         yearlyPrice: editData.yearlyPrice || '',
         pdfUrl: editData.pdfUrl || '',
         isTrending: editData.isTrending || false,
+        extraImages: editData.extraImages || [],
       });
       if (editData.image) {
         setImagePreview(editData.image);
       }
       if (editData.extraImages) {
         setExtraPreviews(editData.extraImages);
+        setExtraFiles(new Array(editData.extraImages.length).fill(null));
       }
     }
   }, [editData]);
+
+  const addExtraImage = () => {
+    setProduct(prev => ({ ...prev, extraImages: [...prev.extraImages, ''] }));
+    setExtraFiles(prev => [...prev, null]);
+    setExtraPreviews(prev => [...prev, null]);
+  };
+
+  const removeExtraImage = (index) => {
+    setProduct(prev => ({ ...prev, extraImages: prev.extraImages.filter((_, i) => i !== index) }));
+    setExtraFiles(prev => prev.filter((_, i) => i !== index));
+    setExtraPreviews(prev => prev.filter((_, i) => i !== index));
+  };
 
   const addVariant = () => {
     setProduct(prev => ({
@@ -90,77 +103,7 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
     }
   };
 
-  const generateDescription = async () => {
-    if (!product.title) {
-      alert("Vui lòng nhập tên sản phẩm trước để AI có thể phân tích.");
-      return;
-    }
 
-    setIsGenerating(true);
-    try {
-      // Ưu tiên sử dụng DeepSeek như yêu cầu của người dùng
-      const deepseekKey = import.meta.env.VITE_DEEPSEEK_GENERAL_KEY;
-      
-      const response = await fetch("https://api.deepseek.com/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${deepseekKey}`
-        },
-        body: JSON.stringify({
-          model: "deepseek-chat",
-          messages: [
-            {
-              role: "system",
-              content: `Bạn là chuyên gia tư vấn vật liệu xây dựng và giải pháp công nghệ. 
-              Nhiệm vụ: Viết mô tả sản phẩm chuyên nghiệp, thuyết phục.
-              
-              Đầu vào: Tên sản phẩm, Trạng thái, Mô tả sơ bộ.
-              Yêu cầu trả về JSON (chỉ JSON):
-              1. "description": Nội dung chuẩn SEO, sử dụng HTML (<strong>, <p>, <ul>, <li>).
-              2. "status": Nếu tên có "phân phối", trả về "Phân phối".
-              3. "category": Đề xuất 1 trong: "Vật liệu xây dựng", "Phần mềm & Dịch vụ", "Thiết bị vệ sinh", "Trang trí nội thất", "Công cụ & Dụng cụ", "Điện tử".
-              4. "demoUrl": Nếu là phần mềm, tìm/đề xuất link demo.
-              5. "quoteUrl": Nếu là phân phối, tìm/đề xuất link báo giá.
-              6. "variants": Đề xuất 2-3 loại biến thể phù hợp.`
-            },
-            {
-              role: "user",
-              content: `Tên: ${product.title}\nTrạng thái: ${product.status}\nSơ bộ: ${product.description}`
-            }
-          ],
-          response_format: { type: 'json_object' }
-        })
-      });
-
-      const data = await response.json();
-      if (data.error) throw new Error(data.error.message);
-      
-      const aiResponse = JSON.parse(data.choices[0].message.content);
-      
-      // Normalize variants to ensure they always have a 'values' array
-      const normalizedVariants = aiResponse.variants?.map((v, index) => ({
-        id: Date.now() + index,
-        type: v.type || 'Tùy chọn',
-        values: Array.isArray(v.values) ? v.values : []
-      })) || prev.variants;
-
-      setProduct(prev => ({ 
-        ...prev, 
-        description: aiResponse.description,
-        status: aiResponse.status || prev.status,
-        category: aiResponse.category || prev.category,
-        demoUrl: aiResponse.demoUrl || prev.demoUrl || '',
-        quoteUrl: aiResponse.quoteUrl || prev.quoteUrl || '',
-        variants: normalizedVariants
-      }));
-    } catch (error) {
-      console.error("Error generating with AI:", error);
-      alert("Lỗi khi kết nối AI: " + error.message);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   const handleDescriptionChange = (content) => {
     setProduct(prev => ({
@@ -204,69 +147,84 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
     }
   };
 
+  // Helper function to get safe environment variables
+  const getEnv = (key, fallback) => {
+    const value = import.meta.env[key];
+    return (value && value !== 'REPLACE_ME') ? value : fallback;
+  };
+
   const handleSave = async () => {
-    // Đối với trạng thái 'Phân phối', cho phép để trống giá hoặc giá bằng 0
-    const isPriceRequired = product.status !== 'Phân phối';
-    if (!product.title || (isPriceRequired && !product.basePrice)) {
-      alert(isPriceRequired ? "Vui lòng điền tên sản phẩm và giá gốc" : "Vui lòng điền tên sản phẩm");
+    if (!product.title) {
+      alert("Vui lòng điền tên sản phẩm");
       return;
     }
 
     setIsSaving(true);
-    let imageUrl = '';
+    let imageUrl = product.image || '';
 
     try {
+      const cloudName = getEnv('VITE_CLOUDINARY_CLOUD_NAME', 'dtdgrcznj');
+      const uploadPreset = getEnv('VITE_CLOUDINARY_UPLOAD_PRESET', 'my_react_app');
+      
+      // Upload main image if changed
       if (imageFile) {
         const formData = new FormData();
         formData.append('file', imageFile);
-        formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+        formData.append('upload_preset', uploadPreset);
         
-        const response = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`, {
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
           method: 'POST',
-          body: formData
+          body: formData,
         });
-
+        
         const data = await response.json();
-        if (data.error) {
-           throw new Error(data.error.message);
+        if (!response.ok) {
+          console.error("Cloudinary Error Details:", data);
+          throw new Error(`Cloudinary upload failed (${cloudName}): ${data.error?.message || "Unknown error"}`);
         }
-        imageUrl = data.secure_url;
-      } else if (editData && editData.image) {
-        imageUrl = editData.image;
+        
+        if (data.secure_url) {
+          imageUrl = data.secure_url;
+        }
       }
 
       // Upload extra images
-      const extraUrls = [...(product.extraImages || ['', ''])];
+      const extraUrls = [...(product.extraImages || [])];
       for (let i = 0; i < extraFiles.length; i++) {
         if (extraFiles[i]) {
           const formData = new FormData();
           formData.append('file', extraFiles[i]);
-          formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
-          const res = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`, {
+          formData.append('upload_preset', uploadPreset);
+          const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
             method: 'POST',
             body: formData
           });
           const d = await res.json();
-          if (d.secure_url) extraUrls[i] = d.secure_url;
+          if (!res.ok) {
+            console.error("Cloudinary Extra Image Error:", d);
+            throw new Error(`Extra image ${i+1} upload failed (${cloudName}): ${d.error?.message || "Unknown error"}`);
+          }
+          if (d.secure_url) {
+            extraUrls[i] = d.secure_url;
+          }
         }
       }
 
-      if (editData) {
-        const productRef = doc(db, "products", editData.id);
-        const { id, ...updateData } = product; // Remove id if present in state
-        await updateDoc(productRef, {
-          ...updateData,
-          slug: product.slug || slugify(product.title),
-          image: imageUrl,
-          extraImages: extraUrls,
-          updatedAt: new Date().toISOString()
-        });
+      // Prepare clean data for Firestore
+      const { id: _removedId, ...cleanProductData } = product;
+      const finalData = {
+        ...cleanProductData,
+        slug: product.slug || slugify(product.title),
+        image: imageUrl,
+        extraImages: extraUrls,
+        updatedAt: new Date().toISOString()
+      };
+
+      if (editData?.id) {
+        await updateDoc(doc(db, "products", editData.id), finalData);
       } else {
         await addDoc(collection(db, "products"), {
-          ...product,
-          slug: product.slug || slugify(product.title),
-          image: imageUrl,
-          extraImages: extraUrls,
+          ...finalData,
           createdBy: auth.currentUser?.email || 'Hệ thống',
           createdAt: new Date().toISOString()
         });
@@ -275,36 +233,40 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
       setIsSaving(false);
       onSave();
     } catch (e) {
-      console.error("Error saving product: ", e);
-      alert("Lưu sản phẩm thất bại: " + e.message);
+      console.error("Save failed:", e);
+      alert(`Lỗi: ${e.message}`);
       setIsSaving(false);
     }
   };
 
+
   return (
-    <div className="admin-add-product-page">
+    <div className="admin-product-page">
       <AdminSidebar activePage="products" />
-      
       <div className="admin-main-content">
         <header className="admin-content-header">
-          <div className="header-left">
-            <nav className="breadcrumb">
-              <span onClick={onBack} className="back-link">Sản phẩm</span>
-              <span className="separator">/</span>
-              <span className="current">{editData ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}</span>
-            </nav>
-            <h1>{editData ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}</h1>
-          </div>
-          <div className="header-actions">
-            <button className="cancel-btn" onClick={onBack} disabled={isSaving}>Hủy</button>
-            <button className="save-btn" onClick={handleSave} disabled={isSaving}>
-              {isSaving ? 'Đang lưu...' : editData ? 'Cập nhật' : 'Lưu sản phẩm'}
-            </button>
+          <nav className="breadcrumb desktop-only">Quản trị / <span className="active">{editData ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}</span></nav>
+          
+          <div className="header-main-row">
+             <div className="title-group">
+                <h1>{editData ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}</h1>
+                <p className="description">Thiết lập thông tin, hình ảnh và giá bán cho sản phẩm của bạn.</p>
+             </div>
+             
+             <div className="header-actions-group">
+                <div className="btn-group" style={{ display: 'flex', gap: '10px' }}>
+                  <button className="secondary-btn" onClick={onBack}>Hủy</button>
+                  <button className="primary-add-btn" onClick={handleSave} disabled={isSaving}>
+                    {isSaving ? 'Đang lưu...' : (editData ? 'Cập nhật sản phẩm' : 'Lưu sản phẩm')}
+                  </button>
+                </div>
+             </div>
           </div>
         </header>
 
-        <div className="add-product-container">
-          <div className="main-form-column">
+        <div className="admin-content-body">
+          <div className="add-product-container">
+            <div className="main-form-column">
             {/* Basic Information */}
             <section className="form-section card">
               <div className="section-header">
@@ -342,29 +304,6 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
               <div className="form-group">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <label style={{ margin: 0 }}>Mô tả sản phẩm</label>
-                  <button 
-                    type="button" 
-                    onClick={generateDescription} 
-                    disabled={isGenerating}
-                    style={{
-                      background: 'linear-gradient(135deg, #FFB800 0%, #FF8A00 100%)',
-                      color: '#1a1a2e',
-                      border: 'none',
-                      padding: '6px 14px',
-                      borderRadius: '6px',
-                      fontSize: '13px',
-                      cursor: isGenerating ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      fontWeight: '700',
-                      transition: 'all 0.3s ease',
-                      opacity: isGenerating ? 0.7 : 1
-                    }}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4M3 5h4"/></svg>
-                    {isGenerating ? 'Đang tạo...' : 'Tự động viết bằng AI'}
-                  </button>
                 </div>
                 <div className="rich-editor-container">
                   <ReactQuill 
@@ -417,9 +356,38 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
                 )}
               </div>
 
-              <div className="extra-media-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '15px', padding: '15px' }}>
-                {[0, 1].map(index => (
-                  <div key={index} className="extra-image-container">
+              <div className="extra-media-grid" style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', 
+                gap: '15px', 
+                marginTop: '15px', 
+                padding: '15px' 
+              }}>
+                {product.extraImages.map((url, index) => (
+                  <div key={index} className="extra-image-container" style={{ position: 'relative' }}>
+                    <button 
+                      type="button" 
+                      onClick={() => removeExtraImage(index)}
+                      style={{
+                        position: 'absolute',
+                        right: '-8px',
+                        top: '-8px',
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        background: '#ff4d4f',
+                        color: 'white',
+                        border: 'none',
+                        cursor: 'pointer',
+                        zIndex: 10,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                      }}
+                    >
+                      ×
+                    </button>
                     <div 
                       className="extra-image-upload" 
                       onClick={() => document.getElementById(`extraImage${index}`).click()} 
@@ -444,14 +412,13 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
                       ) : (
                         <div style={{ textAlign: 'center', color: '#999' }}>
                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFB800" strokeWidth="1.5"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                          <p style={{ fontSize: '11px', margin: '4px 0 0', fontWeight: '500' }}>Ảnh phụ {index + 1} (1:1)</p>
-                          <p style={{ fontSize: '9px', opacity: 0.7 }}>Khuyên dùng: 1000x1000px</p>
+                          <p style={{ fontSize: '11px', margin: '4px 0 0', fontWeight: '500' }}>Ảnh phụ {index + 1}</p>
                         </div>
                       )}
                     </div>
                     <input 
                       type="text" 
-                      placeholder="Hoặc dán URL ảnh..." 
+                      placeholder="URL ảnh..." 
                       value={product.extraImages[index] || ''} 
                       onChange={(e) => {
                         const newUrls = [...product.extraImages];
@@ -461,10 +428,34 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
                         newPreviews[index] = e.target.value;
                         setExtraPreviews(newPreviews);
                       }}
-                      style={{ width: '100%', padding: '6px 10px', fontSize: '12px', borderRadius: '6px', border: '1px solid #e0e0e0' }}
+                      style={{ width: '100%', padding: '6px 10px', fontSize: '11px', borderRadius: '6px', border: '1px solid #e0e0e0' }}
                     />
                   </div>
                 ))}
+                
+                {/* Add More Button */}
+                <div 
+                  className="add-extra-image-box"
+                  onClick={addExtraImage}
+                  style={{
+                    border: '2px dashed #FFB800',
+                    borderRadius: '12px',
+                    aspectRatio: '1/1',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    background: '#fff9e6',
+                    color: '#FFB800',
+                    transition: 'all 0.2s',
+                    padding: '10px',
+                    textAlign: 'center'
+                  }}
+                >
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <span style={{ fontSize: '12px', fontWeight: 'bold', marginTop: '8px' }}>Thêm ảnh</span>
+                </div>
               </div>
 
               <div className="video-url-input" style={{ padding: '0 15px 15px' }}>
@@ -594,7 +585,8 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
               <div className="form-group">
                 <label>Danh mục</label>
                 <select name="category" value={product.category} onChange={handleChange}>
-                   <option value="Vật liệu xây dựng">Vật liệu xây dựng</option>
+                  <option value="Giải pháp AI">Giải pháp AI</option>
+                  <option value="Vật liệu xây dựng">Vật liệu xây dựng</option>
                   <option value="Phần mềm & Dịch vụ">Phần mềm & Dịch vụ</option>
                   <option value="Thiết bị vệ sinh">Thiết bị vệ sinh</option>
                   <option value="Trang trí nội thất">Trang trí nội thất</option>
@@ -637,9 +629,7 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
                   />
                 </div>
                 <span className="input-hint">
-                  {product.status === 'Phân phối' 
-                    ? 'Nếu để trống cả 2 giá, hệ thống sẽ hiện "Liên hệ báo giá"' 
-                    : 'Để trống nếu không có giảm giá'}
+                  Nếu để trống giá, hệ thống sẽ tự động hiển thị <strong>"Liên hệ"</strong>.
                 </span>
               </div>
 
@@ -799,6 +789,7 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
           </div>
         </div>
       </div>
+    </div>
 
       {/* Mobile Sticky Footer */}
       <div className="mobile-sticky-footer mobile-only">
