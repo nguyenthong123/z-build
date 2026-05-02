@@ -40,8 +40,10 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
   const [extraPreviews, setExtraPreviews] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
 
+  const [isInitialized, setIsInitialized] = useState(false);
+
   useEffect(() => {
-    if (editData) {
+    if (editData && !isInitialized) {
       setProduct({
         ...editData,
         // Ensure values are strings for numeric inputs
@@ -63,8 +65,9 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
         setExtraPreviews(editData.extraImages);
         setExtraFiles(new Array(editData.extraImages.length).fill(null));
       }
+      setIsInitialized(true);
     }
-  }, [editData]);
+  }, [editData, isInitialized]);
 
   const addExtraImage = () => {
     setProduct(prev => ({ ...prev, extraImages: [...prev.extraImages, ''] }));
@@ -92,15 +95,19 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
     }));
   };
 
-  const addPill = (variantId) => {
-    const newVal = prompt("Nhập giá trị mới (ví dụ: 12mm, Chống cháy...):");
-    if (newVal && newVal.trim()) {
+  const [activeVariantInput, setActiveVariantInput] = useState(null); // id of variant being edited
+  const [newPillValue, setNewPillValue] = useState('');
+
+  const handleAddPill = (variantId) => {
+    if (newPillValue && newPillValue.trim()) {
       setProduct(prev => ({
         ...prev,
-        variants: prev.variants.map(v => 
-          v.id === variantId ? { ...v, values: [...v.values, newVal.trim()] } : v
+        variants: (prev.variants || []).map(v => 
+          v.id === variantId ? { ...v, values: [...(v.values || []), newPillValue.trim()] } : v
         )
       }));
+      setNewPillValue('');
+      setActiveVariantInput(null);
     }
   };
 
@@ -546,7 +553,30 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
                             </button>
                           </span>
                         ))}
-                        <button className="add-pill" type="button" onClick={() => addPill(variant.id)}>+</button>
+                        {activeVariantInput === variant.id ? (
+                          <div className="inline-pill-input">
+                            <input 
+                              autoFocus
+                              type="text" 
+                              placeholder="Gõ rồi Enter..." 
+                              value={newPillValue}
+                              onChange={(e) => setNewPillValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleAddPill(variant.id);
+                                }
+                                if (e.key === 'Escape') setActiveVariantInput(null);
+                              }}
+                              onBlur={() => {
+                                if (!newPillValue.trim()) setActiveVariantInput(null);
+                              }}
+                            />
+                            <button type="button" onClick={() => handleAddPill(variant.id)}>Lưu</button>
+                          </div>
+                        ) : (
+                          <button className="add-pill" type="button" onClick={() => setActiveVariantInput(variant.id)}>+</button>
+                        )}
                       </div>
                     </div>
                     <button className="delete-row-btn" type="button" onClick={() => deleteVariant(variant.id)}>
