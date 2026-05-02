@@ -54,6 +54,7 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
         pdfUrl: editData.pdfUrl || '',
         isTrending: editData.isTrending || false,
         extraImages: editData.extraImages || [],
+        variants: editData.variants || [],
       });
       if (editData.image) {
         setImagePreview(editData.image);
@@ -80,7 +81,7 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
   const addVariant = () => {
     setProduct(prev => ({
       ...prev,
-      variants: [...prev.variants, { id: Date.now(), type: 'Tùy chọn mới', values: [] }]
+      variants: [...(prev.variants || []), { id: Date.now(), type: 'Tùy chọn mới', values: [] }]
     }));
   };
 
