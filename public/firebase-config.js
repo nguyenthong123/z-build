@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // File này được tự động sinh ra từ .env - KHÔNG NÊN commit lên GitHub
 const firebaseConfig = {
   apiKey: "AIzaSyDFDyDOZlplNltgcYA3VydZT0WA4ogOIMo",

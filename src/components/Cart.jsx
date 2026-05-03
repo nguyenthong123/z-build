@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './Cart.css';
 
 const Cart = ({ onBack, onCheckout, cartItems, updateQuantity, removeItem, clearCart }) => {

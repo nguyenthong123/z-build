@@ -13,7 +13,7 @@
  */
 
 import { db } from '../firebase';
-import { collection, getDocs, query, where, orderBy, limit, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, getDoc } from 'firebase/firestore';
 
 // ============ FUNCTION DEFINITIONS (cho DeepSeek/OpenAI tools format) ============
 

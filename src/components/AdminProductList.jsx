@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, orderBy, deleteDoc, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import './AdminProductList.css';
 import AdminSidebar from './AdminSidebar';
 
 const AdminProductList = ({ onBack, onAddProduct, onEditProduct, onPreviewProduct }) => {
-  const [activeTab, setActiveTab] = useState('All');
+  const [activeTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);

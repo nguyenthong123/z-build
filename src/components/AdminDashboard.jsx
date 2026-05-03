@@ -29,13 +29,131 @@ const AdminDashboard = ({ onBack }) => {
   const [chartPeriod, setChartPeriod] = useState('7days');
   const canvasRef = useRef(null);
 
+  const formatCurrency = (n) => new Intl.NumberFormat('vi-VN').format(n || 0) + '₫';
+  
+  const getStatusLabel = (s) => {
+    const map = { pending: 'Chờ xác nhận', confirmed: 'Đã xác nhận', shipping: 'Đang giao', delivered: 'Đã giao', cancelled: 'Đã hủy' };
+    return map[s] || s;
+  };
+
+  const getStatusColor = (s) => {
+    const map = { pending: '#FFB800', confirmed: '#2196F3', shipping: '#9C27B0', delivered: '#4CAF50', cancelled: '#F44336' };
+    return map[s] || '#888';
+  };
+
+  const drawChart = React.useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    const W = rect.width;
+    const H = rect.height;
+
+    let days = 7;
+    if (chartPeriod === '30days') days = 30;
+    if (chartPeriod === '90days') days = 90;
+
+    const now = new Date();
+    const labels = [];
+    const values = [];
+    
+    const revenueByDay = {};
+    orders.forEach(o => {
+      if (o.status === 'cancelled' || !o.createdAt) return;
+      try {
+        const dateKey = o.createdAt instanceof Date ? o.createdAt.toISOString().split('T')[0] : '';
+        if(dateKey) revenueByDay[dateKey] = (revenueByDay[dateKey] || 0) + (o.total || 0);
+      } catch (err) {
+        console.warn('Invalid order date:', o.id, err);
+      }
+    });
+
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const isoKey = d.toISOString().split('T')[0];
+      labels.push(d.getDate() + '/' + (d.getMonth() + 1));
+      values.push(revenueByDay[isoKey] || 0);
+    }
+
+    const maxVal = Math.max(...values, 1);
+    const padding = { top: 30, right: 20, bottom: 40, left: 10 };
+    const chartW = W - padding.left - padding.right;
+    const chartH = H - padding.top - padding.bottom;
+
+    ctx.clearRect(0, 0, W, H);
+
+    ctx.strokeStyle = '#f0f0f0';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i <= 4; i++) {
+      const y = padding.top + (chartH / 4) * i;
+      ctx.beginPath();
+      ctx.moveTo(padding.left, y);
+      ctx.lineTo(W - padding.right, y);
+      ctx.stroke();
+    }
+
+    if (values.length < 2) return;
+
+    const stepX = chartW / (values.length - 1);
+
+    const gradient = ctx.createLinearGradient(0, padding.top, 0, H - padding.bottom);
+    gradient.addColorStop(0, 'rgba(67, 97, 238, 0.15)');
+    gradient.addColorStop(1, 'rgba(67, 97, 238, 0)');
+
+    ctx.beginPath();
+    ctx.moveTo(padding.left, padding.top + chartH - (values[0] / maxVal) * chartH);
+    for (let i = 1; i < values.length; i++) {
+      const x = padding.left + i * stepX;
+      const y = padding.top + chartH - (values[i] / maxVal) * chartH;
+      const prevX = padding.left + (i - 1) * stepX;
+      const prevY = padding.top + chartH - (values[i - 1] / maxVal) * chartH;
+      const cpX = (prevX + x) / 2;
+      ctx.bezierCurveTo(cpX, prevY, cpX, y, x, y);
+    }
+    ctx.lineTo(padding.left + (values.length - 1) * stepX, padding.top + chartH);
+    ctx.lineTo(padding.left, padding.top + chartH);
+    ctx.closePath();
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(padding.left, padding.top + chartH - (values[0] / maxVal) * chartH);
+    for (let i = 1; i < values.length; i++) {
+      const x = padding.left + i * stepX;
+      const y = padding.top + chartH - (values[i] / maxVal) * chartH;
+      const prevX = padding.left + (i - 1) * stepX;
+      const prevY = padding.top + chartH - (values[i - 1] / maxVal) * chartH;
+      const cpX = (prevX + x) / 2;
+      ctx.bezierCurveTo(cpX, prevY, cpX, y, x, y);
+    }
+    ctx.strokeStyle = '#4361ee';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    values.forEach((v, i) => {
+      if (v > 0) {
+        const x = padding.left + i * stepX;
+        const y = padding.top + chartH - (v / maxVal) * chartH;
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#4361ee';
+        ctx.fill();
+      }
+    });
+  }, [orders, chartPeriod]);
+
   useEffect(() => {
     fetchData();
   }, []);
 
   useEffect(() => {
     if (orders.length > 0) drawChart();
-  }, [orders, chartPeriod]);
+  }, [orders, chartPeriod, drawChart]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -106,153 +224,6 @@ const AdminDashboard = ({ onBack }) => {
     shipping: orders.filter(o => o.status === 'shipping').length,
     delivered: orders.filter(o => o.status === 'delivered').length,
     cancelled: orders.filter(o => o.status === 'cancelled').length
-  };
-
-  const formatCurrency = (n) => new Intl.NumberFormat('vi-VN').format(n || 0) + '₫';
-  
-  const getStatusLabel = (s) => {
-    const map = { pending: 'Chờ xác nhận', confirmed: 'Đã xác nhận', shipping: 'Đang giao', delivered: 'Đã giao', cancelled: 'Đã hủy' };
-    return map[s] || s;
-  };
-
-  const getStatusColor = (s) => {
-    const map = { pending: '#FFB800', confirmed: '#2196F3', shipping: '#9C27B0', delivered: '#4CAF50', cancelled: '#F44336' };
-    return map[s] || '#888';
-  };
-
-  const formatDate = (date) => {
-    if (!date) return '—';
-    return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
-  };
-
-  // Draw revenue chart on canvas
-  const drawChart = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
-    const W = rect.width;
-    const H = rect.height;
-
-    // Determine date range
-    let days = 7;
-    if (chartPeriod === '30days') days = 30;
-    if (chartPeriod === '90days') days = 90;
-
-    const now = new Date();
-    const labels = [];
-    const values = [];
-    
-    // Group orders by date first for performance O(N) instead of O(days * N)
-    const revenueByDay = {};
-    orders.forEach(o => {
-      if (o.status === 'cancelled' || !o.createdAt) return;
-      try {
-        const dateKey = o.createdAt.toISOString().split('T')[0];
-        revenueByDay[dateKey] = (revenueByDay[dateKey] || 0) + (o.total || 0);
-      } catch (e) {
-        console.warn('Invalid order date:', o.id);
-      }
-    });
-
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      const isoKey = d.toISOString().split('T')[0];
-      labels.push(d.getDate() + '/' + (d.getMonth() + 1));
-      values.push(revenueByDay[isoKey] || 0);
-    }
-
-    const maxVal = Math.max(...values, 1);
-    const padding = { top: 30, right: 20, bottom: 40, left: 10 };
-    const chartW = W - padding.left - padding.right;
-    const chartH = H - padding.top - padding.bottom;
-
-    // Clear
-    ctx.clearRect(0, 0, W, H);
-
-    // Grid lines
-    ctx.strokeStyle = '#f0f0f0';
-    ctx.lineWidth = 0.5;
-    for (let i = 0; i <= 4; i++) {
-      const y = padding.top + (chartH / 4) * i;
-      ctx.beginPath();
-      ctx.moveTo(padding.left, y);
-      ctx.lineTo(W - padding.right, y);
-      ctx.stroke();
-    }
-
-    if (values.length < 2) return;
-
-    const stepX = chartW / (values.length - 1);
-
-    // Gradient fill
-    const gradient = ctx.createLinearGradient(0, padding.top, 0, H - padding.bottom);
-    gradient.addColorStop(0, 'rgba(67, 97, 238, 0.15)');
-    gradient.addColorStop(1, 'rgba(67, 97, 238, 0)');
-
-    // Area fill
-    ctx.beginPath();
-    ctx.moveTo(padding.left, padding.top + chartH - (values[0] / maxVal) * chartH);
-    for (let i = 1; i < values.length; i++) {
-      const x = padding.left + i * stepX;
-      const y = padding.top + chartH - (values[i] / maxVal) * chartH;
-      const prevX = padding.left + (i - 1) * stepX;
-      const prevY = padding.top + chartH - (values[i - 1] / maxVal) * chartH;
-      const cpX = (prevX + x) / 2;
-      ctx.bezierCurveTo(cpX, prevY, cpX, y, x, y);
-    }
-    ctx.lineTo(padding.left + (values.length - 1) * stepX, padding.top + chartH);
-    ctx.lineTo(padding.left, padding.top + chartH);
-    ctx.closePath();
-    ctx.fillStyle = gradient;
-    ctx.fill();
-
-    // Line
-    ctx.beginPath();
-    ctx.moveTo(padding.left, padding.top + chartH - (values[0] / maxVal) * chartH);
-    for (let i = 1; i < values.length; i++) {
-      const x = padding.left + i * stepX;
-      const y = padding.top + chartH - (values[i] / maxVal) * chartH;
-      const prevX = padding.left + (i - 1) * stepX;
-      const prevY = padding.top + chartH - (values[i - 1] / maxVal) * chartH;
-      const cpX = (prevX + x) / 2;
-      ctx.bezierCurveTo(cpX, prevY, cpX, y, x, y);
-    }
-    ctx.strokeStyle = '#4361ee';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-
-    // Dots on non-zero values
-    values.forEach((v, i) => {
-      if (v > 0) {
-        const x = padding.left + i * stepX;
-        const y = padding.top + chartH - (v / maxVal) * chartH;
-        ctx.beginPath();
-        ctx.arc(x, y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#4361ee';
-        ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
-    });
-
-    // X labels
-    ctx.fillStyle = '#999';
-    ctx.font = '11px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    const labelStep = Math.max(1, Math.floor(values.length / 10));
-    labels.forEach((l, i) => {
-      if (i % labelStep === 0 || i === labels.length - 1) {
-        const x = padding.left + i * stepX;
-        ctx.fillText(l, x, H - padding.bottom + 18);
-      }
-    });
   };
 
   if (loading) {

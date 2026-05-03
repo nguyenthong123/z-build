@@ -4,25 +4,17 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const WishlistContext = createContext();
 
-export const useWishlist = () => {
-  const context = useContext(WishlistContext);
-  if (!context) throw new Error('useWishlist must be used within WishlistProvider');
-  return context;
-};
+
 
 export const WishlistProvider = ({ children }) => {
-  const [wishlist, setWishlist] = useState([]);
-  const [user, setUser] = useState(null);
-  const [loaded, setLoaded] = useState(false);
-
-  // Load wishlist from localStorage on mount
-  useEffect(() => {
+  const [wishlist, setWishlist] = useState(() => {
     const saved = localStorage.getItem('zbuild-wishlist');
     if (saved) {
-      try { setWishlist(JSON.parse(saved)); } catch (e) {}
+      try { return JSON.parse(saved); } catch { return []; }
     }
-    setLoaded(true);
-  }, []);
+    return [];
+  });
+  const [user, setUser] = useState(null);
 
   // Sync with Firestore when user changes
   const syncWithUser = useCallback(async (currentUser) => {
@@ -58,7 +50,6 @@ export const WishlistProvider = ({ children }) => {
 
   // Save whenever wishlist changes
   useEffect(() => {
-    if (!loaded) return;
     localStorage.setItem('zbuild-wishlist', JSON.stringify(wishlist));
 
     // Also save to Firestore if logged in
@@ -66,7 +57,7 @@ export const WishlistProvider = ({ children }) => {
       const ref = doc(db, 'wishlists', user.uid);
       setDoc(ref, { items: wishlist, updatedAt: new Date().toISOString() }).catch(console.error);
     }
-  }, [wishlist, user, loaded]);
+  }, [wishlist, user]);
 
   const addToWishlist = (product) => {
     setWishlist(prev => {
@@ -112,4 +103,11 @@ export const WishlistProvider = ({ children }) => {
       {children}
     </WishlistContext.Provider>
   );
+};
+
+/* eslint-disable-next-line react-refresh/only-export-components */
+export const useWishlist = () => {
+  const context = useContext(WishlistContext);
+  if (!context) throw new Error('useWishlist must be used within WishlistProvider');
+  return context;
 };

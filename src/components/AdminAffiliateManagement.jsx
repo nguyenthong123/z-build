@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { db } from '../firebase';
@@ -6,7 +7,6 @@ import {
   addDoc, 
   getDocs, 
   query, 
-  where, 
   doc, 
   updateDoc, 
   deleteDoc,
@@ -40,6 +40,32 @@ const AdminAffiliateManagement = () => {
   // Data for Lists
   const [revenueHistory, setRevenueHistory] = useState([]);
   const [promoList, setPromoList] = useState([]);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      // Fetch Affiliates
+      const affSnap = await getDocs(collection(db, 'affiliates'));
+      const affData = affSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setAffiliates(affData);
+
+      // Fetch Products (for promotion selection)
+      const prodSnap = await getDocs(collection(db, 'products'));
+      const prodData = prodSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setProducts(prodData);
+
+      // Fetch Revenue History
+      const revSnap = await getDocs(query(collection(db, 'affiliate_revenue'), orderBy('createdAt', 'desc')));
+      setRevenueHistory(revSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
+      // Fetch Promos (Global Commission Rules)
+      const promoSnap = await getDocs(collection(db, 'affiliate_promotions'));
+      setPromoList(promoSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (error) {
+      console.error("Error fetching affiliate data:", error);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
     fetchData();
@@ -78,32 +104,6 @@ const AdminAffiliateManagement = () => {
       discountPercent: percent,
       discountAmount: amount
     }));
-  };
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      // Fetch Affiliates
-      const affSnap = await getDocs(collection(db, 'affiliates'));
-      const affData = affSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setAffiliates(affData);
-
-      // Fetch Products (for promotion selection)
-      const prodSnap = await getDocs(collection(db, 'products'));
-      const prodData = prodSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setProducts(prodData);
-
-      // Fetch Revenue History
-      const revSnap = await getDocs(query(collection(db, 'affiliate_revenue'), orderBy('createdAt', 'desc')));
-      setRevenueHistory(revSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-
-      // Fetch Promos (Global Commission Rules)
-      const promoSnap = await getDocs(collection(db, 'affiliate_promotions'));
-      setPromoList(promoSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    } catch (error) {
-      console.error("Error fetching affiliate data:", error);
-    }
-    setLoading(false);
   };
 
   const handleAddAffiliate = async (e) => {

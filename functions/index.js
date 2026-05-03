@@ -6,7 +6,7 @@ admin.initializeApp();
 // Listen for new notifications in Firestore and send FCM push notification
 exports.sendPushNotification = functions.firestore
   .document("notifications/{notificationId}")
-  .onCreate(async (snap, context) => {
+  .onCreate(async (snap) => {
     const notification = snap.data();
     
     // We only want to send push notifications for unread ones (which is the default anyway)

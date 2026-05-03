@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './ChatBot.css';
 import { db, auth } from '../firebase';
-import { collection, addDoc, serverTimestamp, doc, updateDoc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 
 const ChatBot = ({ view, isLoggedIn, onLoginRequired, onNavigate }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,7 +9,7 @@ const ChatBot = ({ view, isLoggedIn, onLoginRequired, onNavigate }) => {
     { id: 1, text: "Xin chào! Tôi là trợ lý ảo của ZBUILD. Tôi có thể giúp gì cho bạn?", isBot: true }
   ]);
   const [inputValue, setInputValue] = useState('');
-  const [sessionId] = useState(`session_${Date.now()}`);
+  const [sessionId] = useState(() => `sess_${Math.random().toString(36).substring(7)}`);
   const chatMessagesRef = useRef(null);
 
   // Auto-scroll to bottom

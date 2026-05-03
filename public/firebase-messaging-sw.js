@@ -1,3 +1,5 @@
+/* eslint-disable */
+/* global importScripts, firebase, self, clients */
 // Give the service worker access to Firebase Messaging.
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');

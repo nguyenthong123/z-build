@@ -13,7 +13,6 @@ const ProductReview = ({ productId, isLoggedIn, onLoginRequired }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { addToast } = useToast();
-
   const currentUser = auth.currentUser;
 
   useEffect(() => {
@@ -77,7 +76,7 @@ const ProductReview = ({ productId, isLoggedIn, onLoginRequired }) => {
     });
 
     return () => unsubscribe();
-  }, [productId, isLoggedIn]); // Add isLoggedIn to refetch if auth state changes
+  }, [productId, isLoggedIn, addToast]); // Add addToast to dependencies
 
   const handleSubmit = async (e) => {
     e.preventDefault();

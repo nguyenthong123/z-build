@@ -68,7 +68,6 @@ const OrderHistory = ({ user, onBack, onViewDetails, onNavigate, onLogout }) => 
   };
 
   const filteredOrders = orders.filter(order => {
-    const statusLabel = getStatusLabel(order.status);
     const matchesTab = activeTab === 'Tất cả đơn hàng' || 
                       (activeTab === 'Đang xử lý' && (order.status === 'pending' || order.status === 'confirmed' || order.status === 'shipping')) ||
                       (activeTab === 'Đã hoàn thành' && order.status === 'delivered') ||

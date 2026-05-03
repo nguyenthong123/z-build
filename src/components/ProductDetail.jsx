@@ -4,7 +4,7 @@ import './ProductDetail.css';
 import ProductReview from './ProductReview';
 import SEOHead from './SEOHead';
 
-const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, onLoginRequired, onProductSelect, setGlobalProduct }) => {
+const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, onLoginRequired, setGlobalProduct }) => {
   const { productId } = useParams();
   const navigate = useNavigate();
   const [fetchedProduct, setFetchedProduct] = useState(null);
@@ -13,6 +13,9 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
   const [selectedVariants, setSelectedVariants] = useState({});
   const [quantity, setQuantity] = useState(1);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0);
+  const [visibleThumbs, setVisibleThumbs] = useState(4);
+  const [isAutoPaused, setIsAutoPaused] = useState(false);
 
   // Fetch product from Firestore if not passed as prop
   useEffect(() => {
@@ -76,7 +79,18 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
     if (product) {
       setGlobalProduct?.(product);
     }
-    return () => setGlobalProduct?.(null);
+    
+    // Set visible thumbs based on screen size
+    const updateVisibleThumbs = () => {
+      setVisibleThumbs(window.innerWidth < 768 ? 3 : 4);
+    };
+    updateVisibleThumbs();
+    window.addEventListener('resize', updateVisibleThumbs);
+    
+    return () => {
+      setGlobalProduct?.(null);
+      window.removeEventListener('resize', updateVisibleThumbs);
+    };
   }, [product, setGlobalProduct]);
 
   useEffect(() => {
@@ -93,7 +107,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
           const snap = await getDocs(q);
           const list = snap.docs
             .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(p => p.id !== product.id)
+            .filter(p => p.id !== product?.id)
             .slice(0, 4);
           setRelatedProducts(list);
         } catch (error) {
@@ -103,6 +117,61 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
     };
     fetchRelated();
   }, [product]);
+
+  const images = React.useMemo(() => [
+    product?.image || 'https://placehold.co/800',
+    ...(product?.extraImages || []).filter(img => img)
+  ], [product]);
+
+  const videos = React.useMemo(() => [
+    product?.videoUrl,
+    product?.extraVideoUrl
+  ].filter(v => v), [product]);
+
+  const allMedia = React.useMemo(() => [
+    ...images.map((url, i) => ({ type: 'image', url, index: i })),
+    ...videos.map((url, i) => ({ type: 'video', url, index: i }))
+  ], [images, videos]);
+
+  // Auto-advance logic
+  useEffect(() => {
+    if (isAutoPaused || allMedia.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setActiveMedia(prev => {
+        const currentIndex = allMedia.findIndex(m => m.type === prev.type && m.index === prev.index);
+        const nextIndex = (currentIndex + 1) % allMedia.length;
+        return { type: allMedia[nextIndex].type, index: allMedia[nextIndex].index };
+      });
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [allMedia, isAutoPaused]);
+
+  // Sync thumbnail view with active media
+  useEffect(() => {
+    const currentIndex = allMedia.findIndex(m => m.type === activeMedia.type && m.index === activeMedia.index);
+    if (currentIndex !== -1) {
+      // If current is outside the [start, start + visibleThumbs - 1] range, adjust start
+      if (currentIndex < thumbnailStartIndex) {
+        setThumbnailStartIndex(currentIndex);
+      } else if (currentIndex >= thumbnailStartIndex + visibleThumbs) {
+        setThumbnailStartIndex(Math.max(0, currentIndex - (visibleThumbs - 1)));
+      }
+    }
+  }, [activeMedia, allMedia, thumbnailStartIndex, visibleThumbs]);
+
+  const handleNextThumb = () => {
+    if (thumbnailStartIndex + visibleThumbs < allMedia.length) {
+      setThumbnailStartIndex(prev => prev + 1);
+    }
+  };
+
+  const handlePrevThumb = () => {
+    if (thumbnailStartIndex > 0) {
+      setThumbnailStartIndex(prev => prev - 1);
+    }
+  };
 
   // Handle back navigation
   const handleBack = onBack || (() => navigate(-1));
@@ -138,26 +207,20 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
     );
   }
 
-  const images = [
-    product.image || 'https://placehold.co/800',
-    ...(product.extraImages || []).filter(img => img)
-  ];
 
-  const videos = [
-    product.videoUrl,
-    product.extraVideoUrl
-  ].filter(v => v);
+
+
 
   const getYoutubeEmbedUrl = (url) => {
     if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : null;
   };
 
   const getYoutubeId = (url) => {
     if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
   };
@@ -260,34 +323,73 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
               </button>
             </div>
-            <div className="thumbnails">
-              {images.map((img, idx) => (
-                <div 
-                  key={`img-${idx}`} 
-                  className={`thumb ${activeMedia.type === 'image' && activeMedia.index === idx ? 'active' : ''}`}
-                  onClick={() => setActiveMedia({ type: 'image', index: idx })}
+            <div 
+              className="thumbnails-container"
+              onMouseEnter={() => setIsAutoPaused(true)}
+              onMouseLeave={() => setIsAutoPaused(false)}
+            >
+              {allMedia.length > visibleThumbs && (
+                <button 
+                  className={`thumb-nav-btn prev ${thumbnailStartIndex === 0 ? 'disabled' : ''}`} 
+                  onClick={handlePrevThumb}
+                  disabled={thumbnailStartIndex === 0}
                 >
-                  <img src={img} alt={`Thumbnail ${idx}`} />
-                </div>
-              ))}
-              {videos.map((vid, idx) => (
-                <div 
-                   key={`vid-${idx}`}
-                   className={`thumb video-thumb ${activeMedia.type === 'video' && activeMedia.index === idx ? 'active' : ''}`}
-                   onClick={() => setActiveMedia({ type: 'video', index: idx })}
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m15 18-6-6 6-6"/></svg>
+                </button>
+              )}
+              
+              <div className="thumbnails">
+                {allMedia.slice(thumbnailStartIndex, thumbnailStartIndex + visibleThumbs).map((media) => {
+                  const isActive = activeMedia.type === media.type && activeMedia.index === media.index;
+                  
+                  if (media.type === 'image') {
+                    return (
+                      <div 
+                        key={`img-${media.index}`} 
+                        className={`thumb ${isActive ? 'active' : ''}`}
+                        onClick={() => {
+                          setActiveMedia({ type: 'image', index: media.index });
+                          setIsAutoPaused(true);
+                        }}
+                      >
+                        <img src={media.url} alt={`Thumbnail ${media.index}`} />
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <div 
+                         key={`vid-${media.index}`}
+                         className={`thumb video-thumb ${isActive ? 'active' : ''}`}
+                         onClick={() => {
+                           setActiveMedia({ type: 'video', index: media.index });
+                           setIsAutoPaused(true);
+                         }}
+                      >
+                        <div className="video-overlay">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                        </div>
+                        {getYoutubeId(media.url) ? (
+                          <img src={`https://img.youtube.com/vi/${getYoutubeId(media.url)}/0.jpg`} alt={`Video ${media.index}`} />
+                        ) : (
+                          <div className="video-placeholder">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25a29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                })}
+              </div>
+
+              {allMedia.length > visibleThumbs && (
+                <button 
+                  className={`thumb-nav-btn next ${thumbnailStartIndex + visibleThumbs >= allMedia.length ? 'disabled' : ''}`} 
+                  onClick={handleNextThumb}
+                  disabled={thumbnailStartIndex + visibleThumbs >= allMedia.length}
                 >
-                  <div className="video-overlay">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                  </div>
-                  {getYoutubeId(vid) ? (
-                    <img src={`https://img.youtube.com/vi/${getYoutubeId(vid)}/0.jpg`} alt={`Video ${idx}`} />
-                  ) : (
-                    <div style={{ width: '100%', height: '100%', background: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25a29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
-                    </div>
-                  )}
-                </div>
-              ))}
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+              )}
             </div>
           </div>
 

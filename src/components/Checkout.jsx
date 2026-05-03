@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, addDoc, getDocs, updateDoc, doc, query, where, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -7,7 +7,7 @@ import './Checkout.css';
 const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState({});
-  const [step, setStep] = useState(1);
+  const [step] = useState(1);
   const [formData, setFormData] = useState({
     email: '',
     firstName: '',
@@ -42,7 +42,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
     accountName: 'NGUYEN BA TRUNG'
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchBankInfo = async () => {
       try {
         const docRef = doc(db, 'storeSettings', 'main');

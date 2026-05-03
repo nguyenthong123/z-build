@@ -193,10 +193,15 @@ function App() {
         // Request permission
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-          // You need to replace this VAPID key conceptually, but Firebase needs it
-          const currentToken = await getToken(messaging, { 
-            vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BM_REPLACE_ME' 
-          });
+          const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+          const isPlaceholder = !vapidKey || vapidKey.includes('REPLACE') || vapidKey.includes('YOUR_VAPID_KEY');
+          
+          if (isPlaceholder) {
+            console.warn('FCM VAPID Key is missing or using a placeholder. Skipping token generation.');
+            return;
+          }
+
+          const currentToken = await getToken(messaging, { vapidKey });
           
           if (currentToken) {
             // Save token to Firestore

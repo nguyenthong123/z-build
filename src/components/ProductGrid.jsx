@@ -4,13 +4,25 @@ import { db } from '../firebase';
 import { useWishlist } from '../context/WishlistContext';
 import './ProductGrid.css';
 
-const ProductGrid = ({ onProductClick, onAddToCart, searchQuery, category }) => {
+const ProductGrid = ({ onProductClick, searchQuery, category }) => {
   const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const { toggleWishlist, isInWishlist } = useWishlist();
 
+  const filteredProducts = React.useMemo(() => {
+    if (searchQuery && searchQuery !== "trending") {
+      const lowerQuery = searchQuery.toLowerCase();
+      return products.filter(p =>
+        (p.name && p.name.toLowerCase().includes(lowerQuery)) ||
+        (p.description && p.description.toLowerCase().includes(lowerQuery)) ||
+        (p.tag && p.tag.toLowerCase().includes(lowerQuery))
+      );
+    }
+    return products;
+  }, [searchQuery, products]);
+
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     let q;
     if (searchQuery === "trending") {
@@ -54,19 +66,7 @@ const ProductGrid = ({ onProductClick, onAddToCart, searchQuery, category }) => 
     return () => unsubscribe();
   }, [category, searchQuery]);
 
-  useEffect(() => {
-    if (searchQuery && searchQuery !== "trending") {
-      const lowerQuery = searchQuery.toLowerCase();
-      const filtered = products.filter(p => 
-        (p.name && p.name.toLowerCase().includes(lowerQuery)) || 
-        (p.description && p.description.toLowerCase().includes(lowerQuery)) ||
-        (p.tag && p.tag.toLowerCase().includes(lowerQuery))
-      );
-      setFilteredProducts(filtered);
-    } else {
-      setFilteredProducts(products);
-    }
-  }, [searchQuery, products]);
+
 
   return (
     <section className="product-section container">
