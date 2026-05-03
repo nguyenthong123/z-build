@@ -312,6 +312,7 @@
   }
 
   .item-qty-mobile {
+    display: block;
     margin-top: 5px;
   }
 
@@ -365,6 +366,7 @@
   }
 }
 
-.item-price-mobile {
+.item-price-mobile,
+.item-qty-mobile {
   display: none;
 }
