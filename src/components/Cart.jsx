@@ -132,9 +132,6 @@ const Cart = ({ onBack, onCheckout, cartItems, updateQuantity, removeItem, clear
                 <span>{Number(total).toLocaleString('vi-VN')}₫</span>
               </div>
 
-              <p className="installments desktop-only">
-                Hoặc trả góp chỉ từ <strong>{Number(total/12).toLocaleString('vi-VN')}₫/tháng</strong> với lãi suất 0% trong 12 tháng.
-              </p>
 
               <button className="btn-checkout" onClick={onCheckout}>
                 Thanh toán ngay
