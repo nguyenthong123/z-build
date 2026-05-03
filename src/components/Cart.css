@@ -173,16 +173,28 @@
 .summary-total {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
   font-size: 1.3rem;
   font-weight: 700;
   margin-bottom: var(--space-lg);
+  gap: 15px;
+}
+
+.summary-total span:first-child {
+  white-space: nowrap;
+}
+
+.summary-total span:last-child {
+  text-align: right;
+  color: var(--primary-dark);
 }
 
 .installments {
   font-size: 0.85rem;
-  line-height: 1.5;
+  line-height: 1.6;
   color: var(--text-muted);
   margin-bottom: var(--space-lg);
+  width: 100%;
 }
 
 .btn-checkout {
@@ -263,6 +275,7 @@
 
   .summary-card {
     position: static;
+    padding: var(--space-lg);
   }
 }
 
@@ -281,6 +294,10 @@
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid var(--divider);
+  }
+
+  .summary-card {
+    padding: var(--space-md);
   }
 
   .cart-item {
