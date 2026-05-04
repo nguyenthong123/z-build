@@ -99,10 +99,12 @@ const ProductGrid = ({ onProductClick, searchQuery, category }) => {
               <div className="product-info">
                 <h3>{product.name}</h3>
                 <div className="price-container">
-                  {Number(product.price) > 0 ? (
+                  {Number(String(product.price).replace(/[^0-9.-]+/g,"")) > 0 ? (
                     <>
-                      {product.oldPrice > product.price && <span className="old-price">{Number(product.oldPrice).toLocaleString('vi-VN')}₫</span>}
-                      <span className="current-price">{Number(product.price).toLocaleString('vi-VN')}₫</span>
+                      {Number(String(product.oldPrice).replace(/[^0-9.-]+/g,"")) > Number(String(product.price).replace(/[^0-9.-]+/g,"")) && (
+                        <span className="old-price">{Number(String(product.oldPrice).replace(/[^0-9.-]+/g,"")).toLocaleString('vi-VN')}₫</span>
+                      )}
+                      <span className="current-price">{Number(String(product.price).replace(/[^0-9.-]+/g,"")).toLocaleString('vi-VN')}₫</span>
                     </>
                   ) : (
                     <span className="current-price contact-price">Liên hệ báo giá</span>

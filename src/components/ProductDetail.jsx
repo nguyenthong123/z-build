@@ -17,7 +17,6 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0);
   const [visibleThumbs, setVisibleThumbs] = useState(4);
-  const [visibleThumbs, setVisibleThumbs] = useState(4);
 
   // Fetch product from Firestore if not passed as prop
   useEffect(() => {
@@ -411,7 +410,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
                       {product.status === 'Phân phối' ? 'Chính hãng:' : ''}
                     </span>
                     <span className="current-price">
-                      {Number(product.discountPrice || product.basePrice).toLocaleString('vi-VN')}₫
+                      {Number(String(product.discountPrice || product.basePrice).replace(/[^0-9.-]+/g,"")).toLocaleString('vi-VN')}₫
                     </span>
                   </div>
                   {product.discountPrice && (
@@ -420,13 +419,13 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
                         {product.status === 'Phân phối' ? 'Giá tới nơi:' : ''}
                       </span>
                       <span className="old-price">
-                        {Number(product.basePrice).toLocaleString('vi-VN')}₫
+                        {Number(String(product.basePrice).replace(/[^0-9.-]+/g,"")).toLocaleString('vi-VN')}₫
                       </span>
                     </div>
                   )}
                   {product.discountPrice && !product.status?.includes('Phân phối') && (
                     <span className="discount-badge">
-                      GIẢM {Math.round((1 - product.discountPrice / product.basePrice) * 100)}%
+                      GIẢM {Math.round((1 - Number(String(product.discountPrice).replace(/[^0-9.-]+/g,"")) / Number(String(product.basePrice).replace(/[^0-9.-]+/g,""))) * 100)}%
                     </span>
                   )}
                 </div>
