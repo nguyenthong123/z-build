@@ -257,7 +257,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
     },
     "offers": {
       "@type": "Offer",
-      "url": `https://zbuild.vn/product/${product.slug || product.id}`,
+      "url": `https://zbuild.click/product/${product.slug || product.id}`,
       "priceCurrency": "VND",
       "price": product.pricingType === 'subscription' ? (product.monthlyPrice || 0) : (product.discountPrice || product.basePrice || 0),
       "priceValidUntil": new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],

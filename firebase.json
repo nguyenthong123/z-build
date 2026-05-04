@@ -11,6 +11,14 @@
     ],
     "rewrites": [
       {
+        "source": "/product/**",
+        "function": "server"
+      },
+      {
+        "source": "/products.json",
+        "function": "server"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

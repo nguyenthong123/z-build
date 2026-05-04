@@ -206,7 +206,7 @@ const AdminSettings = ({ onBack }) => {
                   <div className="add-role-group">
                     <input 
                       type="email" 
-                      placeholder="Nhập email (VD: admin@zbuild.vn)" 
+                      placeholder="Nhập email (VD: admin@zbuild.click)" 
                       value={newAdminEmail}
                       onChange={(e) => setNewAdminEmail(e.target.value)}
                       onKeyDown={(e) => {

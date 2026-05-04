@@ -11,7 +11,7 @@ const SEOHead = ({
   noindex = false,
   schemaData = null
 }) => {
-  const siteUrl = 'https://zbuild.vn';
+  const siteUrl = 'https://zbuild.click';
   const fullUrl = canonical ? `${siteUrl}${canonical}` : siteUrl;
 
   return (

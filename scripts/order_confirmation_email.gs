@@ -13,10 +13,10 @@
  */
 
 // ============ CẤU HÌNH ============
-const STORE_NAME = 'ZBUILD Store';
-const STORE_EMAIL = 'noreply@zbuild.vn'; // Email hiển thị (dùng email của bạn khi gửi)
+const STORE_NAME = 'Zbuild - Giải pháp Xây dựng';
+const STORE_EMAIL = 'noreply@zbuild.click'; // Email hiển thị (dùng email của bạn khi gửi)
 const STORE_PHONE = '0xxx.xxx.xxx'; // Số hotline
-const STORE_WEBSITE = 'https://zbuild.vn'; // URL website
+const STORE_WEBSITE = 'https://zbuild.click'; // URL website
 
 // ============ XỬ LÝ REQUEST TỪ WEBSITE ============
 

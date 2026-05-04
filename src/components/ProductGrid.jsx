@@ -41,7 +41,7 @@ const ProductGrid = ({ onProductClick, searchQuery, category }) => {
         name: doc.data().title,
         price: doc.data().discountPrice || doc.data().basePrice,
         oldPrice: doc.data().basePrice,
-        img: doc.data().image || 'https://placehold.co/400x400.png?text=ZBUILD'
+        img: doc.data().image ? doc.data().image.replace('/upload/', '/upload/f_auto,q_auto,w_500,c_fill/') : 'https://placehold.co/400x400.png?text=ZBUILD'
       }));
 
       // Sắp xếp thủ công để tránh lỗi đòi hỏi Composite Index từ Firestore
