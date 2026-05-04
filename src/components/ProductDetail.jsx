@@ -17,7 +17,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0);
   const [visibleThumbs, setVisibleThumbs] = useState(4);
-  const [isAutoPaused, setIsAutoPaused] = useState(false);
+  const [visibleThumbs, setVisibleThumbs] = useState(4);
 
   // Fetch product from Firestore if not passed as prop
   useEffect(() => {
@@ -128,20 +128,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
     ...videos.map((url, i) => ({ type: 'video', url, index: i }))
   ], [images, videos]);
 
-  // Auto-advance logic
-  useEffect(() => {
-    if (isAutoPaused || allMedia.length <= 1) return;
-
-    const interval = setInterval(() => {
-      setActiveMedia(prev => {
-        const currentIndex = allMedia.findIndex(m => m.type === prev.type && m.index === prev.index);
-        const nextIndex = (currentIndex + 1) % allMedia.length;
-        return { type: allMedia[nextIndex].type, index: allMedia[nextIndex].index };
-      });
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [allMedia, isAutoPaused]);
+  // Auto-advance logic removed as per user request
 
   // Sync thumbnail view with active media
   useEffect(() => {
@@ -320,8 +307,6 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
             </div>
             <div 
               className="thumbnails-container"
-              onMouseEnter={() => setIsAutoPaused(true)}
-              onMouseLeave={() => setIsAutoPaused(false)}
             >
               {allMedia.length > visibleThumbs && (
                 <button 
@@ -344,7 +329,6 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
                         className={`thumb ${isActive ? 'active' : ''}`}
                         onClick={() => {
                           setActiveMedia({ type: 'image', index: media.index });
-                          setIsAutoPaused(true);
                         }}
                       >
                         <img src={media.url} alt={`Thumbnail ${media.index}`} />
@@ -357,7 +341,6 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
                          className={`thumb video-thumb ${isActive ? 'active' : ''}`}
                          onClick={() => {
                            setActiveMedia({ type: 'video', index: media.index });
-                           setIsAutoPaused(true);
                          }}
                       >
                         <div className="video-overlay">
