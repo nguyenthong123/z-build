@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { db } from '../firebase';
 import './ProductDetail.css';
 import ProductReview from './ProductReview';
 import SEOHead from './SEOHead';
@@ -29,27 +31,22 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
       
       setLoading(true);
       try {
-        const { doc, getDoc, collection, query, where, getDocs } = await import('firebase/firestore');
-        const { db } = await import('../firebase');
-        
-        // 1. Try fetching as standard document ID
+        // Run standard ID fetch and Slug fetch in parallel for maximum speed
         const docRef = doc(db, 'products', idToFetch);
-        const docSnap = await getDoc(docRef);
+        const slugQuery = query(collection(db, "products"), where("slug", "==", idToFetch), limit(1));
+        
+        const [docSnap, slugSnap] = await Promise.all([
+          getDoc(docRef),
+          getDocs(slugQuery)
+        ]);
         
         if (docSnap.exists()) {
           setFetchedProduct({ id: docSnap.id, ...docSnap.data() });
+        } else if (!slugSnap.empty) {
+          const firstDoc = slugSnap.docs[0];
+          setFetchedProduct({ id: firstDoc.id, ...firstDoc.data() });
         } else {
-          // 2. Fallback: Search as a slug
-          const productsRef = collection(db, "products");
-          const q = query(productsRef, where("slug", "==", idToFetch));
-          const querySnap = await getDocs(q);
-          
-          if (!querySnap.empty) {
-            const firstDoc = querySnap.docs[0];
-            setFetchedProduct({ id: firstDoc.id, ...firstDoc.data() });
-          } else {
-            setFetchedProduct(null);
-          }
+          setFetchedProduct(null);
         }
       } catch (error) {
         console.error('Error fetching product:', error);
@@ -97,8 +94,6 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
     const fetchRelated = async () => {
       if (product?.category) {
         try {
-          const { collection, getDocs, query, where, limit } = await import('firebase/firestore');
-          const { db } = await import('../firebase');
           const q = query(
             collection(db, "products"),
             where("category", "==", product.category),
