@@ -8,6 +8,7 @@ const PricingSection = ({
   pricingType, 
   monthlyPrice, 
   yearlyPrice, 
+  specs,
   onChange, 
   setProduct 
 }) => {
@@ -29,6 +30,21 @@ const PricingSection = ({
           <span className="prefix">VNĐ</span>
           <input type="number" name="discountPrice" placeholder="0" value={discountPrice} onChange={onChange} />
         </div>
+      </div>
+
+      <div className="form-group" style={{ marginTop: '10px' }}>
+        <label>Quy cách sản phẩm</label>
+        <input 
+          type="text" 
+          name="specs" 
+          placeholder="Ví dụ: 1.22m x 2.44m x 18mm" 
+          value={specs} 
+          onChange={onChange} 
+          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #ddd' }}
+        />
+        <small style={{ color: '#666', fontSize: '11px', marginTop: '4px', display: 'block' }}>
+          * Giúp AI tính toán vật tư chính xác hơn.
+        </small>
       </div>
 
       {category === 'Phần mềm & Dịch vụ' && (

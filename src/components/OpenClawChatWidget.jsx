@@ -65,11 +65,14 @@ const OpenClawChatWidget = ({ user }) => {
       // JSONP Implementation to bypass all CORS/Redirect issues
       const callbackName = 'openclaw_callback_' + Math.round(100000 * Math.random());
       
+      // Prepare history for GAS bot (Limit to last 3 messages to avoid URL length issues in JSONP)
+      const limitedHistory = history.slice(-3);
+
       const queryParams = new URLSearchParams();
       queryParams.append('userId', user?.uid || "zbuild_web_user");
       queryParams.append('userName', user?.name || "Khách hàng");
       queryParams.append('message', text);
-      queryParams.append('history', JSON.stringify(history));
+      queryParams.append('history', JSON.stringify(limitedHistory));
       queryParams.append('callback', callbackName);
 
       const cleanApiUrl = apiUrl.trim();

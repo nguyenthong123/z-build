@@ -31,6 +31,7 @@ export const useProductForm = (editData, onSave) => {
     pricingType: 'one-time',
     monthlyPrice: '',
     yearlyPrice: '',
+    specs: '',
   });
 
   const [imageFile, setImageFile] = useState(null);
@@ -54,6 +55,7 @@ export const useProductForm = (editData, onSave) => {
         isTrending: editData.isTrending || false,
         extraImages: editData.extraImages || [],
         variants: editData.variants || [],
+        specs: editData.specs || '',
       });
       if (editData.image) setImagePreview(editData.image);
       if (editData.extraImages) {
