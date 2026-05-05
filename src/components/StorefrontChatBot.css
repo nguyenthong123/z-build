@@ -408,12 +408,13 @@
   flex: 1;
   border: 1px solid #E2E8F0;
   border-radius: 100px;
-  padding: 10px 18px;
-  font-size: 0.9rem;
+  padding: 12px 18px;
+  font-size: 16px; /* Fix iOS auto-zoom */
   outline: none;
   background: #F8FAFC;
   color: #1A2130;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
+  -webkit-appearance: none; /* Fix iOS styling */
 }
 
 .sfcb-input-area input:focus {
@@ -478,6 +479,21 @@
   /* Dedicated close button inside full-screen panel */
   .sfcb-mobile-close {
     display: flex !important;
+  }
+
+  /* Prevent body scroll when panel open */
+  body.chat-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+  }
+
+  /* Ensure input is always visible and doesn't zoom */
+  .sfcb-input-area {
+    padding: 10px 12px 25px; /* Extra padding for safe areas */
+    background: #fff;
+    position: sticky;
+    bottom: 0;
   }
 }
 
