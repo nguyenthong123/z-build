@@ -376,6 +376,29 @@
   margin-bottom: var(--space-lg);
 }
 
+.specs-detail-group {
+  margin-bottom: var(--space-lg);
+}
+
+.specs-detail-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 12px;
+}
+
+.specs-badge {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: var(--primary-yellow);
+  color: #000;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1rem;
+  box-shadow: 0 4px 12px rgba(255, 184, 0, 0.2);
+}
+
 /* Selector Styles */
 .selectors {
   display: flex;

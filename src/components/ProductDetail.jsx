@@ -433,6 +433,16 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
             </div>
             <p className="shipping-info">Miễn phí vận chuyển cho đơn hàng từ 500.000₫</p>
 
+            {/* Specs Section */}
+            {product.specs && (
+              <div className="specs-detail-group">
+                <label>QUY CÁCH / KÍCH THƯỚC</label>
+                <div className="specs-badges">
+                  <span className="specs-badge">{product.specs}</span>
+                </div>
+              </div>
+            )}
+
             {/* Selectors */}
             <div className="selectors">
               {product.variants && product.variants.map((variant, vIdx) => (

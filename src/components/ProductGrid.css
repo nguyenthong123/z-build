@@ -180,6 +180,13 @@
   font-weight: 600;
 }
 
+.product-specs {
+  font-size: 0.75rem;
+  color: #666;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
 .price-container {
   display: flex;
   flex-direction: column;

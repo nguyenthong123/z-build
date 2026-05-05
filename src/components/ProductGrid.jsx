@@ -98,6 +98,7 @@ const ProductGrid = ({ onProductClick, searchQuery, category }) => {
               </div>
               <div className="product-info">
                 <h3>{product.name}</h3>
+                {product.specs && <p className="product-specs">{product.specs}</p>}
                 <div className="price-container">
                   {Number(String(product.price).replace(/[^0-9.-]+/g,"")) > 0 ? (
                     <>
