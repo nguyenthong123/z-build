@@ -4,7 +4,7 @@ import remarkGfm from 'remark-gfm';
 
 const OpenClawChatWidget = ({ user }) => {
   const [messages, setMessages] = useState([
-    { id: 1, text: "Chào bạn! Tôi là **Dunvex Market Advisor**. Tôi đã sẵn sàng phân tích dữ liệu thị trường mới nhất. Bạn muốn biết thông tin gì hôm nay?", isBot: true, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+    { id: 1, text: "Chào bạn! Tôi là trợ lý AI tại **Cơ sở thạch cao Tâm An**. Tôi có thể giúp bạn báo giá, tính toán vật tư hoặc hướng dẫn kỹ thuật thi công. Bạn cần hỗ trợ gì ạ?", isBot: true, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -146,10 +146,10 @@ const OpenClawChatWidget = ({ user }) => {
       {/* Custom Header */}
       <div className="sfcb-header">
         <div className="sfcb-header-left">
-          <div className="sfcb-avatar" style={{ background: '#FFD700', color: '#000', fontWeight: 'bold' }}>oc</div>
+          <div className="sfcb-avatar" style={{ background: '#FFD700', color: '#000', fontWeight: 'bold' }}>TA</div>
           <div>
-            <strong>Dunvex Market Advisor</strong>
-            <span className="sfcb-online" style={{ color: '#10B981' }}>AI-Powered Market Intelligence</span>
+            <strong>Trợ lý Thạch cao Tâm An</strong>
+            <span className="sfcb-online" style={{ color: '#10B981' }}>Tư vấn kỹ thuật & Báo giá 24/7</span>
           </div>
         </div>
       </div>
