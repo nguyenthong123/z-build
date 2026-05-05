@@ -269,21 +269,25 @@ Dưới đây là sơ đồ chi tiết về tiến độ dự án Zbuild. Bạn 
 
 ---
 
+#### 5.11 Quản lý Cộng tác viên (Affiliate Management) ✅ HOÀN THÀNH (04/05/2026)
+- [x] **AdminAffiliateManagement**: Giao diện quản lý đội ngũ CTV.
+- [x] **Affiliate Revenue Tracking**: Ghi nhận và theo dõi biến động doanh thu cho từng CTV.
+- [x] **Commission Rules**: Thiết lập định mức chiết khấu riêng cho từng sản phẩm/nhóm CTV.
+- [x] **Admin Sidebar Integration**: Tích hợp menu "Team Affiliate" vào thanh điều hướng quản trị.
+
+---
+
 ## 💡 Đề xuất từ Antigravity (Assistant Proposals)
 
 ### Đề xuất chiến lược
-1. **Phase 1 trước tiên**: Fix Cart → Checkout → Order History là **bắt buộc** trước khi đi live. Không có flow mua hàng thực = website chưa dùng được.
-2. **AI là USP**: Zbuild có lợi thế AI keys sẵn sàng. Tích hợp AI vào mọi touchpoint (tư vấn, search, báo giá, dashboard) sẽ tạo sự khác biệt lớn so với đối thủ.
-3. **B2B Focus**: Khách hàng B2B (đại lý, nhà thầu) cần báo giá nhanh, chiết khấu theo số lượng, lịch sử mua hàng. Đây nên là trọng tâm UX.
-4. **Mobile-first**: Thầu thợ thường dùng điện thoại tại công trường. Đảm bảo mọi tính năng hoạt động mượt trên mobile.
-5. **Phase 5 ưu tiên cao**: React Router → QR Payment → Coupon. Ba tính năng này tạo giá trị thực tế ngay lập tức cho business.
+1. **Hoàn thiện AI Features**: Đưa AI Q&A và AI Compare vào ProductDetail để tăng tỷ lệ chuyển đổi.
+2. **Review System**: Triển khai hệ thống đánh giá thực tế (chỉ cho người đã mua) để xây dựng lòng tin.
+3. **i18n & PWA**: Nếu muốn mở rộng quy mô, đây là các bước tiếp theo cần thiết.
 
 ### Đề xuất kỹ thuật
-1. **React Router**: Hiện tại dùng `view` state → không có URL routing → không bookmark được, refresh mất trang. **→ ĐANG TRIỂN KHAI Phase 5.1**
-2. **State Management**: Cart, User state nên dùng Context API hoặc Zustand để tránh prop drilling quá sâu.
-3. **Error Boundaries**: Thêm React Error Boundary để trang không crash trắng khi có lỗi.
-4. **Skeleton Loading**: Thay "Đang tải..." bằng Skeleton screens để UX mượt hơn.
+1. **Firestore Security Rules**: Cần kiểm tra kỹ rules cho `affiliates` và `affiliate_revenue` để đảm bảo an toàn dữ liệu.
+2. **Dynamic OG Tags**: Đã triển khai hybrid SSR với Cloud Functions, cần test kỹ với Facebook/Zalo Crawler.
 
 ---
-*Cập nhật lần cuối: 31/03/2026 — Hoàn thành Performance & Accessibility Optimization*
+*Cập nhật lần cuối: 05/05/2026 — Hoàn thành Affiliate Management & SEO Hybrid SSR*
 

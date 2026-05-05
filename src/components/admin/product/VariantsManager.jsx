@@ -1,9 +1,86 @@
 import React, { useState } from 'react';
 
-const VariantsManager = ({ variants, setProduct }) => {
-  const [activeVariantInput, setActiveVariantInput] = useState(null);
-  const [newPillValue, setNewPillValue] = useState('');
+const VariantRow = ({ variant, onUpdateType, onAddValue, onRemoveValue, onDelete }) => {
+  const [isInputActive, setIsInputActive] = useState(false);
+  const [inputValue, setInputValue] = useState('');
 
+  const handleAdd = () => {
+    if (inputValue && inputValue.trim()) {
+      onAddValue(variant.id, inputValue.trim());
+      setInputValue('');
+      setIsInputActive(false);
+    }
+  };
+
+  return (
+    <div className="variant-row">
+      <div className="variant-type">
+        <label>Loại tùy chọn</label>
+        <input 
+          type="text" 
+          placeholder="Ví dụ: Màu sắc, Kích thước..."
+          value={variant.type} 
+          onChange={(e) => onUpdateType(variant.id, e.target.value)} 
+        />
+      </div>
+      <div className="variant-values">
+        <label>Giá trị tùy chọn</label>
+        <div className="pill-container">
+          {variant.values?.map((val, idx) => (
+            <span key={idx} className="value-pill">
+              {val}
+              <button 
+                type="button" 
+                className="remove-pill"
+                onClick={() => onRemoveValue(variant.id, idx)}
+              >×</button>
+            </span>
+          ))}
+          
+          {isInputActive ? (
+            <div className="inline-pill-input">
+              <input 
+                autoFocus
+                type="text" 
+                placeholder="Nhập giá trị..."
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAdd();
+                  }
+                  if (e.key === 'Escape') {
+                    setIsInputActive(false);
+                    setInputValue('');
+                  }
+                }}
+              />
+              <button type="button" className="save-pill-btn" onClick={handleAdd}>Lưu</button>
+            </div>
+          ) : (
+            <button 
+              className="add-pill" 
+              type="button" 
+              onClick={() => setIsInputActive(true)}
+              title="Thêm giá trị"
+            >+</button>
+          )}
+        </div>
+      </div>
+      <button 
+        className="delete-row-btn" 
+        type="button" 
+        onClick={() => onDelete(variant.id)}
+        title="Xóa nhóm biến thể"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    </div>
+  );
+};
+
+const VariantsManager = ({ variants, setProduct }) => {
   const addVariant = () => {
     setProduct(prev => ({
       ...prev,
@@ -18,17 +95,29 @@ const VariantsManager = ({ variants, setProduct }) => {
     }));
   };
 
-  const handleAddPill = (variantId) => {
-    if (newPillValue && newPillValue.trim()) {
-      setProduct(prev => ({
-        ...prev,
-        variants: (prev.variants || []).map(v => 
-          v.id === variantId ? { ...v, values: [...(v.values || []), newPillValue.trim()] } : v
-        )
-      }));
-      setNewPillValue('');
-      setActiveVariantInput(null);
-    }
+  const updateVariantType = (id, newType) => {
+    setProduct(prev => ({
+      ...prev,
+      variants: prev.variants.map(v => v.id === id ? { ...v, type: newType } : v)
+    }));
+  };
+
+  const addVariantValue = (id, value) => {
+    setProduct(prev => ({
+      ...prev,
+      variants: prev.variants.map(v => 
+        v.id === id ? { ...v, values: [...(v.values || []), value] } : v
+      )
+    }));
+  };
+
+  const removeVariantValue = (id, index) => {
+    setProduct(prev => ({
+      ...prev,
+      variants: prev.variants.map(v => 
+        v.id === id ? { ...v, values: v.values.filter((_, i) => i !== index) } : v
+      )
+    }));
   };
 
   return (
@@ -42,66 +131,14 @@ const VariantsManager = ({ variants, setProduct }) => {
       </div>
       <div className="variants-list">
         {variants?.map(variant => (
-          <div key={variant.id} className="variant-row">
-            <div className="variant-type">
-              <label>Loại tùy chọn</label>
-              <input 
-                type="text" 
-                value={variant.type} 
-                onChange={(e) => {
-                  const newType = e.target.value;
-                  setProduct(prev => ({
-                    ...prev,
-                    variants: prev.variants.map(v => v.id === variant.id ? { ...v, type: newType } : v)
-                  }));
-                }} 
-              />
-            </div>
-            <div className="variant-values">
-              <label>Giá trị tùy chọn</label>
-              <div className="pill-container">
-                {variant.values?.map((val, idx) => (
-                  <span key={idx} className="value-pill">
-                    {val}
-                    <button 
-                      type="button" 
-                      className="remove-pill"
-                      onClick={() => {
-                        setProduct(prev => ({
-                          ...prev,
-                          variants: prev.variants.map(v => 
-                            v.id === variant.id ? { ...v, values: v.values.filter((_, i) => i !== idx) } : v
-                          )
-                        }));
-                      }}
-                    >×</button>
-                  </span>
-                ))}
-                {activeVariantInput === variant.id ? (
-                  <div className="inline-pill-input">
-                    <input 
-                      autoFocus
-                      type="text" 
-                      value={newPillValue}
-                      onChange={(e) => setNewPillValue(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddPill(variant.id);
-                        }
-                        if (e.key === 'Escape') setActiveVariantInput(null);
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <button className="add-pill" type="button" onClick={() => setActiveVariantInput(variant.id)}>+</button>
-                )}
-              </div>
-            </div>
-            <button className="delete-row-btn" type="button" onClick={() => deleteVariant(variant.id)}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            </button>
-          </div>
+          <VariantRow 
+            key={variant.id}
+            variant={variant}
+            onUpdateType={updateVariantType}
+            onAddValue={addVariantValue}
+            onRemoveValue={removeVariantValue}
+            onDelete={deleteVariant}
+          />
         ))}
       </div>
     </section>
