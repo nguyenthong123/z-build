@@ -277,6 +277,13 @@ Dưới đây là sơ đồ chi tiết về tiến độ dự án Zbuild. Bạn 
 
 ---
 
+#### 5.12 Khắc phục UI & UX Quản trị ✅ HOÀN THÀNH (05/05/2026)
+- [x] **VariantsManager Refactor**: Tách biệt state cho từng hàng biến thể, khắc phục lỗi nhảy dữ liệu khi nhập liệu.
+- [x] **Save Button Addition**: Thêm nút Lưu trực quan cho từng giá trị biến thể (Option Values).
+- [x] **State Isolation**: Đảm bảo việc nhập liệu ở hàng này không ảnh hưởng đến hàng kia.
+
+---
+
 ## 💡 Đề xuất từ Antigravity (Assistant Proposals)
 
 ### Đề xuất chiến lược
@@ -289,5 +296,5 @@ Dưới đây là sơ đồ chi tiết về tiến độ dự án Zbuild. Bạn 
 2. **Dynamic OG Tags**: Đã triển khai hybrid SSR với Cloud Functions, cần test kỹ với Facebook/Zalo Crawler.
 
 ---
-*Cập nhật lần cuối: 05/05/2026 — Hoàn thành Affiliate Management & SEO Hybrid SSR*
+*Cập nhật lần cuối: 05/05/2026 — Hoàn thành Affiliate Management & UI/UX Fixes*
 
