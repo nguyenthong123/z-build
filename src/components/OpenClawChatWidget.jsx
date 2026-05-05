@@ -72,7 +72,8 @@ const OpenClawChatWidget = ({ user }) => {
       queryParams.append('history', JSON.stringify(history));
       queryParams.append('callback', callbackName);
 
-      const finalUrl = `${apiUrl}${apiUrl.includes('?') ? '&' : '?'}${queryParams.toString()}`;
+      const cleanApiUrl = apiUrl.trim();
+      const finalUrl = `${cleanApiUrl}${cleanApiUrl.includes('?') ? '&' : '?'}${queryParams.toString()}`;
       console.log("🤖 OpenClaw calling via JSONP:", finalUrl);
 
       // Create a promise to handle the JSONP response
