@@ -616,6 +616,7 @@ function App() {
           isOpen={isChatBotOpen} 
           setIsOpen={setIsChatBotOpen} 
           isLoggedIn={!!user}
+          user={user}
           onLoginRequired={() => handleLoginRequired(location.pathname)}
           onAddToCart={handleAddToCart} 
         />

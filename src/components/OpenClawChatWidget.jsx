@@ -4,11 +4,11 @@ import remarkGfm from 'remark-gfm';
 
 const OpenClawChatWidget = ({ user }) => {
   const [messages, setMessages] = useState([
-    { id: 1, text: "Chào bạn! Tôi là **Dunvex Market Advisor** (Powered by OpenClaw). Tôi đã sẵn sàng phân tích dữ liệu thị trường mới nhất. Bạn muốn biết thông tin gì hôm nay?", isBot: true, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+    { id: 1, text: "Chào bạn! Tôi là **Dunvex Market Advisor**. Tôi đã sẵn sàng phân tích dữ liệu thị trường mới nhất. Bạn muốn biết thông tin gì hôm nay?", isBot: true, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [apiUrl, setApiUrl] = useState(import.meta.env.VITE_OPENCLAW_API_URL || 'http://localhost:8000/chat');
+  const [apiUrl, setApiUrl] = useState(import.meta.env.VITE_OPENCLAW_API_URL || '');
   const chatEndRef = useRef(null);
 
   useEffect(() => {
@@ -19,7 +19,11 @@ const OpenClawChatWidget = ({ user }) => {
         const docRef = doc(db, 'storeSettings', 'main');
         const docSnap = await getDoc(docRef);
         if (docSnap.exists() && docSnap.data().openClawConfig?.apiUrl) {
-          setApiUrl(docSnap.data().openClawConfig.apiUrl);
+          const remoteUrl = docSnap.data().openClawConfig.apiUrl;
+          console.log("🤖 OpenClaw: Using Remote API URL from Firestore:", remoteUrl);
+          setApiUrl(remoteUrl);
+        } else {
+          console.log("🤖 OpenClaw: No remote config found, using VITE_OPENCLAW_API_URL:", import.meta.env.VITE_OPENCLAW_API_URL);
         }
       } catch (err) {
         console.error("Error fetching bot config:", err);
@@ -47,39 +51,79 @@ const OpenClawChatWidget = ({ user }) => {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
     };
     
+    // Prepare history for GAS bot (convert to simple role/content format)
+    const history = messages.map(m => ({
+      role: m.isBot ? "assistant" : "user",
+      content: m.text
+    }));
+
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsTyping(true);
 
     try {
-      const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: user?.uid || "zbuild_web_user",
-          message: text
-        })
+      // JSONP Implementation to bypass all CORS/Redirect issues
+      const callbackName = 'openclaw_callback_' + Math.round(100000 * Math.random());
+      
+      const queryParams = new URLSearchParams();
+      queryParams.append('userId', user?.uid || "zbuild_web_user");
+      queryParams.append('userName', user?.name || "Khách hàng");
+      queryParams.append('message', text);
+      queryParams.append('history', JSON.stringify(history));
+      queryParams.append('callback', callbackName);
+
+      const finalUrl = `${apiUrl}${apiUrl.includes('?') ? '&' : '?'}${queryParams.toString()}`;
+      console.log("🤖 OpenClaw calling via JSONP:", finalUrl);
+
+      // Create a promise to handle the JSONP response
+      const botReply = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          cleanup();
+          reject(new Error("Kết nối quá hạn (Timeout). Vui lòng thử lại."));
+        }, 30000);
+
+        const cleanup = () => {
+          clearTimeout(timeout);
+          delete window[callbackName];
+          const script = document.getElementById(callbackName);
+          if (script) script.remove();
+        };
+
+        window[callbackName] = (data) => {
+          console.log("🤖 OpenClaw JSONP Data:", data);
+          cleanup();
+          if (data.status === "success" || data.reply) {
+            resolve(data.reply || data.response);
+          } else {
+            reject(new Error(data.message || "Lỗi phản hồi từ AI"));
+          }
+        };
+
+        const script = document.createElement('script');
+        script.id = callbackName;
+        script.src = finalUrl;
+        script.onerror = () => {
+          cleanup();
+          reject(new Error("Lỗi tải Script (CORS hoặc Network)."));
+        };
+        document.body.appendChild(script);
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setMessages(prev => [...prev, {
-          id: Date.now() + 1,
-          text: data.response,
-          isBot: true,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }]);
-      } else {
-        throw new Error(`API error: ${response.status}`);
-      }
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        text: botReply,
+        isBot: true,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }]);
+
     } catch (err) {
-      console.error("OpenClaw Chat Error:", err);
+      console.error("🤖 OpenClaw Chat Error Details:", err);
       let errorMsg = "⚠️ Kết nối với OpenClaw thất bại.";
       
-      if (window.location.protocol === 'https:' && apiUrl.startsWith('http:')) {
+      if (apiUrl.startsWith('http://') && window.location.protocol === 'https:') {
         errorMsg += " Lỗi: Không thể kết nối từ trang HTTPS sang API HTTP (Mixed Content). Vui lòng cấu hình HTTPS cho API trong phần Cài đặt.";
       } else {
-        errorMsg += " Vui lòng kiểm tra xem bot đã được bật trên điện thoại chưa và URL API có chính xác không.";
+        errorMsg += ` Chi tiết: ${err.message || "Lỗi mạng hoặc CORS"}. URL đang gọi: ${apiUrl || "Trống"}.`;
       }
 
       setMessages(prev => [...prev, {
@@ -95,13 +139,13 @@ const OpenClawChatWidget = ({ user }) => {
 
   return (
     <div className="sfcb-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Custom Header to match screenshot */}
+      {/* Custom Header */}
       <div className="sfcb-header">
         <div className="sfcb-header-left">
-          <div className="sfcb-avatar">OC</div>
+          <div className="sfcb-avatar" style={{ background: '#FFD700', color: '#000', fontWeight: 'bold' }}>oc</div>
           <div>
             <strong>Dunvex Market Advisor</strong>
-            <span className="sfcb-online">AI-Powered Market Intelligence</span>
+            <span className="sfcb-online" style={{ color: '#10B981' }}>AI-Powered Market Intelligence</span>
           </div>
         </div>
       </div>
@@ -134,7 +178,7 @@ const OpenClawChatWidget = ({ user }) => {
       <div className="sfcb-input-area">
         <input 
           type="text" 
-          placeholder="Hỏi tôi bất cứ điều gì..." 
+          placeholder="Hỏi về sản phẩm hoặc cách thi công..." 
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
