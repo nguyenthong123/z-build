@@ -30,7 +30,7 @@ const ProductGrid = ({ onProductClick, searchQuery, category }) => {
     } else if (category) {
       q = query(collection(db, "products"), where("category", "==", category));
     } else {
-      q = query(collection(db, "products"), orderBy("createdAt", "desc"), limit(20));
+      q = query(collection(db, "products"), orderBy("createdAt", "desc"));
     }
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -51,9 +51,6 @@ const ProductGrid = ({ onProductClick, searchQuery, category }) => {
           const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
           return timeB - timeA;
         });
-        if (searchQuery === "trending") {
-          productData = productData.slice(0, 20);
-        }
       }
 
       setProducts(productData);
