@@ -18,6 +18,8 @@ export const useProductForm = (editData, onSave) => {
     stock: '',
     trackInventory: true,
     isTrending: false,
+    weight: '',
+    packaging: '',
     variants: [
       { id: 1, type: 'Size', values: ['S', 'M', 'L'] },
       { id: 2, type: 'Color', values: ['Black', 'Silver'] }
@@ -56,6 +58,8 @@ export const useProductForm = (editData, onSave) => {
         extraImages: editData.extraImages || [],
         variants: editData.variants || [],
         specs: editData.specs || '',
+        weight: editData.weight || '',
+        packaging: editData.packaging || '',
       });
       if (editData.image) setImagePreview(editData.image);
       if (editData.extraImages) {

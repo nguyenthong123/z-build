@@ -1,8 +1,8 @@
 import React from 'react';
 
 const InventorySection = ({ 
-  stock, 
-  trackInventory, 
+  weight,
+  packaging,
   isTrending, 
   category, 
   status, 
@@ -13,21 +13,15 @@ const InventorySection = ({
   return (
     <section className="form-section card">
       <div className="section-header">
-        <h3>KHO HÀNG</h3>
+        <h3>THÔNG SỐ & KHO</h3>
       </div>
       <div className="form-group">
-        <label>Số lượng tồn kho</label>
-        <input type="number" name="stock" placeholder="0" value={stock} onChange={onChange} />
+        <label>Trọng lượng riêng (kg)</label>
+        <input type="text" name="weight" placeholder="VD: 5.4" value={weight || ''} onChange={onChange} />
       </div>
-      <div className="toggle-group">
-        <div className="toggle-info">
-          <strong>Theo dõi kho hàng</strong>
-          <span>Tự động cập nhật số lượng khi có đơn hàng</span>
-        </div>
-        <label className="switch">
-          <input type="checkbox" name="trackInventory" checked={trackInventory} onChange={onChange} />
-          <span className="slider round"></span>
-        </label>
+      <div className="form-group">
+        <label>Quy cách đóng gói</label>
+        <input type="text" name="packaging" placeholder="VD: 50 tấm/kiện" value={packaging || ''} onChange={onChange} />
       </div>
       <div className="toggle-group">
         <div className="toggle-info">

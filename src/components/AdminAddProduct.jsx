@@ -106,8 +106,8 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
               />
 
               <InventorySection 
-                stock={product.stock}
-                trackInventory={product.trackInventory}
+                weight={product.weight}
+                packaging={product.packaging}
                 isTrending={product.isTrending}
                 category={product.category}
                 status={product.status}
