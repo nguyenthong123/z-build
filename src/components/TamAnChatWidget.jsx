@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-const OpenClawChatWidget = ({ user }) => {
+const TamAnChatWidget = ({ user }) => {
   const [messages, setMessages] = useState([
     { id: 1, text: "Chào bạn! Tôi là trợ lý AI tại **Cơ sở thạch cao Tâm An**. Tôi có thể giúp bạn báo giá, tính toán vật tư hoặc hướng dẫn kỹ thuật thi công. Bạn cần hỗ trợ gì ạ?", isBot: true, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
   ]);
@@ -20,10 +20,10 @@ const OpenClawChatWidget = ({ user }) => {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists() && docSnap.data().openClawConfig?.apiUrl) {
           const remoteUrl = docSnap.data().openClawConfig.apiUrl;
-          console.log("🤖 OpenClaw: Using Remote API URL from Firestore:", remoteUrl);
+          console.log("🤖 TamAnBot: Using Remote API URL from Firestore:", remoteUrl);
           setApiUrl(remoteUrl);
         } else {
-          console.log("🤖 OpenClaw: No remote config found, using VITE_OPENCLAW_API_URL:", import.meta.env.VITE_OPENCLAW_API_URL);
+          console.log("🤖 TamAnBot: No remote config found, using VITE_OPENCLAW_API_URL:", import.meta.env.VITE_OPENCLAW_API_URL);
         }
       } catch (err) {
         console.error("Error fetching bot config:", err);
@@ -63,7 +63,7 @@ const OpenClawChatWidget = ({ user }) => {
 
     try {
       // JSONP Implementation to bypass all CORS/Redirect issues
-      const callbackName = 'openclaw_callback_' + Math.round(100000 * Math.random());
+      const callbackName = 'taman_callback_' + Math.round(100000 * Math.random());
       
       // Prepare history for GAS bot (Limit to last 3 messages to avoid URL length issues in JSONP)
       const limitedHistory = history.slice(-3);
@@ -77,13 +77,13 @@ const OpenClawChatWidget = ({ user }) => {
 
       const cleanApiUrl = apiUrl.trim();
       const finalUrl = `${cleanApiUrl}${cleanApiUrl.includes('?') ? '&' : '?'}${queryParams.toString()}`;
-      console.log("🤖 OpenClaw calling via JSONP:", finalUrl);
+      console.log("🤖 TamAnBot calling via JSONP:", finalUrl);
 
       // Create a promise to handle the JSONP response
       const botReply = await new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
           cleanup();
-          reject(new Error("Kết nối quá hạn (Timeout). Vui lòng thử lại."));
+          reject(new Error("Kết nối tới trợ lý AI quá hạn. Vui lòng kiểm tra lại kết nối mạng."));
         }, 30000);
 
         const cleanup = () => {
@@ -94,12 +94,12 @@ const OpenClawChatWidget = ({ user }) => {
         };
 
         window[callbackName] = (data) => {
-          console.log("🤖 OpenClaw JSONP Data:", data);
+          console.log("🤖 TamAnBot JSONP Response:", data);
           cleanup();
           if (data.status === "success" || data.reply) {
             resolve(data.reply || data.response);
           } else {
-            reject(new Error(data.message || "Lỗi phản hồi từ AI"));
+            reject(new Error(data.message || "Không nhận được phản hồi từ trợ lý AI."));
           }
         };
 
@@ -108,7 +108,7 @@ const OpenClawChatWidget = ({ user }) => {
         script.src = finalUrl;
         script.onerror = () => {
           cleanup();
-          reject(new Error("Lỗi tải Script (CORS hoặc Network)."));
+          reject(new Error("Không thể kết nối với hệ thống AI (Lỗi Network/CORS)."));
         };
         document.body.appendChild(script);
       });
@@ -121,13 +121,13 @@ const OpenClawChatWidget = ({ user }) => {
       }]);
 
     } catch (err) {
-      console.error("🤖 OpenClaw Chat Error Details:", err);
-      let errorMsg = "⚠️ Kết nối với OpenClaw thất bại.";
+      console.error("🤖 TamAnBot Error:", err);
+      let errorMsg = "⚠️ Hệ thống trợ lý AI đang tạm bận.";
       
       if (apiUrl.startsWith('http://') && window.location.protocol === 'https:') {
-        errorMsg += " Lỗi: Không thể kết nối từ trang HTTPS sang API HTTP (Mixed Content). Vui lòng cấu hình HTTPS cho API trong phần Cài đặt.";
+        errorMsg += " Lỗi kỹ thuật: Mixed Content (HTTP/HTTPS). Vui lòng liên hệ quản trị viên.";
       } else {
-        errorMsg += ` Chi tiết: ${err.message || "Lỗi mạng hoặc CORS"}. URL đang gọi: ${apiUrl || "Trống"}.`;
+        errorMsg += ` Chi tiết: ${err.message || "Lỗi mạng hoặc hệ thống"}.`;
       }
 
       setMessages(prev => [...prev, {
@@ -202,4 +202,4 @@ const OpenClawChatWidget = ({ user }) => {
   );
 };
 
-export default OpenClawChatWidget;
+export default TamAnChatWidget;
