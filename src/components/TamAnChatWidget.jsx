@@ -57,14 +57,16 @@ const TamAnChatWidget = ({ user }) => {
       content: m.text
     }));
 
+    console.log("🤖 TamAnBot: Sending message via JSONP...", text);
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsTyping(true);
 
     // Hàm rút gọn lịch sử để không quá dài URL
     const pruneHistory = (historyArr) => {
+      if (!historyArr) return [];
       return historyArr.slice(-6).map(item => {
-        let content = item.content;
+        let content = item.content || "";
         // Loại bỏ các bảng Markdown dài khỏi lịch sử để tiết kiệm dung lượng
         if (content.includes('|')) {
           content = content.split('\n').filter(line => !line.includes('|')).join('\n') + "\n[Bảng dữ liệu đã lược bỏ]";
@@ -83,12 +85,13 @@ const TamAnChatWidget = ({ user }) => {
       const makeRequest = async (attempt = 1) => {
         return new Promise((resolve, reject) => {
           const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+          
           const timeoutId = setTimeout(() => {
             delete window[callbackName];
             const script = document.getElementById(callbackName);
             if (script) script.remove();
-            reject(new Error("Yêu cầu quá lâu, vui lòng thử lại."));
-          }, 60000);
+            reject(new Error("Yêu cầu quá lâu (timeout), vui lòng thử lại."));
+          }, 45000); // 45s timeout
 
           window[callbackName] = (data) => {
             clearTimeout(timeoutId);
@@ -117,17 +120,18 @@ const TamAnChatWidget = ({ user }) => {
 
           const script = document.createElement('script');
           script.id = callbackName;
+          script.async = true;
           script.src = `${apiUrl.trim()}${apiUrl.includes('?') ? '&' : '?'}${queryString}`;
           script.onerror = () => {
             clearTimeout(timeoutId);
             delete window[callbackName];
             script.remove();
-            reject(new Error("Không thể kết nối đến máy chủ AI."));
+            reject(new Error("Lỗi kết nối (Network Error) khi gọi JSONP."));
           };
           document.body.appendChild(script);
         }).catch(async (err) => {
           if (attempt < 2) {
-            console.log(`🤖 TamAnBot: Thử lại lần ${attempt + 1}...`, err);
+            console.warn(`🤖 TamAnBot: Thử lại lần ${attempt + 1}...`, err.message);
             await new Promise(r => setTimeout(r, 2000));
             return makeRequest(attempt + 1);
           }
@@ -147,12 +151,7 @@ const TamAnChatWidget = ({ user }) => {
     } catch (err) {
       console.error("🤖 TamAnBot Error:", err);
       let errorMsg = "⚠️ Hệ thống trợ lý AI đang tạm bận.";
-      
-      if (apiUrl.startsWith('http://') && window.location.protocol === 'https:') {
-        errorMsg += " Lỗi kỹ thuật: Mixed Content (HTTP/HTTPS). Vui lòng liên hệ quản trị viên.";
-      } else {
-        errorMsg += ` Chi tiết: ${err.message || "Lỗi mạng hoặc hệ thống"}.`;
-      }
+      errorMsg += ` Chi tiết: ${err.message || "Lỗi mạng hoặc hệ thống"}.`;
 
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
@@ -163,6 +162,7 @@ const TamAnChatWidget = ({ user }) => {
     } finally {
       setIsTyping(false);
     }
+
   };
 
   return (
