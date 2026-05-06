@@ -70,20 +70,15 @@ const TamAnChatWidget = ({ user }) => {
         const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 giây timeout cho hội thoại dài
 
         try {
-          const formData = new URLSearchParams();
-          formData.append('userId', user?.uid || "zbuild_web_user");
-          formData.append('userName', user?.name || "Khách hàng");
-          formData.append('message', text);
-          formData.append('history', JSON.stringify(limitedHistory));
-
-          // Chuyển sang POST để không bị giới hạn độ dài URL
+          // Gửi dạng text/plain để trình duyệt coi là "Simple Request", tránh lỗi CORS Preflight
           const response = await fetch(apiUrl.trim(), {
             method: 'POST',
-            mode: 'cors',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: formData.toString(),
+            body: JSON.stringify({
+              userId: user?.uid || "zbuild_web_user",
+              userName: user?.name || "Khách hàng",
+              message: text,
+              history: limitedHistory
+            }),
             signal: controller.signal
           });
 
