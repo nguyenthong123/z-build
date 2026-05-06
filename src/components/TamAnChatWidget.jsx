@@ -77,10 +77,6 @@ const TamAnChatWidget = ({ user }) => {
       });
     };
 
-    setMessages(prev => [...prev, userMsg]);
-    setInput('');
-    setIsTyping(true);
-
     try {
       const limitedHistory = pruneHistory(history);
 
