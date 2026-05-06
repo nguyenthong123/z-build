@@ -62,60 +62,52 @@ const TamAnChatWidget = ({ user }) => {
     setIsTyping(true);
 
     try {
-      // Chuẩn bị lịch sử (Giới hạn 5 tin nhắn gần nhất để giữ ngữ cảnh tốt hơn)
+      // Chuẩn bị lịch sử (Giới hạn 5 tin nhắn gần nhất)
       const limitedHistory = history.slice(-5);
 
-      const makeRequest = (attempt = 1) => {
-        return new Promise((resolve, reject) => {
-          const callbackName = 'taman_callback_' + Math.round(100000 * Math.random());
-          
-          const timeout = setTimeout(() => {
-            cleanup();
-            reject(new Error("Kết nối quá hạn. Đang thử lại..."));
-          }, 45000); // Tăng timeout lên 45s vì quy trình 3 bước tốn thời gian hơn
+      const makeRequest = async (attempt = 1) => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 giây timeout cho hội thoại dài
 
-          const cleanup = () => {
-            clearTimeout(timeout);
-            delete window[callbackName];
-            const script = document.getElementById(callbackName);
-            if (script) script.remove();
-          };
+        try {
+          const formData = new URLSearchParams();
+          formData.append('userId', user?.uid || "zbuild_web_user");
+          formData.append('userName', user?.name || "Khách hàng");
+          formData.append('message', text);
+          formData.append('history', JSON.stringify(limitedHistory));
 
-          window[callbackName] = (data) => {
-            cleanup();
-            if (data.status === "success" || data.reply) {
-              resolve(data.reply || data.response);
-            } else {
-              reject(new Error(data.message || "Lỗi phản hồi từ AI."));
-            }
-          };
+          // Chuyển sang POST để không bị giới hạn độ dài URL
+          const response = await fetch(apiUrl.trim(), {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formData.toString(),
+            signal: controller.signal
+          });
 
-          const queryParams = new URLSearchParams();
-          queryParams.append('userId', user?.uid || "zbuild_web_user");
-          queryParams.append('userName', user?.name || "Khách hàng");
-          queryParams.append('message', text);
-          queryParams.append('history', JSON.stringify(limitedHistory));
-          queryParams.append('callback', callbackName);
+          clearTimeout(timeoutId);
 
-          const cleanApiUrl = apiUrl.trim();
-          const finalUrl = `${cleanApiUrl}${cleanApiUrl.includes('?') ? '&' : '?'}${queryParams.toString()}`;
+          if (!response.ok) {
+            throw new Error(`Cổng AI phản hồi lỗi: ${response.status}`);
+          }
 
-          const script = document.createElement('script');
-          script.id = callbackName;
-          script.src = finalUrl;
-          script.onerror = () => {
-            cleanup();
-            if (attempt < 2) {
-              console.log("🤖 TamAnBot: Connection failed, retrying (Attempt 2)...");
-              setTimeout(() => {
-                resolve(makeRequest(attempt + 1));
-              }, 1500);
-            } else {
-              reject(new Error("Lỗi kết nối Network/CORS sau 2 lần thử."));
-            }
-          };
-          document.body.appendChild(script);
-        });
+          const data = await response.json();
+          if (data.status === "success" || data.reply) {
+            return data.reply || data.response;
+          } else {
+            throw new Error(data.message || "Lỗi phản hồi từ AI.");
+          }
+        } catch (err) {
+          clearTimeout(timeoutId);
+          if (attempt < 2 && err.name !== 'AbortError') {
+            console.log(`🤖 TamAnBot: Thử lại lần ${attempt + 1}...`, err);
+            await new Promise(r => setTimeout(r, 2000));
+            return makeRequest(attempt + 1);
+          }
+          throw err;
+        }
       };
 
       const botReply = await makeRequest();
