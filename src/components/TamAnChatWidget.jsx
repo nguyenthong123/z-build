@@ -62,56 +62,63 @@ const TamAnChatWidget = ({ user }) => {
     setIsTyping(true);
 
     try {
-      // JSONP Implementation to bypass all CORS/Redirect issues
-      const callbackName = 'taman_callback_' + Math.round(100000 * Math.random());
-      
-      // Prepare history for GAS bot (Limit to last 3 messages to avoid URL length issues in JSONP)
-      const limitedHistory = history.slice(-3);
+      // Chuẩn bị lịch sử (Giới hạn 5 tin nhắn gần nhất để giữ ngữ cảnh tốt hơn)
+      const limitedHistory = history.slice(-5);
 
-      const queryParams = new URLSearchParams();
-      queryParams.append('userId', user?.uid || "zbuild_web_user");
-      queryParams.append('userName', user?.name || "Khách hàng");
-      queryParams.append('message', text);
-      queryParams.append('history', JSON.stringify(limitedHistory));
-      queryParams.append('callback', callbackName);
+      const makeRequest = (attempt = 1) => {
+        return new Promise((resolve, reject) => {
+          const callbackName = 'taman_callback_' + Math.round(100000 * Math.random());
+          
+          const timeout = setTimeout(() => {
+            cleanup();
+            reject(new Error("Kết nối quá hạn. Đang thử lại..."));
+          }, 45000); // Tăng timeout lên 45s vì quy trình 3 bước tốn thời gian hơn
 
-      const cleanApiUrl = apiUrl.trim();
-      const finalUrl = `${cleanApiUrl}${cleanApiUrl.includes('?') ? '&' : '?'}${queryParams.toString()}`;
-      console.log("🤖 TamAnBot calling via JSONP:", finalUrl);
+          const cleanup = () => {
+            clearTimeout(timeout);
+            delete window[callbackName];
+            const script = document.getElementById(callbackName);
+            if (script) script.remove();
+          };
 
-      // Create a promise to handle the JSONP response
-      const botReply = await new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          cleanup();
-          reject(new Error("Kết nối tới trợ lý AI quá hạn. Vui lòng kiểm tra lại kết nối mạng."));
-        }, 30000);
+          window[callbackName] = (data) => {
+            cleanup();
+            if (data.status === "success" || data.reply) {
+              resolve(data.reply || data.response);
+            } else {
+              reject(new Error(data.message || "Lỗi phản hồi từ AI."));
+            }
+          };
 
-        const cleanup = () => {
-          clearTimeout(timeout);
-          delete window[callbackName];
-          const script = document.getElementById(callbackName);
-          if (script) script.remove();
-        };
+          const queryParams = new URLSearchParams();
+          queryParams.append('userId', user?.uid || "zbuild_web_user");
+          queryParams.append('userName', user?.name || "Khách hàng");
+          queryParams.append('message', text);
+          queryParams.append('history', JSON.stringify(limitedHistory));
+          queryParams.append('callback', callbackName);
 
-        window[callbackName] = (data) => {
-          console.log("🤖 TamAnBot JSONP Response:", data);
-          cleanup();
-          if (data.status === "success" || data.reply) {
-            resolve(data.reply || data.response);
-          } else {
-            reject(new Error(data.message || "Không nhận được phản hồi từ trợ lý AI."));
-          }
-        };
+          const cleanApiUrl = apiUrl.trim();
+          const finalUrl = `${cleanApiUrl}${cleanApiUrl.includes('?') ? '&' : '?'}${queryParams.toString()}`;
 
-        const script = document.createElement('script');
-        script.id = callbackName;
-        script.src = finalUrl;
-        script.onerror = () => {
-          cleanup();
-          reject(new Error("Không thể kết nối với hệ thống AI (Lỗi Network/CORS)."));
-        };
-        document.body.appendChild(script);
-      });
+          const script = document.createElement('script');
+          script.id = callbackName;
+          script.src = finalUrl;
+          script.onerror = () => {
+            cleanup();
+            if (attempt < 2) {
+              console.log("🤖 TamAnBot: Connection failed, retrying (Attempt 2)...");
+              setTimeout(() => {
+                resolve(makeRequest(attempt + 1));
+              }, 1500);
+            } else {
+              reject(new Error("Lỗi kết nối Network/CORS sau 2 lần thử."));
+            }
+          };
+          document.body.appendChild(script);
+        });
+      };
+
+      const botReply = await makeRequest();
 
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
