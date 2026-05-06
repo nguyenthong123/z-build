@@ -61,48 +61,82 @@ const TamAnChatWidget = ({ user }) => {
     setInput('');
     setIsTyping(true);
 
+    // Hàm rút gọn lịch sử để không quá dài URL
+    const pruneHistory = (historyArr) => {
+      return historyArr.slice(-6).map(item => {
+        let content = item.content;
+        // Loại bỏ các bảng Markdown dài khỏi lịch sử để tiết kiệm dung lượng
+        if (content.includes('|')) {
+          content = content.split('\n').filter(line => !line.includes('|')).join('\n') + "\n[Bảng dữ liệu đã lược bỏ]";
+        }
+        // Giới hạn độ dài mỗi tin nhắn trong lịch sử
+        if (content.length > 300) {
+          content = content.substring(0, 300) + "...";
+        }
+        return { role: item.role, content: content };
+      });
+    };
+
+    setMessages(prev => [...prev, userMsg]);
+    setInput('');
+    setIsTyping(true);
+
     try {
-      // Chuẩn bị lịch sử (Giới hạn 5 tin nhắn gần nhất)
-      const limitedHistory = history.slice(-5);
+      const limitedHistory = pruneHistory(history);
 
       const makeRequest = async (attempt = 1) => {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 giây timeout cho hội thoại dài
+        return new Promise((resolve, reject) => {
+          const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+          const timeoutId = setTimeout(() => {
+            delete window[callbackName];
+            const script = document.getElementById(callbackName);
+            if (script) script.remove();
+            reject(new Error("Yêu cầu quá lâu, vui lòng thử lại."));
+          }, 60000);
 
-        try {
-          // Gửi dạng text/plain để trình duyệt coi là "Simple Request", tránh lỗi CORS Preflight
-          const response = await fetch(apiUrl.trim(), {
-            method: 'POST',
-            body: JSON.stringify({
-              userId: user?.uid || "zbuild_web_user",
-              userName: user?.name || "Khách hàng",
-              message: text,
-              history: limitedHistory
-            }),
-            signal: controller.signal
-          });
+          window[callbackName] = (data) => {
+            clearTimeout(timeoutId);
+            const script = document.getElementById(callbackName);
+            if (script) script.remove();
+            delete window[callbackName];
+            
+            if (data && (data.status === "success" || data.reply)) {
+              resolve(data.reply || data.response);
+            } else {
+              reject(new Error(data?.message || "Lỗi phản hồi từ AI."));
+            }
+          };
 
-          clearTimeout(timeoutId);
+          const params = {
+            callback: callbackName,
+            userId: user?.uid || "zbuild_web_user",
+            userName: user?.name || "Khách hàng",
+            message: text,
+            history: JSON.stringify(limitedHistory)
+          };
 
-          if (!response.ok) {
-            throw new Error(`Cổng AI phản hồi lỗi: ${response.status}`);
-          }
+          const queryString = Object.keys(params)
+            .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(params[key]))
+            .join('&');
 
-          const data = await response.json();
-          if (data.status === "success" || data.reply) {
-            return data.reply || data.response;
-          } else {
-            throw new Error(data.message || "Lỗi phản hồi từ AI.");
-          }
-        } catch (err) {
-          clearTimeout(timeoutId);
-          if (attempt < 2 && err.name !== 'AbortError') {
+          const script = document.createElement('script');
+          script.id = callbackName;
+          script.src = `${apiUrl.trim()}${apiUrl.includes('?') ? '&' : '?'}${queryString}`;
+          script.onerror = () => {
+            clearTimeout(timeoutId);
+            delete window[callbackName];
+            script.remove();
+            reject(new Error("Không thể kết nối đến máy chủ AI."));
+          };
+          document.body.appendChild(script);
+        }).catch(async (err) => {
+          if (attempt < 2) {
             console.log(`🤖 TamAnBot: Thử lại lần ${attempt + 1}...`, err);
             await new Promise(r => setTimeout(r, 2000));
             return makeRequest(attempt + 1);
           }
           throw err;
-        }
+        });
       };
 
       const botReply = await makeRequest();
