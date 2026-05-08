@@ -12,7 +12,27 @@ import InventorySection from './admin/product/InventorySection';
 
 import './AdminAddProduct.css';
 
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
+
 const AdminAddProduct = ({ onBack, onSave, editData }) => {
+  const [existingCategories, setExistingCategories] = React.useState([]);
+
+  React.useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "products"));
+        const cats = new Set();
+        querySnapshot.forEach((doc) => {
+          if (doc.data().category) cats.add(doc.data().category);
+        });
+        setExistingCategories(Array.from(cats).sort());
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
   const {
     product, setProduct,
     imagePreview, extraPreviews,
@@ -90,6 +110,7 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
                 status={product.status}
                 category={product.category}
                 onChange={handleChange}
+                existingCategories={existingCategories}
               />
 
               <PricingSection 

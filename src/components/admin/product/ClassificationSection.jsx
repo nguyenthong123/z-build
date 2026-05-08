@@ -1,6 +1,10 @@
 import React from 'react';
 
-const ClassificationSection = ({ status, category, onChange }) => {
+const ClassificationSection = ({ status, category, onChange, existingCategories = [] }) => {
+  // Kết hợp danh mục mặc định và danh mục lấy từ database
+  const defaultCats = ["Giải pháp AI", "Vật liệu xây dựng", "Phần mềm & Dịch vụ", "Thiết bị vệ sinh", "Trang trí nội thất", "Công cụ & Dụng cụ", "Điện tử", "Laptop", "Âm thanh"];
+  const allCategories = Array.from(new Set([...defaultCats, ...existingCategories])).sort();
+
   return (
     <section className="form-section card">
       <div className="section-header">
@@ -20,17 +24,29 @@ const ClassificationSection = ({ status, category, onChange }) => {
       </div>
       <div className="form-group">
         <label>Danh mục</label>
-        <select name="category" value={category} onChange={onChange}>
-          <option value="Giải pháp AI">Giải pháp AI</option>
-          <option value="Vật liệu xây dựng">Vật liệu xây dựng</option>
-          <option value="Phần mềm & Dịch vụ">Phần mềm & Dịch vụ</option>
-          <option value="Thiết bị vệ sinh">Thiết bị vệ sinh</option>
-          <option value="Trang trí nội thất">Trang trí nội thất</option>
-          <option value="Công cụ & Dụng cụ">Công cụ & Dụng cụ</option>
-          <option value="Điện tử">Điện tử</option>
-          <option value="Laptops">Laptop</option>
-          <option value="Âm thanh">Âm thanh</option>
-        </select>
+        <input 
+          type="text" 
+          name="category" 
+          value={category} 
+          onChange={onChange} 
+          list="category-list"
+          placeholder="Chọn hoặc nhập danh mục mới..."
+          autoComplete="off"
+          style={{
+            width: '100%',
+            padding: '12px',
+            borderRadius: '12px',
+            border: '1px solid #E2E8F0',
+            fontSize: '0.95rem',
+            outline: 'none',
+            background: '#fff'
+          }}
+        />
+        <datalist id="category-list">
+          {allCategories.map((cat, index) => (
+            <option key={index} value={cat} />
+          ))}
+        </datalist>
       </div>
     </section>
   );
