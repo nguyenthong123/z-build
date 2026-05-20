@@ -44,6 +44,9 @@ const ProductGrid = ({ onProductClick, searchQuery, category }) => {
         img: doc.data().image ? doc.data().image.replace('/upload/', '/upload/f_auto,q_auto,w_500,c_fill/') : 'https://placehold.co/400x400.png?text=ZBUILD'
       }));
 
+      // Lọc bỏ các sản phẩm là Bản nháp (Draft) hoặc Ngừng kinh doanh (Inactive) khỏi Storefront
+      productData = productData.filter(p => p.status !== 'Draft' && p.status !== 'Inactive');
+
       // Sắp xếp thủ công để tránh lỗi đòi hỏi Composite Index từ Firestore
       if (searchQuery === "trending" || category) {
         productData.sort((a, b) => {

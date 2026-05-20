@@ -96,12 +96,12 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
           const q = query(
             collection(db, "products"),
             where("category", "==", product.category),
-            limit(5)
+            limit(10) // Tăng limit lên một chút để bù đắp các sản phẩm bản nháp bị lọc đi
           );
           const snap = await getDocs(q);
           const list = snap.docs
             .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(p => p.id !== product?.id)
+            .filter(p => p.id !== product?.id && p.status !== 'Draft' && p.status !== 'Inactive')
             .slice(0, 4);
           setRelatedProducts(list);
         } catch (error) {
