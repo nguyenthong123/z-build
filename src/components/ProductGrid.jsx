@@ -48,7 +48,18 @@ const ProductGrid = ({ onProductClick, searchQuery, category }) => {
       productData = productData.filter(p => p.status !== 'Draft' && p.status !== 'Inactive');
 
       // Sắp xếp thủ công để tránh lỗi đòi hỏi Composite Index từ Firestore
-      if (searchQuery === "trending" || category) {
+      if (!category && !searchQuery) {
+        // Trang chủ: Nhóm các sản phẩm cùng danh mục lại gần nhau
+        productData.sort((a, b) => {
+          const catA = (a.tag || '').toLowerCase();
+          const catB = (b.tag || '').toLowerCase();
+          if (catA < catB) return -1;
+          if (catA > catB) return 1;
+          const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+          const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+          return timeB - timeA;
+        });
+      } else if (searchQuery === "trending" || category) {
         productData.sort((a, b) => {
           const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
           const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
