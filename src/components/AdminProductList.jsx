@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import './AdminProductList.css';
 import AdminSidebar from './AdminSidebar';
@@ -9,6 +9,47 @@ const AdminProductList = ({ onBack, onAddProduct, onEditProduct, onPreviewProduc
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSyncPricesFromSheet = async () => {
+    setIsSyncing(true);
+    try {
+      const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyjxwNzi7j1KMpLdrYFfPzYFYhEmFhb9ercrPho5CMXCTRKE_dx0iaoYOFwP8t20gZG/exec";
+      const response = await fetch(`${APP_SCRIPT_URL}?action=get_all_products_from_sheet`);
+      const data = await response.json();
+      
+      if (data.success && data.products) {
+        let updatedCount = 0;
+        for (const sheetProduct of data.products) {
+          if (!sheetProduct.id || !sheetProduct.price) continue;
+          
+          try {
+            const priceString = String(sheetProduct.price).replace(/[^\d]/g, '');
+            const newPrice = Number(priceString);
+            
+            if (!isNaN(newPrice) && newPrice > 0) {
+              const productRef = doc(db, "products", sheetProduct.id);
+              await updateDoc(productRef, {
+                discountPrice: newPrice
+              });
+              updatedCount++;
+            }
+          } catch (e) {
+            console.error("Error updating product:", sheetProduct.id, e);
+          }
+        }
+        alert(`Đã đồng bộ giá thành công cho ${updatedCount} sản phẩm!`);
+        fetchProducts(); // Reload table
+      } else {
+        alert("Lỗi từ Google Sheet: " + (data.error || "Không xác định"));
+      }
+    } catch (error) {
+      console.error("Lỗi đồng bộ:", error);
+      alert("Không thể kết nối đến Google Sheet. Vui lòng kiểm tra lại cấu hình Web App.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   useEffect(() => {
     fetchProducts();
@@ -110,6 +151,10 @@ const AdminProductList = ({ onBack, onAddProduct, onEditProduct, onPreviewProduc
               <div className="btn-group">
                 <button className="home-icon-btn desktop-only" onClick={onBack} title="Về trang chủ">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                </button>
+                <button className="sync-btn desktop-only" onClick={handleSyncPricesFromSheet} disabled={isSyncing} style={{ padding: '0 16px', borderRadius: '8px', border: '1px solid #e0e0e0', backgroundColor: '#fff', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500, color: '#333' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21v-5h5"/></svg>
+                  {isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ từ Sheet'}
                 </button>
                 <button className="primary-add-btn" onClick={onAddProduct}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 5v14M5 12h14"/></svg>
