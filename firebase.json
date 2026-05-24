@@ -19,6 +19,10 @@
         "function": "server"
       },
       {
+        "source": "/sitemap.xml",
+        "function": "server"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

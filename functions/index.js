@@ -104,7 +104,7 @@ app.get("/product/:productId", async (req, res) => {
 });
 
 // Endpoint for all products as JSON (Bot Feed)
-app.get("/api/products.json", async (req, res) => {
+app.get(["/api/products.json", "/products.json"], async (req, res) => {
   try {
     const db = admin.firestore();
     const snap = await db.collection("products").orderBy("createdAt", "desc").get();
@@ -115,6 +115,45 @@ app.get("/api/products.json", async (req, res) => {
     return res.json(products);
   } catch (error) {
     return res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint for dynamic Sitemap (Googlebot & SEO)
+app.get("/sitemap.xml", async (req, res) => {
+  try {
+    const db = admin.firestore();
+    const snap = await db.collection("products").get();
+    
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://zbuild.click/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://zbuild.click/products.json</loc>
+    <changefreq>hourly</changefreq>
+    <priority>0.8</priority>
+  </url>\n`;
+
+    snap.docs.forEach(doc => {
+      const data = doc.data();
+      const slug = data.slug || doc.id;
+      // Tránh lỗi các kí tự đặc biệt trong XML
+      xml += `  <url>
+    <loc>https://zbuild.click/product/${encodeURIComponent(slug)}</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>\n`;
+    });
+
+    xml += `</urlset>`;
+    
+    res.header("Content-Type", "application/xml");
+    res.send(xml);
+  } catch (error) {
+    res.status(500).send(error.message);
   }
 });
 
