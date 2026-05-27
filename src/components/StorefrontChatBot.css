@@ -268,8 +268,18 @@
   background: white;
   border: 1px solid #E2E8F0;
   border-radius: 8px;
-  display: table; /* Change from block to table for better desktop behavior */
-  overflow: hidden;
+  display: block; /* Change to block to allow horizontal scroll */
+  overflow-x: auto; /* Enable horizontal scrolling */
+  white-space: nowrap; /* Prevent tight wrapping in cells */
+}
+
+/* Custom scrollbar for tables */
+.sfcb-msg-bubble table::-webkit-scrollbar {
+  height: 6px;
+}
+.sfcb-msg-bubble table::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 10px;
 }
 
 .sfcb-msg-bubble th, 
