@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, addDoc, getDocs, updateDoc, doc, query, where, serverTimestamp, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, query, where, serverTimestamp, getDoc, runTransaction } from 'firebase/firestore';
 import { db } from '../firebase';
 import './Checkout.css';
 
@@ -159,21 +159,78 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
     setIsSubmitting(true);
     try {
       const orderNumber = 'ZB' + Date.now().toString(36).toUpperCase() + Math.floor(Math.random() * 1000);
+      const orderRef = doc(collection(db, 'orders'));
       
-      const orderDoc = {
-        orderNumber,
-        userId: user?.uid || 'guest',
-        userEmail: user?.email || formData.email,
-        userName: user?.name || `${formData.firstName} ${formData.lastName}`,
-        items: cartItems.map(item => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          image: item.image || '',
-          variant: item.variant || 'Default'
-        })),
-        shippingAddress: {
+      let newTotal = 0;
+      let newSubtotal = 0;
+      let realDiscount = 0;
+      let finalOrderData = null;
+
+      await runTransaction(db, async (transaction) => {
+        // 1. Read all products
+        const productRefs = cartItems.map(item => doc(db, 'products', item.id));
+        const productSnaps = await Promise.all(productRefs.map(ref => transaction.get(ref)));
+        
+        // Read coupon if applied
+        let couponSnap = null;
+        if (appliedCoupon) {
+          couponSnap = await transaction.get(doc(db, 'coupons', appliedCoupon.id));
+        }
+
+        // 2. Validate and calculate
+        const itemsToBuy = [];
+        
+        for (let i = 0; i < productSnaps.length; i++) {
+          const pSnap = productSnaps[i];
+          if (!pSnap.exists()) {
+            throw new Error(`Sản phẩm "${cartItems[i].name}" không còn tồn tại hoặc đã bị xóa.`);
+          }
+          const pData = pSnap.data();
+          const buyQty = cartItems[i].quantity;
+          
+          // Stock validation
+          const currentStock = Number(pData.stock) || 0;
+          if (currentStock < buyQty) {
+            throw new Error(`Sản phẩm "${pData.title}" chỉ còn ${currentStock} trong kho.`);
+          }
+          
+          // Price validation (use discountPrice if > 0, else basePrice)
+          let realPrice = Number(pData.discountPrice);
+          if (!realPrice || realPrice <= 0) {
+            realPrice = Number(pData.basePrice) || 0;
+          }
+          
+          newSubtotal += realPrice * buyQty;
+          
+          itemsToBuy.push({
+            ref: productRefs[i],
+            newStock: currentStock - buyQty,
+            id: cartItems[i].id,
+            name: pData.title,
+            price: realPrice,
+            quantity: buyQty,
+            image: cartItems[i].image || '',
+            variant: cartItems[i].variant || 'Default'
+          });
+        }
+
+        // Coupon validation
+        if (appliedCoupon && couponSnap && couponSnap.exists()) {
+          const cData = couponSnap.data();
+          if (!cData.active) throw new Error("Mã giảm giá đã bị vô hiệu hóa.");
+          if (cData.maxUses > 0 && (cData.usedCount || 0) >= cData.maxUses) throw new Error("Mã giảm giá đã hết lượt sử dụng.");
+          if (cData.minOrder > 0 && newSubtotal < cData.minOrder) throw new Error(`Đơn hàng tối thiểu ${Number(cData.minOrder).toLocaleString('vi-VN')}₫ để sử dụng mã này.`);
+          if (cData.expiryDate && new Date(cData.expiryDate) < new Date()) throw new Error("Mã giảm giá đã hết hạn.");
+          
+          if (cData.type === 'percent') realDiscount = Math.round(newSubtotal * cData.value / 100);
+          else if (cData.type === 'fixed') realDiscount = Math.min(cData.value, newSubtotal);
+          else if (cData.type === 'free_shipping') realDiscount = shippingCost;
+        }
+
+        const newTax = newSubtotal * 0.08;
+        newTotal = newSubtotal + shippingCost + newTax - realDiscount;
+
+        const shippingAddress = {
           firstName: formData.firstName,
           lastName: formData.lastName,
           address: formData.address,
@@ -182,45 +239,64 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
           zipCode: formData.zipCode,
           country: formData.country,
           phone: formData.phone
-        },
-        subtotal,
-        shippingCost,
-        tax,
-        total,
-        shippingMethod: formData.shippingMethod,
-        paymentMethod: formData.paymentMethod,
-        coupon: appliedCoupon ? { code: appliedCoupon.code, type: appliedCoupon.type, value: appliedCoupon.value, discount } : null,
-        discount,
-        status: 'pending',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
+        };
 
-      await addDoc(collection(db, 'orders'), orderDoc);
+        // 3. Writes
+        for (const item of itemsToBuy) {
+          transaction.update(item.ref, { stock: item.newStock });
+        }
+        
+        if (appliedCoupon && couponSnap && couponSnap.exists()) {
+          transaction.update(couponSnap.ref, { usedCount: (couponSnap.data().usedCount || 0) + 1 });
+        }
+        
+        const orderDocData = {
+          orderNumber,
+          userId: user?.uid || 'guest',
+          userEmail: user?.email || formData.email,
+          userName: user?.name || `${formData.firstName} ${formData.lastName}`,
+          items: itemsToBuy.map(({ id, name, price, quantity, image, variant }) => ({
+            id, name, price, quantity, image, variant
+          })),
+          shippingAddress,
+          subtotal: newSubtotal,
+          shippingCost,
+          tax: newTax,
+          total: newTotal,
+          shippingMethod: formData.shippingMethod,
+          paymentMethod: formData.paymentMethod,
+          coupon: appliedCoupon ? { code: appliedCoupon.code, type: appliedCoupon.type, value: appliedCoupon.value, discount: realDiscount } : null,
+          discount: realDiscount,
+          status: 'pending',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
 
-      // Increment coupon usedCount
-      if (appliedCoupon) {
-        try {
-          await updateDoc(doc(db, 'coupons', appliedCoupon.id), {
-            usedCount: (appliedCoupon.usedCount || 0) + 1
-          });
-        } catch (e) { console.log('Coupon usage update error:', e); }
-      }
+        transaction.set(orderRef, orderDocData);
 
-      // Gửi email xác nhận (non-blocking, không ảnh hưởng đặt hàng)
+        finalOrderData = {
+          orderNumber,
+          cartItems: itemsToBuy, // Use items with real prices
+          formData,
+          total: newTotal,
+          shippingAddress
+        };
+      }); // End transaction
+
+      // Send emails (non-blocking)
       try {
         const payload = {
           email: formData.email || user?.email,
           orderNumber,
           customerName: `${formData.firstName} ${formData.lastName}`,
-          items: cartItems.map(item => ({
+          items: finalOrderData.cartItems.map(item => ({
             name: item.name,
             quantity: item.quantity,
             price: item.price,
             image: item.image || ''
           })),
-          total,
-          shippingAddress: orderDoc.shippingAddress,
+          total: finalOrderData.total,
+          shippingAddress: finalOrderData.shippingAddress,
           paymentMethod: formData.paymentMethod,
           shippingMethod: formData.shippingMethod
         };
@@ -250,29 +326,20 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
             }).catch(e => console.log('Admin Email error:', e));
           });
         }
-
       } catch (emailErr) {
         console.log('Email error (non-critical):', emailErr);
       }
 
-      const finalOrder = {
-        orderNumber,
-        cartItems: [...cartItems],
-        formData,
-        total,
-        shippingAddress: orderDoc.shippingAddress
-      };
-
       if (formData.paymentMethod === 'bank-transfer') {
-        setGeneratedOrder(finalOrder);
+        setGeneratedOrder(finalOrderData);
         setPaymentStep(2);
         setIsSubmitting(false);
       } else {
-        onOrderComplete(finalOrder);
+        onOrderComplete(finalOrderData);
       }
     } catch (error) {
       console.error('Error placing order:', error);
-      alert('Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại!');
+      alert(error.message || 'Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại!');
     } finally {
       setIsSubmitting(false);
     }

@@ -39,6 +39,8 @@ const AdminProductDetailsForm = lazy(() => import('./components/AdminProductDeta
 const AdminCouponManagement = lazy(() => import('./components/AdminCouponManagement'));
 const AdminAffiliateManagement = lazy(() => import('./components/AdminAffiliateManagement'));
 
+import ErrorBoundary from './components/ErrorBoundary';
+
 // ScrollToTop - cuộn lên đầu khi chuyển trang
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -428,6 +430,7 @@ function App() {
         />
       )}
       <main>
+        <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* === STOREFRONT ROUTES === */}
@@ -584,6 +587,7 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>
+        </ErrorBoundary>
       </main>
 
       {isStorefront && <Footer />}

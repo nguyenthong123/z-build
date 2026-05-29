@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc, startAfter, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 import './AdminProductList.css';
 import AdminSidebar from './AdminSidebar';
@@ -51,6 +51,12 @@ const AdminProductList = ({ onBack, onAddProduct, onEditProduct, onPreviewProduc
     }
   };
 
+  const [lastVisible, setLastVisible] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  
+  const ITEMS_PER_PAGE = 20;
+
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -58,8 +64,13 @@ const AdminProductList = ({ onBack, onAddProduct, onEditProduct, onPreviewProduc
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const q = query(collection(db, "products"), orderBy("createdAt", "desc"));
+      const q = query(collection(db, "products"), orderBy("createdAt", "desc"), limit(ITEMS_PER_PAGE));
       const querySnapshot = await getDocs(q);
+      
+      const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
+      setLastVisible(lastDoc || null);
+      setHasMore(querySnapshot.docs.length === ITEMS_PER_PAGE);
+
       const productData = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
@@ -74,6 +85,39 @@ const AdminProductList = ({ onBack, onAddProduct, onEditProduct, onPreviewProduc
       console.error("Error fetching products:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMoreProducts = async () => {
+    if (!lastVisible || !hasMore || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const q = query(
+        collection(db, "products"), 
+        orderBy("createdAt", "desc"), 
+        startAfter(lastVisible),
+        limit(ITEMS_PER_PAGE)
+      );
+      const querySnapshot = await getDocs(q);
+      
+      const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
+      setLastVisible(lastDoc || null);
+      setHasMore(querySnapshot.docs.length === ITEMS_PER_PAGE);
+
+      const productData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        price: (doc.data().discountPrice || doc.data().basePrice) 
+                ? Number(doc.data().discountPrice || doc.data().basePrice).toLocaleString('vi-VN') + '₫' 
+                : 'Liên hệ',
+        name: doc.data().title,
+        sku: doc.data().sku || doc.id.substring(0, 8).toUpperCase()
+      }));
+      setProducts(prev => [...prev, ...productData]);
+    } catch (error) {
+      console.error("Error loading more products:", error);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -188,7 +232,7 @@ const AdminProductList = ({ onBack, onAddProduct, onEditProduct, onPreviewProduc
                       <tr key={product.id} onClick={() => onPreviewProduct(product)}>
                         <td>
                           <div className="product-cell">
-                            <img src={product.image || 'https://placehold.co/100'} alt="" />
+                            <img src={product.image ? product.image.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/') : 'https://placehold.co/100'} alt="" />
                             <div className="info">
                               <strong>{product.name}</strong>
                               <span>{product.sku}</span>
@@ -223,7 +267,7 @@ const AdminProductList = ({ onBack, onAddProduct, onEditProduct, onPreviewProduc
                 {filteredProducts.map(product => (
                   <div className="mobile-card" key={product.id} onClick={() => onPreviewProduct(product)}>
                     <div className="card-header">
-                      <img src={product.image || 'https://placehold.co/100'} alt="" />
+                      <img src={product.image ? product.image.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/') : 'https://placehold.co/100'} alt="" />
                       <div className="card-title-info">
                         <strong>{product.name}</strong>
                         <span className="card-extra">{product.sku} • {product.category}</span>
@@ -245,6 +289,26 @@ const AdminProductList = ({ onBack, onAddProduct, onEditProduct, onPreviewProduc
                   </div>
                 ))}
               </div>
+
+              {hasMore && !searchQuery && (
+                <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                  <button 
+                    onClick={loadMoreProducts} 
+                    disabled={loadingMore}
+                    style={{ 
+                      padding: '10px 24px', 
+                      background: '#fff', 
+                      border: '1px solid #d1d5db', 
+                      borderRadius: '8px', 
+                      cursor: 'pointer',
+                      fontWeight: 500,
+                      color: '#4b5563'
+                    }}
+                  >
+                    {loadingMore ? 'Đang tải...' : 'Tải thêm sản phẩm'}
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>

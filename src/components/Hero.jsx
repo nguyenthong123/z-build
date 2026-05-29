@@ -3,24 +3,12 @@ import './Hero.css';
 
 const Hero = () => {
   return (
-    <section className="hero">
-      <div className="container hero-container">
-        <div className="hero-content animate-fade-in">
-          <span className="hero-tag">GIẢI PHÁP XÂY DỰNG & CÔNG NGHỆ 4.0</span>
-          <h1 className="hero-title">
-            Cung cấp <span className="highlight">Vật liệu & Phần mềm</span> chuyên dụng cho ngành Thầu thợ
-          </h1>
-          <p className="hero-description">
-            Từ tấm ván sợi xi măng Duraflex chất lượng cao đến hệ thống quản lý bán hàng thông minh, 
-            chúng tôi mang tới giải pháp toàn diện để tối ưu hóa mọi công trình và doanh nghiệp.
-          </p>
-          <div className="hero-btns">
-            <button className="btn btn-primary" aria-label="Khám phá ngay các giải pháp xây dựng">Khám phá ngay</button>
-            <button className="btn btn-secondary" aria-label="Tư vấn giải pháp xây dựng và công nghệ">Tư vấn giải pháp</button>
-          </div>
-        </div>
-      </div>
-      <div className="hero-overlay"></div>
+    <section className="hero-banner">
+      <img 
+        src="/banner-vinh-tuong.jpg" 
+        alt="Vật liệu & Phần mềm chuyên dụng cho ngành thầu thợ - Vĩnh Tường Tâm An" 
+        className="hero-img" 
+      />
     </section>
   );
 };

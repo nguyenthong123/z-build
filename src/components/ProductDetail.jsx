@@ -112,9 +112,18 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
     fetchRelated();
   }, [product]);
 
+  const getOptimizedUrl = (url, width = 800) => {
+    if (!url) return '';
+    if (typeof url === 'string' && url.includes('/upload/')) {
+      // Tối ưu ảnh qua Cloudinary: tự động định dạng (WebP), nén chất lượng, giới hạn chiều rộng
+      return url.replace('/upload/', `/upload/f_auto,q_auto,w_${width},c_limit/`);
+    }
+    return url;
+  };
+
   const images = React.useMemo(() => [
-    product?.image || 'https://placehold.co/800',
-    ...(product?.extraImages || []).filter(img => img)
+    getOptimizedUrl(product?.image, 1000) || 'https://placehold.co/800',
+    ...(product?.extraImages || []).filter(img => img).map(img => getOptimizedUrl(img, 1000))
   ], [product]);
 
   const videos = React.useMemo(() => [

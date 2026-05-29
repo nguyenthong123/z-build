@@ -1,6 +1,7 @@
 import React from 'react';
 
 const InventorySection = ({ 
+  stock,
   weight,
   packaging,
   isTrending, 
@@ -14,6 +15,10 @@ const InventorySection = ({
     <section className="form-section card">
       <div className="section-header">
         <h3>THÔNG SỐ & KHO</h3>
+      </div>
+      <div className="form-group">
+        <label>Số lượng tồn kho (Stock)</label>
+        <input type="number" name="stock" placeholder="VD: 100" value={stock || ''} onChange={onChange} />
       </div>
       <div className="form-group">
         <label>Trọng lượng riêng (kg)</label>
