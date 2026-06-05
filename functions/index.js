@@ -6,6 +6,21 @@ admin.initializeApp();
 const express = require("express");
 const app = express();
 
+app.use(express.json()); // Parse JSON bodies
+
+// Hàm tạo slug tự động
+const slugify = (text) => {
+  if (!text) return '';
+  const from = "áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđ·/_,:;";
+  const to   = "aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyyd------";
+  let str = text.toLowerCase().trim();
+  for (let i = 0, l = from.length; i < l; i++) {
+    str = str.replace(new RegExp(from.charAt(i), 'g'), to.charAt(i));
+  }
+  str = str.replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+  return str;
+};
+
 app.get("/product/:productId", async (req, res) => {
   const productId = req.params.productId;
   
@@ -115,6 +130,84 @@ app.get(["/api/products.json", "/products.json"], async (req, res) => {
     return res.json(products);
   } catch (error) {
     return res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint for Bots to create new products
+app.post("/api/products", async (req, res) => {
+  const apiKey = req.headers["x-api-key"] || req.headers["authorization"]?.replace("Bearer ", "");
+  
+  if (!apiKey) {
+    return res.status(401).json({ error: "Unauthorized: Missing API Key" });
+  }
+
+  try {
+    const db = admin.firestore();
+
+    // 1. Lấy cấu hình API Key từ database
+    const settingsSnap = await db.collection("storeSettings").doc("main").get();
+    let expectedApiKey = "bot_zbuild_2026"; // Fallback
+    
+    if (settingsSnap.exists) {
+      const openClawConfig = settingsSnap.data().openClawConfig;
+      if (openClawConfig && openClawConfig.botApiKey) {
+        expectedApiKey = openClawConfig.botApiKey;
+      }
+    }
+
+    // 2. So sánh API Key
+    if (apiKey !== expectedApiKey) {
+      return res.status(403).json({ error: "Forbidden: Invalid API Key" });
+    }
+
+    // 3. Tiến hành tạo sản phẩm
+    const { 
+      title, 
+      category = "Khác", 
+      weight = "", 
+      specs = "", 
+      description = "",
+      basePrice = 0,
+      discountPrice = 0
+    } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ error: "Missing required field: title" });
+    }
+
+    const db = admin.firestore();
+    
+    const newProduct = {
+      title,
+      slug: slugify(title),
+      category,
+      weight,
+      specs,
+      description,
+      basePrice: Number(basePrice) || 0,
+      discountPrice: Number(discountPrice) || 0,
+      status: "draft", // Mặc định là draft chờ duyệt/thêm hình
+      image: "",
+      extraImages: [],
+      stock: 0,
+      trackInventory: true,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdBy: "API_Bot"
+    };
+
+    const docRef = await db.collection("products").add(newProduct);
+
+    return res.status(201).json({
+      success: true,
+      message: "Product created successfully",
+      productId: docRef.id,
+      slug: newProduct.slug
+    });
+
+  } catch (error) {
+    console.error("Error creating product via API:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 

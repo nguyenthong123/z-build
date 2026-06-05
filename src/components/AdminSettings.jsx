@@ -12,7 +12,8 @@ const AdminSettings = ({ onBack }) => {
     accountName: ''
   });
   const [openClawConfig, setOpenClawConfig] = useState({
-    apiUrl: ''
+    apiUrl: '',
+    botApiKey: ''
   });
   const [adminEmails, setAdminEmails] = useState([]);
   const [newAdminEmail, setNewAdminEmail] = useState('');
@@ -34,7 +35,10 @@ const AdminSettings = ({ onBack }) => {
         if (docSnap.exists() && docSnap.data().openClawConfig) {
           setOpenClawConfig(docSnap.data().openClawConfig);
         } else {
-          setOpenClawConfig({ apiUrl: import.meta.env.VITE_OPENCLAW_API_URL || 'http://localhost:8000/chat' });
+          setOpenClawConfig({ 
+            apiUrl: import.meta.env.VITE_OPENCLAW_API_URL || 'http://localhost:8000/chat',
+            botApiKey: 'bot_zbuild_2026'
+          });
         }
 
         const adminDocRef = doc(db, 'settings', 'admins');
@@ -190,6 +194,33 @@ const AdminSettings = ({ onBack }) => {
                   </div>
                   <p className="field-hint" style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
                     * Lưu ý: Nếu trang web chạy HTTPS, API Endpoint cũng <strong>PHẢI</strong> là HTTPS (sử dụng Ngrok hoặc Cloudflare Tunnel).
+                  </p>
+                </div>
+                
+                <div className="setting-field" style={{ maxWidth: '100%', marginTop: '15px' }}>
+                  <label>Mã bảo mật Bot (API Key)</label>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <input 
+                      type="text" 
+                      value={openClawConfig.botApiKey || ''} 
+                      onChange={(e) => setOpenClawConfig({ ...openClawConfig, botApiKey: e.target.value })} 
+                      placeholder="Nhập hoặc bấm Tạo mã tự động..."
+                      style={{ flex: 1 }}
+                    />
+                    <button 
+                      type="button" 
+                      className="secondary-btn"
+                      onClick={() => {
+                        const randomKey = 'zb_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+                        setOpenClawConfig({ ...openClawConfig, botApiKey: randomKey });
+                      }}
+                      style={{ whiteSpace: 'nowrap', padding: '0 15px' }}
+                    >
+                      🔄 Tạo mã tự động
+                    </button>
+                  </div>
+                  <p className="field-hint" style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
+                    * Khóa này dùng để cấp quyền cho Bot kết nối vào API tạo sản phẩm. Bot cần gửi Header <code>x-api-key</code> trùng khớp với mã này.
                   </p>
                 </div>
               </div>

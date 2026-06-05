@@ -1,3 +1,122 @@
+/* Layout */
+.admin-product-page {
+  display: flex;
+  background-color: #f6f8fb;
+  min-height: 100vh;
+}
+
+.admin-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.admin-content-header {
+  background: white;
+  padding: 1.5rem 2.5rem;
+  border-bottom: 1px solid #edf2f7;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.breadcrumb {
+  font-size: 0.8rem;
+  color: #a0aec0;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+}
+
+.breadcrumb .active {
+  color: #1a1a2e;
+  font-weight: 700;
+}
+
+.header-main-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+}
+
+.title-group h1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.description {
+  color: #718096;
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.header-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.btn-group {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.home-icon-btn {
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 1.5px solid #edf2f7;
+  border-radius: 14px;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.home-icon-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e0;
+  color: #1a1a2e;
+  transform: translateY(-1px);
+}
+
+.primary-add-btn {
+  height: 46px;
+  padding: 0 1.5rem;
+  background: #1a1a2e;
+  color: white;
+  border: none;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(26, 26, 46, 0.15);
+}
+
+.primary-add-btn:hover {
+  background: #2d3748;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(26, 26, 46, 0.2);
+}
+
+.admin-content-body {
+  padding: 2.5rem;
+}
+
 .settings-loading {
   display: flex;
   flex-direction: column;
