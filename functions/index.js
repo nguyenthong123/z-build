@@ -175,8 +175,6 @@ app.post("/api/products", async (req, res) => {
       return res.status(400).json({ error: "Missing required field: title" });
     }
 
-    const db = admin.firestore();
-    
     const newProduct = {
       title,
       slug: slugify(title),
