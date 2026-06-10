@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './Footer.css';
 
 const Footer = () => {
@@ -52,8 +53,8 @@ const Footer = () => {
       <div className="footer-bottom container">
         <p>&copy; 2026 ZBUILD Store. Bảo lưu mọi quyền.</p>
         <div className="footer-policy">
-          <a href="#">Chính sách bảo mật</a>
-          <a href="#">Điều khoản sử dụng</a>
+          <Link to="/privacy-policy">Chính sách bảo mật</Link>
+          <Link to="/terms-of-service">Điều khoản sử dụng</Link>
         </div>
       </div>
     </footer>

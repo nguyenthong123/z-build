@@ -38,6 +38,8 @@ const AdminSidebar = lazy(() => import('./components/AdminSidebar'));
 const AdminProductDetailsForm = lazy(() => import('./components/AdminProductDetailsForm'));
 const AdminCouponManagement = lazy(() => import('./components/AdminCouponManagement'));
 const AdminAffiliateManagement = lazy(() => import('./components/AdminAffiliateManagement'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -580,8 +582,11 @@ function App() {
             <AdminCouponManagement onBack={() => navigate('/admin/dashboard')} />
           } />
           <Route path="/admin/settings" element={
-            <AdminSettings onBack={() => navigate('/admin/dashboard')} />
+            isAdmin ? <AdminSettings onBack={() => navigate('/admin/dashboard')} /> : <Navigate to="/" />
           } />
+
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
 
           {/* === 404 === */}
           <Route path="*" element={<NotFound />} />
