@@ -5,7 +5,7 @@ const PrivacyPolicy = () => {
   return (
     <div className="legal-container">
       <div className="legal-header">
-        <h1>Chính Sách Bảo Mật (Privacy Policy)</h1>
+        <h1>Privacy Policy</h1>
         <p>Cập nhật lần cuối: 10/06/2026</p>
       </div>
 

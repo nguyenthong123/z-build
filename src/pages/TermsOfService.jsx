@@ -5,7 +5,7 @@ const TermsOfService = () => {
   return (
     <div className="legal-container">
       <div className="legal-header">
-        <h1>Điều Khoản Sử Dụng (Terms of Service)</h1>
+        <h1>Terms of Service</h1>
         <p>Cập nhật lần cuối: 10/06/2026</p>
       </div>
 
