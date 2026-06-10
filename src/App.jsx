@@ -38,8 +38,10 @@ const AdminSidebar = lazy(() => import('./components/AdminSidebar'));
 const AdminProductDetailsForm = lazy(() => import('./components/AdminProductDetailsForm'));
 const AdminCouponManagement = lazy(() => import('./components/AdminCouponManagement'));
 const AdminAffiliateManagement = lazy(() => import('./components/AdminAffiliateManagement'));
-const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
-const TermsOfService = lazy(() => import('./pages/TermsOfService'));
+const PrivacyPolicyVN = lazy(() => import('./pages/PrivacyPolicyVN'));
+const TermsOfServiceVN = lazy(() => import('./pages/TermsOfServiceVN'));
+const PrivacyPolicyEN = lazy(() => import('./pages/PrivacyPolicyEN'));
+const TermsOfServiceEN = lazy(() => import('./pages/TermsOfServiceEN'));
 
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -585,8 +587,10 @@ function App() {
             isAdmin ? <AdminSettings onBack={() => navigate('/admin/dashboard')} /> : <Navigate to="/" />
           } />
 
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/chinh-sach-bao-mat" element={<PrivacyPolicyVN />} />
+          <Route path="/dieu-khoan-su-dung" element={<TermsOfServiceVN />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyEN />} />
+          <Route path="/terms-of-service" element={<TermsOfServiceEN />} />
 
           {/* === 404 === */}
           <Route path="*" element={<NotFound />} />

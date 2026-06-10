@@ -52,8 +52,8 @@ const Footer = () => {
       <div className="footer-bottom container">
         <p>&copy; 2026 ZBUILD Store. Bảo lưu mọi quyền.</p>
         <div className="footer-policy">
-          <a href="/privacy-policy">Privacy Policy</a>
-          <a href="/terms-of-service">Terms of Service</a>
+          <a href="/chinh-sach-bao-mat">Chính sách bảo mật</a>
+          <a href="/dieu-khoan-su-dung">Điều khoản sử dụng</a>
         </div>
       </div>
     </footer>
