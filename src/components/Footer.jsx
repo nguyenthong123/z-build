@@ -54,6 +54,8 @@ const Footer = () => {
         <div className="footer-policy">
           <a href="/chinh-sach-bao-mat">Chính sách bảo mật</a>
           <a href="/dieu-khoan-su-dung">Điều khoản sử dụng</a>
+          <a href="/privacy-policy">Privacy Policy</a>
+          <a href="/terms-of-service">Terms of Service</a>
         </div>
       </div>
     </footer>
