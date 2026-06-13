@@ -38,6 +38,7 @@ const AdminSidebar = lazy(() => import('./components/AdminSidebar'));
 const AdminProductDetailsForm = lazy(() => import('./components/AdminProductDetailsForm'));
 const AdminCouponManagement = lazy(() => import('./components/AdminCouponManagement'));
 const AdminAffiliateManagement = lazy(() => import('./components/AdminAffiliateManagement'));
+const AdminAIAssistant = lazy(() => import('./components/AdminAIAssistant'));
 const PrivacyPolicyVN = lazy(() => import('./pages/PrivacyPolicyVN'));
 const TermsOfServiceVN = lazy(() => import('./pages/TermsOfServiceVN'));
 const PrivacyPolicyEN = lazy(() => import('./pages/PrivacyPolicyEN'));
@@ -144,6 +145,7 @@ function App() {
       const page = e.detail;
       const adminRoutes = {
         'ai_knowledge': '/admin/ai-knowledge',
+        'ai-assistant': '/admin/ai-assistant',
         'products': '/admin/products',
         'orders': '/admin/orders',
         'coupons': '/admin/coupons',
@@ -575,6 +577,7 @@ function App() {
               }}
             />
           } />
+          <Route path="/admin/ai-assistant" element={isAdmin ? <AdminAIAssistant onBack={() => navigate('/admin/dashboard')} /> : <Navigate to="/" />} />
           <Route path="/admin/affiliates" element={isAdmin ? <AdminAffiliateManagement onBack={() => navigate('/admin/dashboard')} /> : <Navigate to="/" />} />
           <Route path="/admin/customers" element={
             <AdminCustomerManagement onBack={() => navigate('/')} />

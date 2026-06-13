@@ -7,11 +7,43 @@ import { AI_FUNCTIONS, executeFunction } from '../services/aiFunctions';
 /**
  * Custom hook to manage AI Advisor state and logic.
  */
-export const useAIAdvisor = (productContext) => {
-  const [messages, setMessages] = useState([]);
+export const useAIAdvisor = (productContext, role = 'storefront') => {
+  const storageKey = `zbuild_ai_messages_${role}`;
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error("Error loading AI messages", e);
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(messages));
+  }, [messages, storageKey]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [activeModel, setActiveModel] = useState('DeepSeek-V3');
+  const [activeModel, setActiveModel] = useState('Gemini-2.5-Flash');
+  const [dbCategories, setDbCategories] = useState([]);
+
+  useEffect(() => {
+    const fetchCats = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "products"));
+        // Khởi tạo các danh mục mặc định cơ bản
+        const cats = new Set(["Giải pháp AI", "Vật liệu xây dựng", "Phần mềm & Dịch vụ", "Thiết bị vệ sinh", "Trang trí nội thất", "Công cụ & Dụng cụ", "Điện tử", "Laptop", "Âm thanh"]);
+        querySnapshot.forEach((doc) => {
+          if (doc.data().category) cats.add(doc.data().category);
+        });
+        setDbCategories(Array.from(cats).sort());
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+    if (role === 'admin') fetchCats();
+  }, [role]);
+
   const [productSuggestions, setProductSuggestions] = useState([]);
   const [knowledgeBase, setKnowledgeBase] = useState({ all_units: [], raw_docs: [], performance: [] });
   const [userName, setUserName] = useState("Thong Nguyen");
@@ -72,23 +104,6 @@ export const useAIAdvisor = (productContext) => {
     loadKB();
   }, []);
 
-  // Handle Product Context
-  useEffect(() => {
-    if (productContext && messages.length === 0 && lastProcessedProductIdRef.current !== productContext.id) {
-      lastProcessedProductIdRef.current = productContext.id;
-      const initialMessage = `Tôi muốn hỏi chi tiết về sản phẩm: **${productContext.title}**
-      \n📊 Thông tin sản phẩm:
-      - Giá gốc: ${productContext.basePrice ? productContext.basePrice.toLocaleString('vi-VN') + '₫' : 'Liên hệ'}
-      - Giá niêm yết: ${productContext.discountPrice ? productContext.discountPrice.toLocaleString('vi-VN') + '₫' : 'Liên hệ'}
-      - Danh mục: ${productContext.category}
-      - Mô tả: ${productContext.description || 'N/A'}
-      - Tồn kho: ${productContext.stock || 'N/A'}
-      \nGiúp tôi phân tích sản phẩm này và đề xuất cách sử dụng tối ưu, so sánh với các sản phẩm tương tự.`;
-      
-      setTimeout(() => handleSend(initialMessage), 500);
-    }
-  }, [productContext, messages.length, handleSend]);
-
   const getKnowledgeContext = useCallback((msgText) => {
     const recentUserMessages = messages.filter(m => !m.isBot).slice(-2).map(m => m.text).join(" ");
     const searchContext = `${recentUserMessages} ${msgText}`;
@@ -104,6 +119,56 @@ export const useAIAdvisor = (productContext) => {
     return contextText + "==========================\n";
   }, [messages, knowledgeBase]);
 
+  const callAI = useCallback(async (msgText, systemPrompt) => {
+    const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    
+    if (!geminiApiKey) {
+      return "⚠️ Hệ thống AI đang bảo trì: Chưa cấu hình VITE_GEMINI_API_KEY trên môi trường chạy.";
+    }
+
+    const history = messages.map(m => ({ role: m.isBot ? "assistant" : "user", content: m.text }));
+    const apiMessages = [{ role: "system", content: systemPrompt }, ...history, { role: "user", content: msgText }];
+
+    // Gemini with Function Calling
+    try {
+      let res = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
+        method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${geminiApiKey}` },
+        body: JSON.stringify({ model: "gemini-2.5-flash", messages: apiMessages, tools: AI_FUNCTIONS, tool_choice: "auto", temperature: 0.3 })
+      });
+      if (res.ok) {
+        let d = await res.json();
+        setActiveModel('Gemini-2.5-Flash');
+        let responseMsg = d.choices[0]?.message;
+        
+        let rounds = 0;
+        while (responseMsg?.tool_calls && rounds < 3) {
+          rounds++;
+          apiMessages.push(responseMsg);
+          const toolResults = await Promise.all(responseMsg.tool_calls.map(async (tc) => {
+            const result = await executeFunction(tc.function.name, tc.function.arguments);
+            return { role: "tool", tool_call_id: tc.id, name: tc.function.name, content: JSON.stringify(result) };
+          }));
+          apiMessages.push(...toolResults);
+          const followUp = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
+            method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${geminiApiKey}` },
+            body: JSON.stringify({ model: "gemini-2.5-flash", messages: apiMessages, tools: AI_FUNCTIONS, tool_choice: "auto", temperature: 0.3 })
+          });
+          if (!followUp.ok) break;
+          d = await followUp.json();
+          responseMsg = d.choices[0]?.message;
+        }
+        return responseMsg?.content || "Bot không phản hồi.";
+      } else {
+        const errorData = await res.json();
+        console.error("Gemini Error:", errorData);
+        return `⚠️ Lỗi từ API: ${errorData.error?.message || "Không xác định"}`;
+      }
+    } catch (err) { 
+      console.warn("Gemini network error", err); 
+      return "⚠️ Lỗi mạng: Không thể kết nối tới Google AI.";
+    }
+  }, [messages]);
+
   const handleSend = useCallback(async (msgText) => {
     if (!msgText?.trim()) return;
     const userMsg = { role: 'user', text: msgText, id: Date.now(), time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
@@ -112,11 +177,20 @@ export const useAIAdvisor = (productContext) => {
     setIsTyping(true);
 
     try {
-      const systemPrompt = `Bạn là Giám Đốc Kinh Doanh B2B của Z-BUILD, tư vấn cho ĐẠI LÝ: ${userName}.
-      🔧 NĂNG LỰC ĐẶC BIỆT - FUNCTION CALLING: Sử dụng tools khi cần thông tin real-time về sản phẩm, đơn hàng, thống kê.
-      Tài liệu nội bộ: ${getKnowledgeContext(msgText)}`;
+      const systemPrompt = role === 'admin'
+        ? `Bạn là Trợ lý AI Quản trị của Z-BUILD, hỗ trợ Admin quản lý hệ thống.
+        🔧 NĂNG LỰC ĐẶC BIỆT: Bạn CÓ QUYỀN TRUY CẬP VÀ BẮT BUỘC PHẢI SỬ DỤNG tools (function calling) để thực hiện các tác vụ.
+        - Khi người dùng yêu cầu tạo sản phẩm, BẠN PHẢI GỌI function 'create_product'. Tuyệt đối KHÔNG ĐƯỢC tự ý trả lời "đã tạo" mà không gọi function.
+        - Khi tạo sản phẩm, nó sẽ tự động được lưu dưới dạng NHÁP để Admin duyệt sau.
+        - Danh mục hiện có trong hệ thống: ${dbCategories.length > 0 ? dbCategories.join(', ') : 'Vật liệu xây dựng, Nội thất...'}. Nếu khách quên nhập danh mục, hãy nhắc họ chọn trong danh sách này.
+        - LƯU Ý QUAN TRỌNG VỀ NGỮ CẢNH: NẾU người dùng đang trả lời bổ sung thông tin còn thiếu (ví dụ: bổ sung danh mục, giá cả) cho một yêu cầu tạo sản phẩm ở câu trước, bạn HÃY TỰ ĐỘNG nhớ và ghép thông tin mới này vào các thông tin cũ (tên, quy cách, giá) ở câu trước, sau đó GỌI LẠI function 'create_product' với đầy đủ thông tin.
+        Hãy phản hồi ngắn gọn, chuyên nghiệp và đi thẳng vào vấn đề.
+        Tài liệu nội bộ: ${getKnowledgeContext(msgText)}`
+        : `Bạn là Giám Đốc Kinh Doanh B2B của Z-BUILD, tư vấn cho ĐẠI LÝ: ${userName}.
+        🔧 NĂNG LỰC ĐẶC BIỆT - FUNCTION CALLING: Sử dụng tools khi cần thông tin real-time về sản phẩm, đơn hàng, thống kê.
+        Tài liệu nội bộ: ${getKnowledgeContext(msgText)}`;
 
-      // Try OpenClaw API, then DeepSeek, then Groq
+      // Try Gemini API
       const botResult = await callAI(msgText, systemPrompt);
       
       let cleanResponse = botResult;
@@ -141,78 +215,24 @@ export const useAIAdvisor = (productContext) => {
     } finally {
       setIsTyping(false);
     }
-  }, [userName, getKnowledgeContext, callAI]);
+  }, [userName, getKnowledgeContext, callAI, role]);
 
-  const callAI = useCallback(async (msgText, systemPrompt) => {
-    const openClawUrl = import.meta.env.VITE_OPENCLAW_API_URL;
-    if (openClawUrl) {
-      try {
-        const res = await fetch(openClawUrl, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_id: auth.currentUser?.uid || "zbuild_web_user", message: msgText })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setActiveModel('OpenClaw Intelligence');
-          return data.response;
-        }
-      } catch (err) { console.warn("OpenClaw failed", err); }
+  // Handle Product Context
+  useEffect(() => {
+    if (productContext && messages.length === 0 && lastProcessedProductIdRef.current !== productContext.id) {
+      lastProcessedProductIdRef.current = productContext.id;
+      const initialMessage = `Tôi muốn hỏi chi tiết về sản phẩm: **${productContext.title}**
+      \n📊 Thông tin sản phẩm:
+      - Giá gốc: ${productContext.basePrice ? productContext.basePrice.toLocaleString('vi-VN') + '₫' : 'Liên hệ'}
+      - Giá niêm yết: ${productContext.discountPrice ? productContext.discountPrice.toLocaleString('vi-VN') + '₫' : 'Liên hệ'}
+      - Danh mục: ${productContext.category}
+      - Mô tả: ${productContext.description || 'N/A'}
+      - Tồn kho: ${productContext.stock || 'N/A'}
+      \nGiúp tôi phân tích sản phẩm này và đề xuất cách sử dụng tối ưu, so sánh với các sản phẩm tương tự.`;
+      
+      setTimeout(() => handleSend(initialMessage), 500);
     }
-
-    const dsApiKey = import.meta.env.VITE_DEEPSEEK_ADVISOR_KEY;
-    const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
-    const history = messages.map(m => ({ role: m.isBot ? "assistant" : "user", content: m.text }));
-    const apiMessages = [{ role: "system", content: systemPrompt }, ...history, { role: "user", content: msgText }];
-
-    // DeepSeek with Function Calling
-    if (dsApiKey) {
-      try {
-        let res = await fetch("https://api.deepseek.com/chat/completions", {
-          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${dsApiKey}` },
-          body: JSON.stringify({ model: "deepseek-chat", messages: apiMessages, tools: AI_FUNCTIONS, tool_choice: "auto", temperature: 0.3 })
-        });
-        if (res.ok) {
-          let d = await res.json();
-          setActiveModel('DeepSeek-V3');
-          let responseMsg = d.choices[0]?.message;
-          
-          let rounds = 0;
-          while (responseMsg?.tool_calls && rounds < 3) {
-            rounds++;
-            apiMessages.push(responseMsg);
-            const toolResults = await Promise.all(responseMsg.tool_calls.map(async (tc) => {
-              const result = await executeFunction(tc.function.name, tc.function.arguments);
-              return { role: "tool", tool_call_id: tc.id, content: JSON.stringify(result) };
-            }));
-            apiMessages.push(...toolResults);
-            const followUp = await fetch("https://api.deepseek.com/chat/completions", {
-              method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${dsApiKey}` },
-              body: JSON.stringify({ model: "deepseek-chat", messages: apiMessages, tools: AI_FUNCTIONS, tool_choice: "auto", temperature: 0.3 })
-            });
-            if (!followUp.ok) break;
-            d = await followUp.json();
-            responseMsg = d.choices[0]?.message;
-          }
-          return responseMsg?.content || "Bot không phản hồi.";
-        }
-      } catch (err) { console.warn("DeepSeek failed", err); }
-    }
-
-    // Groq Fallback
-    if (groqApiKey) {
-      try {
-        setActiveModel('Groq Llama-3.3');
-        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${groqApiKey}` },
-          body: JSON.stringify({ messages: apiMessages, model: "llama-3.3-70b-versatile", temperature: 0.3 })
-        });
-        const d = await res.json();
-        return d.choices[0]?.message?.content || "Groq không phản hồi.";
-      } catch (err) { console.error("Groq failed", err); }
-    }
-
-    return "Lỗi toàn hệ thống cả 2 luồng AI.";
-  }, [messages]);
+  }, [productContext, messages.length, handleSend]);
 
   return {
     messages, input, setInput, isTyping, activeModel, productSuggestions, userName,

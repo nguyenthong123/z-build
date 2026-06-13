@@ -13,11 +13,77 @@
  */
 
 import { db } from '../firebase';
-import { collection, getDocs, query, orderBy, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, getDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { calculateConstructionMaterials } from './MaterialService';
 
 // ============ FUNCTION DEFINITIONS (cho DeepSeek/OpenAI tools format) ============
 
 export const AI_FUNCTIONS = [
+  {
+    type: "function",
+    function: {
+      name: "calculate_construction_materials",
+      description: "Tính toán số lượng vật tư cần thiết (thạch cao, khung xương, phụ kiện) cho các hạng mục thi công.",
+      parameters: {
+        type: "object",
+        properties: {
+          projectType: { type: "string", description: "Loại hạng mục thi công: 'Trần thả', 'Trần chìm', 'Vách ngăn', 'Sàn nhẹ'" },
+          area: { type: "number", description: "Diện tích cần thi công (m2)" }
+        },
+        required: ["projectType", "area"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_order",
+      description: "Tạo đơn hàng mới vào hệ thống khi khách hàng chốt đơn mua hàng.",
+      parameters: {
+        type: "object",
+        properties: {
+          customerName: { type: "string", description: "Tên khách hàng" },
+          customerPhone: { type: "string", description: "Số điện thoại" },
+          customerAddress: { type: "string", description: "Địa chỉ giao hàng" },
+          items: {
+            type: "array",
+            description: "Danh sách sản phẩm trong đơn",
+            items: {
+              type: "object",
+              properties: {
+                productName: { type: "string" },
+                quantity: { type: "number" },
+                price: { type: "number" }
+              }
+            }
+          }
+        },
+        required: ["customerName", "customerPhone", "items"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_product",
+      description: "Tạo sản phẩm mới vào danh mục sản phẩm của hệ thống (Ví dụ: khách hàng yêu cầu thêm mã hàng mới).",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Tên sản phẩm (Lưu ý: KHÔNG bao gồm quy cách vào tên)" },
+          category: { 
+            type: "string", 
+            description: "Danh mục sản phẩm. Bắt buộc nhập. Nếu người dùng chưa cung cấp, HÃY DỪNG LẠI và yêu cầu họ cung cấp (hãy gợi ý dựa trên 'Danh mục hiện có' trong System Prompt)." 
+          },
+          price: { type: "number", description: "Giá bán" },
+          description: { type: "string", description: "Mô tả sản phẩm" },
+          specs: { type: "string", description: "Quy cách sản phẩm (Ví dụ: 400x3000, 1.22mx2.44mx18mm...)" },
+          packaging: { type: "string", description: "Quy cách đóng gói (Ví dụ: 10 tấm/hộp)" }
+        },
+        required: ["title", "price", "category"]
+      }
+    }
+  },
   {
     type: "function",
     function: {
@@ -375,6 +441,104 @@ async function getStoreStats() {
   }
 }
 
+async function createOrder({ customerName, customerPhone, customerAddress = "", items = [] }) {
+  try {
+    let total = 0;
+    const orderItems = items.map(item => {
+      const pPrice = Number(item.price) || 0;
+      const pQty = Number(item.quantity) || 1;
+      total += pPrice * pQty;
+      return {
+        name: item.productName,
+        price: pPrice,
+        quantity: pQty,
+        id: "ai_" + Math.random().toString(36).substr(2, 9),
+        image: ""
+      };
+    });
+
+    const newOrder = {
+      orderNumber: "AI_" + Date.now().toString().slice(-6),
+      userId: "ai_bot_user",
+      userName: customerName || "Khách Hàng (Tạo bởi AI)",
+      userEmail: "ai-generated@zbuild.click",
+      status: "pending",
+      paymentMethod: "COD",
+      shippingAddress: {
+        firstName: customerName || "",
+        lastName: "",
+        address: customerAddress || "Khách chốt qua Chat",
+        phone: customerPhone || "",
+        city: "",
+        district: "",
+        ward: ""
+      },
+      items: orderItems,
+      total: total,
+      createdAt: serverTimestamp()
+    };
+
+    const docRef = await addDoc(collection(db, "orders"), newOrder);
+    return {
+      success: true,
+      message: `Đã tạo đơn hàng thành công! Mã đơn: ${newOrder.orderNumber}`,
+      orderId: docRef.id,
+      orderNumber: newOrder.orderNumber,
+      total: formatCurrency(total)
+    };
+  } catch (err) {
+    return { error: 'Lỗi tạo đơn hàng: ' + err.message };
+  }
+}
+
+const slugify = (text) => {
+  if (!text) return '';
+  const from = "áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđ·/_,:;";
+  const to   = "aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyyd------";
+  let str = text.toLowerCase().trim();
+  for (let i = 0, l = from.length; i < l; i++) {
+    str = str.replace(new RegExp(from.charAt(i), 'g'), to.charAt(i));
+  }
+  str = str.replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+  return str;
+};
+
+export async function createProduct(args) {
+  try {
+    const { title, category, price, description = "", specs = "", packaging = "" } = args;
+
+    const newProduct = {
+      title,
+      slug: slugify(title),
+      category,
+      basePrice: Number(price),
+      discountPrice: Number(price),
+      price: Number(price),
+      description,
+      specs,
+      packaging,
+      status: "Draft", // Viết hoa chữ D để khớp với getStatusColor
+      stock: 100, // Mặc định có hàng
+      trackInventory: true,
+      image: "",
+      extraImages: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdBy: "AI_Bot"
+    };
+
+    const docRef = await addDoc(collection(db, "products"), newProduct);
+    return {
+      success: true,
+      message: `Đã lưu NHÁP sản phẩm "${title}". Bạn có thể vào phần Quản lý Sản phẩm để up thêm hình ảnh và chuyển sang trạng thái Hoạt động.`,
+      productId: docRef.id,
+      slug: newProduct.slug
+    };
+  } catch (err) {
+    return { error: 'Lỗi tạo sản phẩm: ' + err.message };
+  }
+}
+
 // ============ FUNCTION EXECUTOR ============
 
 export async function executeFunction(name, args) {
@@ -388,6 +552,9 @@ export async function executeFunction(name, args) {
     case 'get_order_history': return await getOrderHistory(parsedArgs);
     case 'generate_quotation': return await generateQuotation(parsedArgs);
     case 'get_store_stats': return await getStoreStats(parsedArgs);
+    case 'calculate_construction_materials': return await calculateConstructionMaterials(parsedArgs);
+    case 'create_order': return await createOrder(parsedArgs);
+    case 'create_product': return await createProduct(parsedArgs);
     default: return { error: `Function "${name}" không tồn tại` };
   }
 }

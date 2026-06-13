@@ -285,6 +285,15 @@ Dưới đây là sơ đồ chi tiết về tiến độ dự án Zbuild. Bạn 
 
 ---
 
+#### 5.13 Nâng cấp & Tối ưu AI Admin Assistant ✅ HOÀN THÀNH (13/06/2026)
+- [x] **Cập nhật Tool Calling**: Sửa lỗi AI gọi thiếu tên function `tc.function.name` gây đứt gãy luồng kết nối với Gemini.
+- [x] **Trích xuất thuộc tính (Specs & Packaging)**: Nâng cấp AI để tự động tách `quy cách sản phẩm` (specs) và `quy cách đóng gói` (packaging) thay vì gộp chung vào tên sản phẩm.
+- [x] **Lấy danh mục động (Dynamic Categories)**: AI tự động quét danh sách các danh mục thực tế đang có trong Firestore để gợi ý chuẩn xác cho người dùng, thay vì dùng danh sách cứng.
+- [x] **Quản lý Ngữ cảnh (Context Memory)**: Bổ sung chỉ dẫn hệ thống giúp AI tự động ghi nhớ và nối ghép ngữ cảnh từ câu trước khi người dùng bổ sung thông tin còn thiếu.
+- [x] **Generate Content AI**: Thêm nút "✨ Viết bằng AI" trực tiếp vào màn hình Chỉnh sửa sản phẩm để tự động viết mô tả chuẩn SEO dựa vào tên sản phẩm.
+
+---
+
 ## 💡 Đề xuất từ Antigravity (Assistant Proposals)
 
 ### Đề xuất chiến lược
@@ -297,5 +306,5 @@ Dưới đây là sơ đồ chi tiết về tiến độ dự án Zbuild. Bạn 
 2. **Dynamic OG Tags**: Đã triển khai hybrid SSR với Cloud Functions, cần test kỹ với Facebook/Zalo Crawler.
 
 ---
-*Cập nhật lần cuối: 05/05/2026 — Hoàn thành Affiliate Management & UI/UX Fixes*
+*Cập nhật lần cuối: 13/06/2026 — Hoàn thành Nâng cấp AI Admin Assistant*
 
