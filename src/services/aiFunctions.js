@@ -188,6 +188,31 @@ export const AI_FUNCTIONS = [
   {
     type: "function",
     function: {
+      name: "add_to_cart_batch",
+      description: "Thêm một danh sách các sản phẩm vào giỏ hàng của khách hàng sau khi khách hàng đồng ý chốt đơn từ báo giá.",
+      parameters: {
+        type: "object",
+        properties: {
+          items: {
+            type: "array",
+            description: "Danh sách sản phẩm cần thêm vào giỏ",
+            items: {
+              type: "object",
+              properties: {
+                product_name: { type: "string", description: "Tên sản phẩm" },
+                quantity: { type: "number", description: "Số lượng" }
+              },
+              required: ["product_name", "quantity"]
+            }
+          }
+        },
+        required: ["items"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
       name: "get_store_stats",
       description: "Lấy thống kê tổng quan cửa hàng: tổng sản phẩm, tổng đơn hàng, doanh thu, đơn chờ xử lý.",
       parameters: {
@@ -296,6 +321,45 @@ async function countProducts({ category = '' }) {
     return { total: products.length, by_category: categoryCounts };
   } catch (err) {
     return { error: 'Lỗi đếm sản phẩm: ' + err.message };
+  }
+}
+
+async function addToCartBatch({ items = [] }) {
+  try {
+    if (!items || items.length === 0) return { error: "Danh sách sản phẩm trống" };
+
+    const snap = await getDocs(collection(db, 'products'));
+    const allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    const productsToAdd = [];
+    const notFound = [];
+
+    for (const item of items) {
+      const kw = item.product_name.toLowerCase();
+      // Tìm sản phẩm khớp nhất
+      const found = allProducts.find(p => (p.title || '').toLowerCase().includes(kw));
+      if (found) {
+        productsToAdd.push({
+          product: { id: found.id, ...found },
+          quantity: Number(item.quantity) || 1
+        });
+      } else {
+        notFound.push(item.product_name);
+      }
+    }
+
+    if (productsToAdd.length > 0) {
+      window.dispatchEvent(new CustomEvent('AI_ADD_TO_CART_BATCH', { detail: productsToAdd }));
+      let msg = `Đã thêm thành công ${productsToAdd.length} loại sản phẩm vào giỏ hàng!`;
+      if (notFound.length > 0) {
+        msg += ` Tuy nhiên, không tìm thấy các sản phẩm sau: ${notFound.join(', ')}.`;
+      }
+      return { success: true, message: msg };
+    } else {
+      return { success: false, error: 'Không tìm thấy sản phẩm nào khớp trong hệ thống để thêm vào giỏ.' };
+    }
+  } catch (err) {
+    return { error: 'Lỗi thêm vào giỏ: ' + err.message };
   }
 }
 
@@ -586,6 +650,7 @@ export async function executeFunction(name, args) {
     case 'check_order_status': return await checkOrderStatus(parsedArgs);
     case 'get_order_history': return await getOrderHistory(parsedArgs);
     case 'generate_quotation': return await generateQuotation(parsedArgs);
+    case 'add_to_cart_batch': return await addToCartBatch(parsedArgs);
     case 'get_store_stats': return await getStoreStats(parsedArgs);
     case 'calculate_construction_materials': return await calculateConstructionMaterials(parsedArgs);
     case 'create_order': return await createOrder(parsedArgs);

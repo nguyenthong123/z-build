@@ -280,6 +280,38 @@ function App() {
     syncWithUser(user);
   }, [user, syncWithUser]);
 
+  useEffect(() => {
+    const handleAIBatchAdd = (e) => {
+      const items = e.detail; 
+      if (Array.isArray(items) && items.length > 0) {
+        setCartItems(prev => {
+          let next = [...prev];
+          items.forEach(item => {
+            const product = item.product;
+            const quantity = item.quantity;
+            const existingItem = next.find(i => i.id === product.id);
+            if (existingItem) {
+              next = next.map(i => i.id === product.id ? { ...i, quantity: i.quantity + quantity } : i);
+            } else {
+              next.push({
+                id: product.id,
+                name: product.title || product.name,
+                price: product.discountPrice || product.basePrice || product.price,
+                quantity: quantity,
+                image: product.image || product.img,
+                variant: 'Default'
+              });
+            }
+          });
+          return next;
+        });
+        addToast(`Trợ lý AI đã tự động thêm ${items.length} mặt hàng vào giỏ!`, 'success');
+      }
+    };
+    window.addEventListener('AI_ADD_TO_CART_BATCH', handleAIBatchAdd);
+    return () => window.removeEventListener('AI_ADD_TO_CART_BATCH', handleAIBatchAdd);
+  }, [addToast]);
+
   const handleAddToCart = (product, quantity = 1) => {
     setCartItems(prev => {
       const existingItem = prev.find(item => item.id === product.id);
