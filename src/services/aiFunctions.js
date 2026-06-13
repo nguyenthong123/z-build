@@ -75,12 +75,15 @@ export const AI_FUNCTIONS = [
             type: "string", 
             description: "Danh mục sản phẩm. Bắt buộc nhập. Nếu người dùng chưa cung cấp, HÃY DỪNG LẠI và yêu cầu họ cung cấp (hãy gợi ý dựa trên 'Danh mục hiện có' trong System Prompt)." 
           },
-          price: { type: "number", description: "Giá bán" },
-          description: { type: "string", description: "Mô tả sản phẩm" },
+          basePrice: { type: "number", description: "Giá gốc của sản phẩm" },
+          discountPrice: { type: "number", description: "Giá khuyến mãi (tùy chọn)" },
+          stock: { type: "number", description: "Số lượng tồn kho ban đầu (mặc định 100)" },
+          weight: { type: "string", description: "Trọng lượng riêng (VD: 5.4kg)" },
+          packaging: { type: "string", description: "Quy cách đóng gói (Ví dụ: 10 tấm/hộp)" },
           specs: { type: "string", description: "Quy cách sản phẩm (Ví dụ: 400x3000, 1.22mx2.44mx18mm...)" },
-          packaging: { type: "string", description: "Quy cách đóng gói (Ví dụ: 10 tấm/hộp)" }
+          shortDesc: { type: "string", description: "Mô tả ngắn gọn hoặc yêu cầu của khách về sản phẩm (để AI tự động mở rộng thành bài viết)" }
         },
-        required: ["title", "price", "category"]
+        required: ["title", "basePrice", "category"]
       }
     }
   },
@@ -505,20 +508,52 @@ const slugify = (text) => {
 
 export async function createProduct(args) {
   try {
-    const { title, category, price, description = "", specs = "", packaging = "" } = args;
+    const { title, category, basePrice, discountPrice, stock = 100, weight = "", shortDesc = "", specs = "", packaging = "" } = args;
+
+    // Tự động sinh nội dung chi tiết bài viết sản phẩm bằng AI
+    let description = "";
+    const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (geminiApiKey) {
+      try {
+        const prompt = `Viết một bài mô tả sản phẩm chuyên nghiệp, hấp dẫn, chuẩn SEO cho sản phẩm có tên là "${title}".
+Thông tin bổ sung: ${shortDesc ? `Mô tả ngắn: ${shortDesc}` : ''} | Quy cách: ${specs} | Đóng gói: ${packaging}.
+Yêu cầu:
+- Trình bày bố cục rõ ràng, chia thành các phần: Giới thiệu chung, Ưu điểm nổi bật, Ứng dụng.
+- Dùng định dạng HTML cơ bản (các thẻ h3, p, ul, li, strong).
+- Chỉ trả về đoạn mã HTML thuần, KHÔNG BỌC TRONG markdown block \`\`\`html.`;
+
+        const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${geminiApiKey}` },
+          body: JSON.stringify({ model: "gemini-2.5-flash", messages: [{ role: "user", content: prompt }], temperature: 0.7 })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          let content = data.choices[0]?.message?.content || "";
+          description = content.replace(/```html/g, '').replace(/```/g, '').trim();
+        }
+      } catch (err) {
+        console.error("Auto generate description failed:", err);
+      }
+    }
+
+    const priceNum = Number(basePrice);
+    const discountNum = discountPrice ? Number(discountPrice) : priceNum;
 
     const newProduct = {
       title,
       slug: slugify(title),
       category,
-      basePrice: Number(price),
-      discountPrice: Number(price),
-      price: Number(price),
+      basePrice: priceNum,
+      discountPrice: discountNum,
+      price: discountNum, // Giá bán hiện tại sẽ là giá khuyến mãi (nếu có)
       description,
       specs,
       packaging,
+      weight,
       status: "Draft", // Viết hoa chữ D để khớp với getStatusColor
-      stock: 100, // Mặc định có hàng
+      stock: Number(stock),
       trackInventory: true,
       image: "",
       extraImages: [],
