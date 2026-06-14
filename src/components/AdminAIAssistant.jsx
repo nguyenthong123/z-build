@@ -5,7 +5,7 @@ import AdminSidebar from './AdminSidebar';
 import { useAIAdvisor } from '../hooks/useAIAdvisor';
 import './AdminAIAssistant.css';
 
-const AdminAIAssistant = ({ onBack }) => {
+const AdminAIAssistant = () => {
   // Use 'admin' role to get admin capabilities and prompts
   const { messages, input, setInput, isTyping, handleSend } = useAIAdvisor(null, 'admin');
   const chatEndRef = useRef(null);
@@ -25,7 +25,20 @@ const AdminAIAssistant = ({ onBack }) => {
 
   useEffect(() => {
     scrollToBottom();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayMessages, isTyping]);
+
+  useEffect(() => {
+    const savedPrompt = sessionStorage.getItem('ai-prompt');
+    if (savedPrompt) {
+      sessionStorage.removeItem('ai-prompt');
+      // Delay slightly to ensure component is fully mounted
+      setTimeout(() => {
+        handleSend(savedPrompt);
+      }, 500);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onSendClick = () => {
     if (!input.trim() || isTyping) return;

@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 import { useAIAdvisor } from '../hooks/useAIAdvisor';
 
-const TamAnChatWidget = ({ user }) => {
+const TamAnChatWidget = () => {
   const { messages, input, setInput, isTyping, handleSend } = useAIAdvisor(null);
   const chatEndRef = useRef(null);
 
@@ -18,6 +18,7 @@ const TamAnChatWidget = ({ user }) => {
 
   useEffect(() => {
     scrollToBottom();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayMessages, isTyping]);
 
   const onSendClick = () => {

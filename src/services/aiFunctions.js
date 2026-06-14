@@ -13,7 +13,7 @@
  */
 
 import { db } from '../firebase';
-import { collection, getDocs, query, orderBy, doc, getDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, getDoc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { calculateConstructionMaterials } from './MaterialService';
 
 // ============ FUNCTION DEFINITIONS (cho DeepSeek/OpenAI tools format) ============
@@ -218,6 +218,34 @@ export const AI_FUNCTIONS = [
       parameters: {
         type: "object",
         properties: {}
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_draft_products",
+      description: "Lấy danh sách các sản phẩm đang ở trạng thái nháp (Draft) hoặc chưa có mô tả chi tiết để tiến hành cập nhật.",
+      parameters: {
+        type: "object",
+        properties: {}
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_product_details",
+      description: "Cập nhật chi tiết một sản phẩm (mô tả chuẩn SEO bằng HTML, quy cách, danh mục) và chuyển trạng thái sang Active.",
+      parameters: {
+        type: "object",
+        properties: {
+          product_id: { type: "string", description: "ID của sản phẩm cần cập nhật" },
+          description: { type: "string", description: "Đoạn mã HTML mô tả chi tiết sản phẩm (KHÔNG bọc trong markdown ```html)" },
+          category: { type: "string", description: "Danh mục sản phẩm" },
+          specs: { type: "string", description: "Thông số kỹ thuật/quy cách" }
+        },
+        required: ["product_id", "description"]
       }
     }
   }
@@ -638,6 +666,46 @@ Yêu cầu:
   }
 }
 
+async function getDraftProducts() {
+  try {
+    const snap = await getDocs(collection(db, 'products'));
+    let products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    
+    // Lọc ra các sản phẩm Draft hoặc chưa có description
+    let drafts = products.filter(p => p.status === 'Draft' || !p.description || p.description.trim() === '');
+    
+    return drafts.map(p => ({
+      id: p.id,
+      title: p.title,
+      category: p.category || 'Chung',
+      price: formatCurrency(p.price),
+      specs: p.specs || '',
+      status: p.status
+    }));
+  } catch (err) {
+    return { error: 'Lỗi lấy danh sách sản phẩm nháp: ' + err.message };
+  }
+}
+
+async function updateProductDetails({ product_id, description, category, specs }) {
+  try {
+    const productRef = doc(db, 'products', product_id);
+    const updateData = {
+      description: description || "",
+      status: "Active", // Chuyển sang hoạt động
+      updatedAt: new Date().toISOString()
+    };
+    if (category) updateData.category = category;
+    if (specs) updateData.specs = specs;
+
+    await updateDoc(productRef, updateData);
+    
+    return { success: true, message: `Đã cập nhật chi tiết và kích hoạt sản phẩm ID ${product_id}.` };
+  } catch (err) {
+    return { error: 'Lỗi cập nhật chi tiết sản phẩm: ' + err.message };
+  }
+}
+
 // ============ FUNCTION EXECUTOR ============
 
 export async function executeFunction(name, args) {
@@ -655,6 +723,8 @@ export async function executeFunction(name, args) {
     case 'calculate_construction_materials': return await calculateConstructionMaterials(parsedArgs);
     case 'create_order': return await createOrder(parsedArgs);
     case 'create_product': return await createProduct(parsedArgs);
+    case 'get_draft_products': return await getDraftProducts(parsedArgs);
+    case 'update_product_details': return await updateProductDetails(parsedArgs);
     default: return { error: `Function "${name}" không tồn tại` };
   }
 }

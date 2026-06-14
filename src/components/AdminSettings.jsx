@@ -17,6 +17,7 @@ const AdminSettings = ({ onBack }) => {
   });
   const [adminEmails, setAdminEmails] = useState([]);
   const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [googleSheetUrl, setGoogleSheetUrl] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState(null);
@@ -39,6 +40,12 @@ const AdminSettings = ({ onBack }) => {
             apiUrl: import.meta.env.VITE_OPENCLAW_API_URL || 'http://localhost:8000/chat',
             botApiKey: 'bot_zbuild_2026'
           });
+        }
+
+        if (docSnap.exists() && docSnap.data().googleSheetUrl) {
+          setGoogleSheetUrl(docSnap.data().googleSheetUrl);
+        } else {
+          setGoogleSheetUrl("https://script.google.com/macros/s/AKfycbyjxwNzi7j1KMpLdrYFfPzYFYhEmFhb9ercrPho5CMXCTRKE_dx0iaoYOFwP8t20gZG/exec");
         }
 
         const adminDocRef = doc(db, 'settings', 'admins');
@@ -66,7 +73,7 @@ const AdminSettings = ({ onBack }) => {
     setIsSaving(true);
     try {
       const docRef = doc(db, 'storeSettings', 'main');
-      await setDoc(docRef, { bankInfo, openClawConfig }, { merge: true });
+      await setDoc(docRef, { bankInfo, openClawConfig, googleSheetUrl }, { merge: true });
 
       const adminDocRef = doc(db, 'settings', 'admins');
       await setDoc(adminDocRef, { emails: adminEmails }, { merge: true });
@@ -174,7 +181,6 @@ const AdminSettings = ({ onBack }) => {
                 </div>
               </div>
             </div>
-            
             <div className="settings-panel" style={{ marginTop: '24px' }}>
               <div className="settings-section">
                 <div className="settings-section-header">

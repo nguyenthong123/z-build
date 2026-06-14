@@ -1,51 +1,176 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc, startAfter, limit } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc, startAfter, limit, addDoc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import './AdminProductList.css';
 import AdminSidebar from './AdminSidebar';
 
-const AdminProductList = ({ onBack, onAddProduct, onEditProduct, onPreviewProduct }) => {
+const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => {
   const [activeTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [googleSheetUrl, setGoogleSheetUrl] = useState('');
+  
+  // Batch delete states
+  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('All');
 
-  const handleSyncPricesFromSheet = async () => {
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const settingsRef = doc(db, 'storeSettings', 'main');
+        const settingsSnap = await getDoc(settingsRef);
+        if (settingsSnap.exists() && settingsSnap.data().googleSheetUrl) {
+          setGoogleSheetUrl(settingsSnap.data().googleSheetUrl);
+        }
+      } catch (error) {
+        console.error("Error fetching settings:", error);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const handleUpdatePrices = async () => {
+    if (!googleSheetUrl || !googleSheetUrl.includes("docs.google.com/spreadsheets")) {
+      alert("Vui lòng dán đúng link Google Sheet (có chứa docs.google.com/spreadsheets...) để đồng bộ!");
+      return;
+    }
+
+    const match = googleSheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    if (!match || !match[1]) {
+      alert("Link Google Sheet không hợp lệ, không tìm thấy ID!");
+      return;
+    }
+    const sheetId = match[1];
+
+    const gidMatch = googleSheetUrl.match(/[#&]gid=([0-9]+)/);
+    const gid = gidMatch ? gidMatch[1] : '';
+
     setIsSyncing(true);
     try {
+      const settingsRef = doc(db, 'storeSettings', 'main');
+      await setDoc(settingsRef, { googleSheetUrl }, { merge: true });
+
       const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyjxwNzi7j1KMpLdrYFfPzYFYhEmFhb9ercrPho5CMXCTRKE_dx0iaoYOFwP8t20gZG/exec";
-      const response = await fetch(`${APP_SCRIPT_URL}?action=get_all_products_from_sheet`);
+      const response = await fetch(`${APP_SCRIPT_URL}?action=bulk_import_products&sheet_id=${sheetId}&gid=${gid}`);
       const data = await response.json();
       
       if (data.success && data.products) {
         let updatedCount = 0;
+        
+        // Fetch existing products
+        const existingProductsSnap = await getDocs(collection(db, "products"));
+        const existingProductsMap = new Map();
+        existingProductsSnap.forEach(doc => {
+          const name = (doc.data().title || '').toLowerCase().trim();
+          existingProductsMap.set(name, doc.id);
+        });
+
         for (const sheetProduct of data.products) {
-          if (!sheetProduct.id || !sheetProduct.price) continue;
+          if (!sheetProduct.name) continue;
+          const productNameLower = sheetProduct.name.toLowerCase().trim();
           
-          try {
+          if (existingProductsMap.has(productNameLower)) {
+            // Update price
+            const productId = existingProductsMap.get(productNameLower);
             const priceString = String(sheetProduct.price).replace(/[^\d]/g, '');
             const newPrice = Number(priceString);
             
             if (!isNaN(newPrice) && newPrice > 0) {
-              const productRef = doc(db, "products", sheetProduct.id);
+              const productRef = doc(db, "products", productId);
               await updateDoc(productRef, {
-                discountPrice: newPrice
+                discountPrice: newPrice,
+                basePrice: newPrice,
+                price: newPrice
               });
               updatedCount++;
             }
-          } catch (e) {
-            console.error("Error updating product:", sheetProduct.id, e);
           }
         }
-        alert(`Đã đồng bộ giá thành công cho ${updatedCount} sản phẩm!`);
+        alert(`Đồng bộ giá thành công!\n- Đã cập nhật giá cho ${updatedCount} sản phẩm.`);
         fetchProducts(); // Reload table
       } else {
         alert("Lỗi từ Google Sheet: " + (data.error || "Không xác định"));
       }
     } catch (error) {
       console.error("Lỗi đồng bộ:", error);
-      alert("Không thể kết nối đến Google Sheet. Vui lòng kiểm tra lại cấu hình Web App.");
+      alert("Không thể kết nối đến Google Sheet. Vui lòng kiểm tra lại cấu hình.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleImportProducts = async () => {
+    if (!googleSheetUrl || !googleSheetUrl.includes("docs.google.com/spreadsheets")) {
+      alert("Vui lòng dán đúng link Google Sheet (có chứa docs.google.com/spreadsheets...) để tải!");
+      return;
+    }
+
+    const match = googleSheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    if (!match || !match[1]) {
+      alert("Link Google Sheet không hợp lệ, không tìm thấy ID!");
+      return;
+    }
+    const sheetId = match[1];
+
+    const gidMatch = googleSheetUrl.match(/[#&]gid=([0-9]+)/);
+    const gid = gidMatch ? gidMatch[1] : '';
+
+    setIsSyncing(true);
+    try {
+      const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyjxwNzi7j1KMpLdrYFfPzYFYhEmFhb9ercrPho5CMXCTRKE_dx0iaoYOFwP8t20gZG/exec";
+      const response = await fetch(`${APP_SCRIPT_URL}?action=bulk_import_products&sheet_id=${sheetId}&gid=${gid}`);
+      const data = await response.json();
+      
+      if (data.success && data.products) {
+        let createdCount = 0;
+        
+        // Fetch existing products to avoid duplicates
+        const existingProductsSnap = await getDocs(collection(db, "products"));
+        const existingProductNames = new Set(existingProductsSnap.docs.map(d => (d.data().title || '').toLowerCase().trim()));
+
+        for (const sheetProduct of data.products) {
+          if (!sheetProduct.name) continue;
+          const productNameLower = sheetProduct.name.toLowerCase().trim();
+          
+          if (!existingProductNames.has(productNameLower)) {
+            try {
+              const priceString = sheetProduct.price ? String(sheetProduct.price).replace(/[^\d]/g, '') : '0';
+              const priceNum = Number(priceString);
+              const newProduct = {
+                title: sheetProduct.name,
+                slug: sheetProduct.name.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-'),
+                category: sheetProduct.category || "Chung",
+                basePrice: priceNum,
+                discountPrice: priceNum,
+                price: priceNum,
+                status: "Draft",
+                stock: sheetProduct.stock ? Number(sheetProduct.stock) : 100,
+                trackInventory: true,
+                description: "",
+                specs: sheetProduct.specs || "",
+                image: sheetProduct.image || "",
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                createdBy: "Sheet_Import"
+              };
+              await addDoc(collection(db, "products"), newProduct);
+              existingProductNames.add(productNameLower); // Prevent duplicates in the same sync
+              createdCount++;
+            } catch (e) {
+              console.error("Error creating product:", sheetProduct.name, e);
+            }
+          }
+        }
+        alert(`Tải sản phẩm mới thành công!\n- Đã thêm ${createdCount} sản phẩm mới (trạng thái Draft).`);
+        fetchProducts(); // Reload table
+      } else {
+        alert("Lỗi từ Google Sheet: " + (data.error || "Không xác định"));
+      }
+    } catch (error) {
+      console.error("Lỗi tải sản phẩm:", error);
+      alert("Không thể kết nối đến Google Sheet. Vui lòng kiểm tra lại cấu hình.");
     } finally {
       setIsSyncing(false);
     }
@@ -125,9 +250,26 @@ const AdminProductList = ({ onBack, onAddProduct, onEditProduct, onPreviewProduc
     if (window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) {
       try {
         await deleteDoc(doc(db, "products", id));
+        setSelectedProducts(prev => prev.filter(pId => pId !== id));
         fetchProducts();
       } catch (error) {
         alert("Lỗi khi xóa: " + error.message);
+      }
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedProducts.length === 0) return;
+    if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedProducts.length} sản phẩm đã chọn không? Hành động này không thể hoàn tác!`)) {
+      try {
+        setLoading(true);
+        // Delete all selected products in parallel
+        await Promise.all(selectedProducts.map(id => deleteDoc(doc(db, "products", id))));
+        setSelectedProducts([]);
+        fetchProducts();
+      } catch (error) {
+        alert("Lỗi khi xóa hàng loạt: " + error.message);
+        setLoading(false);
       }
     }
   };
@@ -160,12 +302,31 @@ const AdminProductList = ({ onBack, onAddProduct, onEditProduct, onPreviewProduc
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
+  const uniqueCategories = ['All', ...new Set(products.map(p => p.category || 'Chưa phân loại'))];
+
   const filteredProducts = products.filter(p => {
     const matchesTab = activeTab === 'All' || p.status === activeTab;
+    const matchesCategory = selectedCategory === 'All' || (p.category || 'Chưa phân loại') === selectedCategory;
     const matchesSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
                           (p.sku || '').toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTab && matchesSearch;
+    return matchesTab && matchesCategory && matchesSearch;
   });
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      const newSelected = new Set([...selectedProducts, ...filteredProducts.map(p => p.id)]);
+      setSelectedProducts(Array.from(newSelected));
+    } else {
+      const filteredIds = new Set(filteredProducts.map(p => p.id));
+      setSelectedProducts(selectedProducts.filter(id => !filteredIds.has(id)));
+    }
+  };
+
+  const handleSelectProduct = (id) => {
+    setSelectedProducts(prev => 
+      prev.includes(id) ? prev.filter(pId => pId !== id) : [...prev, id]
+    );
+  };
 
   return (
     <div className="admin-product-page">
@@ -192,17 +353,54 @@ const AdminProductList = ({ onBack, onAddProduct, onEditProduct, onPreviewProduc
                 />
               </div>
 
-              <div className="btn-group">
-                <button className="home-icon-btn desktop-only" onClick={onBack} title="Về trang chủ">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                </button>
-                <button className="sync-btn desktop-only" onClick={handleSyncPricesFromSheet} disabled={isSyncing} style={{ padding: '0 16px', borderRadius: '8px', border: '1px solid #e0e0e0', backgroundColor: '#fff', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500, color: '#333' }}>
+              <div className="search-box category-filter" style={{ minWidth: '150px' }}>
+                <select 
+                  value={selectedCategory} 
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', padding: '8px', cursor: 'pointer', color: 'var(--text-main)' }}
+                >
+                  {uniqueCategories.map(cat => (
+                    <option key={cat} value={cat}>{cat === 'All' ? 'Tất cả danh mục' : cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="btn-group" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                {selectedProducts.length > 0 && (
+                  <button className="primary-add-btn" onClick={handleBatchDelete} style={{ backgroundColor: '#F44336', color: '#fff' }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                    <span className="desktop-only">Xóa ({selectedProducts.length})</span>
+                  </button>
+                )}
+                <input 
+                  type="text" 
+                  className="desktop-only"
+                  placeholder="Dán link Google Sheet vào đây..." 
+                  value={googleSheetUrl}
+                  onChange={(e) => setGoogleSheetUrl(e.target.value)}
+                  style={{ width: '220px', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e0e0e0', fontSize: '14px' }}
+                />
+                <button className="sync-btn desktop-only" onClick={handleUpdatePrices} disabled={isSyncing} style={{ padding: '0 16px', borderRadius: '8px', border: '1px solid #e0e0e0', backgroundColor: '#fff', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500, color: '#333' }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21v-5h5"/></svg>
-                  {isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ từ Sheet'}
+                  {isSyncing ? 'Đang tải...' : 'Cập nhật giá'}
                 </button>
-                <button className="primary-add-btn" onClick={onAddProduct}>
+                <button className="sync-btn desktop-only" onClick={handleImportProducts} disabled={isSyncing} style={{ padding: '0 16px', borderRadius: '8px', border: '1px solid #212B36', backgroundColor: '#212B36', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500 }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  {isSyncing ? 'Đang tải...' : 'Lấy SP mới'}
+                </button>
+                <button className="primary-add-btn" onClick={onAddProduct} style={{ backgroundColor: '#212B36' }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 5v14M5 12h14"/></svg>
-                  <span className="desktop-only">Thêm sản phẩm</span>
+                  <span className="desktop-only">Thêm</span>
+                </button>
+                <button 
+                  className="primary-add-btn" 
+                  onClick={() => {
+                    sessionStorage.setItem('ai-prompt', 'Hãy quét danh sách sản phẩm và tự động viết mô tả chi tiết, phân loại danh mục, thông số cho tất cả các sản phẩm đang ở trạng thái Draft');
+                    window.dispatchEvent(new CustomEvent('admin-nav', { detail: 'ai-assistant' }));
+                  }}
+                  style={{ backgroundColor: '#D4AF37', color: '#1a1a1a' }}
+                >
+                  🪄 <span className="desktop-only">Viết nội dung (AI)</span>
                 </button>
               </div>
             </div>
@@ -219,6 +417,14 @@ const AdminProductList = ({ onBack, onAddProduct, onEditProduct, onPreviewProduc
                 <table className="admin-table">
                   <thead>
                     <tr>
+                      <th style={{ width: '40px', textAlign: 'center' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={filteredProducts.length > 0 && filteredProducts.every(p => selectedProducts.includes(p.id))}
+                          onChange={handleSelectAll}
+                          style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                        />
+                      </th>
                       <th>Sản phẩm</th>
                       <th>Danh mục</th>
                       <th>Giá tiền</th>
@@ -228,36 +434,52 @@ const AdminProductList = ({ onBack, onAddProduct, onEditProduct, onPreviewProduc
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredProducts.map(product => (
-                      <tr key={product.id} onClick={() => onPreviewProduct(product)}>
-                        <td>
-                          <div className="product-cell">
-                            <img src={product.image ? product.image.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/') : 'https://placehold.co/100'} alt="" />
-                            <div className="info">
-                              <strong>{product.name}</strong>
-                              <span>{product.sku}</span>
-                            </div>
-                          </div>
-                        </td>
-                        <td>{product.category || 'Chưa phân loại'}</td>
-                        <td className="price-text">{product.price}</td>
-                        <td>{product.stock || 0}</td>
-                        <td>
-                          <span className="status-dot" style={{ backgroundColor: getStatusColor(product.status) }}></span>
-                          {product.status}
-                        </td>
-                        <td className="text-right">
-                          <div className="table-actions">
-                            <button className="edit-icon" onClick={(e) => { e.stopPropagation(); onEditProduct(product); }}>
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                            </button>
-                            <button className="delete-icon" onClick={(e) => { e.stopPropagation(); handleDelete(product.id); }}>
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-                            </button>
-                          </div>
+                    {filteredProducts.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
+                          Không tìm thấy sản phẩm nào. Vui lòng kiểm tra lại từ khóa tìm kiếm.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      filteredProducts.map(product => (
+                        <tr key={product.id} onClick={() => onPreviewProduct(product)} style={{ cursor: 'pointer', backgroundColor: selectedProducts.includes(product.id) ? 'rgba(212, 175, 55, 0.05)' : 'transparent' }}>
+                          <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                            <input 
+                              type="checkbox" 
+                              checked={selectedProducts.includes(product.id)}
+                              onChange={() => handleSelectProduct(product.id)}
+                              style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                            />
+                          </td>
+                          <td>
+                            <div className="product-cell">
+                              <img src={product.image ? product.image.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/') : 'https://placehold.co/100'} alt="" />
+                              <div className="info">
+                                <strong>{product.name}</strong>
+                                <span>{product.sku}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td>{product.category || 'Chưa phân loại'}</td>
+                          <td className="price-text">{product.price}</td>
+                          <td>{product.stock || 0}</td>
+                          <td>
+                            <span className="status-dot" style={{ backgroundColor: getStatusColor(product.status) }}></span>
+                            {product.status}
+                          </td>
+                          <td className="text-right">
+                            <div className="table-actions">
+                              <button className="edit-icon" onClick={(e) => { e.stopPropagation(); onEditProduct(product); }}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                              </button>
+                              <button className="delete-icon" onClick={(e) => { e.stopPropagation(); handleDelete(product.id); }}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

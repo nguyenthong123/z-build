@@ -117,7 +117,8 @@ export const useAIAdvisor = (productContext, role = 'storefront') => {
     let contextText = "==== TÀI LIỆU NỘI BỘ ====\n";
     results.slice(0, 20).forEach(r => contextText += `- [Chuyên mục: ${r.item.category || 'Chung'}] Nội dung: ${r.item.content}\n---\n`);
     return contextText + "==========================\n";
-  }, [messages, knowledgeBase]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, role]);
 
   const callAI = useCallback(async (msgText, systemPrompt) => {
     const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -184,6 +185,7 @@ export const useAIAdvisor = (productContext, role = 'storefront') => {
         - Khi tạo sản phẩm, nó sẽ tự động được lưu dưới dạng NHÁP để Admin duyệt sau.
         - Danh mục hiện có trong hệ thống: ${dbCategories.length > 0 ? dbCategories.join(', ') : 'Vật liệu xây dựng, Nội thất...'}. Nếu khách quên nhập danh mục, hãy nhắc họ chọn trong danh sách này.
         - LƯU Ý QUAN TRỌNG VỀ NGỮ CẢNH: NẾU người dùng đang trả lời bổ sung thông tin còn thiếu (ví dụ: bổ sung danh mục, giá cả) cho một yêu cầu tạo sản phẩm ở câu trước, bạn HÃY TỰ ĐỘNG nhớ và ghép thông tin mới này vào các thông tin cũ (tên, quy cách, giá) ở câu trước, sau đó GỌI LẠI function 'create_product' với đầy đủ thông tin.
+        - KHI NGƯỜI DÙNG YÊU CẦU KIỂM TRA/CẬP NHẬT SẢN PHẨM MỚI TỪ SHEET (SẢN PHẨM NHÁP): BƯỚC 1: Gọi 'get_draft_products' để lấy danh sách. BƯỚC 2: Duyệt qua từng sản phẩm, tự động suy luận và sinh đoạn mã HTML mô tả chuẩn SEO (dựa vào tên, quy cách, danh mục). BƯỚC 3: Gọi tool 'update_product_details' để cập nhật mô tả đó vào hệ thống cho từng sản phẩm và kích hoạt chúng.
         Hãy phản hồi ngắn gọn, chuyên nghiệp và đi thẳng vào vấn đề.
         Tài liệu nội bộ: ${getKnowledgeContext(msgText)}`
         : `Bạn là Giám Đốc Kinh Doanh B2B của Z-BUILD, tư vấn cho ĐẠI LÝ: ${userName}.

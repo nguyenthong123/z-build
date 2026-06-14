@@ -15,9 +15,9 @@ const ProductGrid = ({ onProductClick, searchQuery, category }) => {
   
   const ITEMS_PER_PAGE = 12;
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchInitialProducts();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, searchQuery]);
 
   const fetchInitialProducts = async () => {
