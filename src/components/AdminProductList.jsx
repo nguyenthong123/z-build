@@ -101,6 +101,72 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
     }
   };
 
+  const handleSyncInfo = async () => {
+    if (!googleSheetUrl || !googleSheetUrl.includes("docs.google.com/spreadsheets")) {
+      alert("Vui lòng dán đúng link Google Sheet (có chứa docs.google.com/spreadsheets...) để đồng bộ!");
+      return;
+    }
+
+    const match = googleSheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    if (!match || !match[1]) {
+      alert("Link Google Sheet không hợp lệ, không tìm thấy ID!");
+      return;
+    }
+    const sheetId = match[1];
+
+    const gidMatch = googleSheetUrl.match(/[#&]gid=([0-9]+)/);
+    const gid = gidMatch ? gidMatch[1] : '';
+
+    setIsSyncing(true);
+    try {
+      const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyjxwNzi7j1KMpLdrYFfPzYFYhEmFhb9ercrPho5CMXCTRKE_dx0iaoYOFwP8t20gZG/exec";
+      const response = await fetch(`${APP_SCRIPT_URL}?action=bulk_import_products&sheet_id=${sheetId}&gid=${gid}`);
+      const data = await response.json();
+      
+      if (data.success && data.products) {
+        let updatedCount = 0;
+        
+        // Fetch existing products
+        const existingProductsSnap = await getDocs(collection(db, "products"));
+        const existingProductsMap = new Map();
+        existingProductsSnap.forEach(doc => {
+          const name = (doc.data().title || '').toLowerCase().trim();
+          existingProductsMap.set(name, doc.id);
+        });
+
+        for (const sheetProduct of data.products) {
+          if (!sheetProduct.name) continue;
+          const productNameLower = sheetProduct.name.toLowerCase().trim();
+          
+          if (existingProductsMap.has(productNameLower)) {
+            const productId = existingProductsMap.get(productNameLower);
+            const productRef = doc(db, "products", productId);
+            
+            const updateData = {};
+            if (sheetProduct.category) updateData.category = sheetProduct.category;
+            if (sheetProduct.weight) updateData.weight = Number(sheetProduct.weight);
+            if (sheetProduct.specs) updateData.specs = sheetProduct.specs;
+            if (sheetProduct.stock) updateData.stock = Number(sheetProduct.stock);
+            
+            if (Object.keys(updateData).length > 0) {
+              await updateDoc(productRef, updateData);
+              updatedCount++;
+            }
+          }
+        }
+        alert(`Đồng bộ thông tin thành công!\n- Đã cập nhật Danh mục, Trọng lượng, Quy cách cho ${updatedCount} sản phẩm.`);
+        fetchProducts(); // Reload table
+      } else {
+        alert("Lỗi từ Google Sheet: " + (data.error || "Không xác định"));
+      }
+    } catch (error) {
+      console.error("Lỗi đồng bộ thông tin:", error);
+      alert("Không thể kết nối đến Google Sheet. Vui lòng kiểm tra lại cấu hình.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const handleImportProducts = async () => {
     if (!googleSheetUrl || !googleSheetUrl.includes("docs.google.com/spreadsheets")) {
       alert("Vui lòng dán đúng link Google Sheet (có chứa docs.google.com/spreadsheets...) để tải!");
@@ -384,6 +450,10 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                 <button className="sync-btn desktop-only" onClick={handleUpdatePrices} disabled={isSyncing} style={{ padding: '0 16px', borderRadius: '8px', border: '1px solid #e0e0e0', backgroundColor: '#fff', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500, color: '#333' }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21v-5h5"/></svg>
                   {isSyncing ? 'Đang tải...' : 'Cập nhật giá'}
+                </button>
+                <button className="sync-btn desktop-only" onClick={handleSyncInfo} disabled={isSyncing} style={{ padding: '0 16px', borderRadius: '8px', border: '1px solid #e0e0e0', backgroundColor: '#e8f0fe', color: '#1a73e8', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500 }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  {isSyncing ? 'Đang tải...' : 'Đồng bộ Thông tin'}
                 </button>
                 <button className="sync-btn desktop-only" onClick={handleImportProducts} disabled={isSyncing} style={{ padding: '0 16px', borderRadius: '8px', border: '1px solid #212B36', backgroundColor: '#212B36', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500 }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
