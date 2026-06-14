@@ -151,6 +151,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                 description: "",
                 specs: sheetProduct.specs || "",
                 image: sheetProduct.image || "",
+                weight: sheetProduct.weight ? Number(sheetProduct.weight) : "",
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
                 createdBy: "Sheet_Import"
