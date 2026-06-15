@@ -253,6 +253,14 @@ export const AI_FUNCTIONS = [
 
 // ============ FUNCTION IMPLEMENTATIONS ============
 
+const sanitizeNumber = (val) => {
+  if (typeof val === 'number') return val;
+  if (!val) return 0;
+  const str = String(val).replace(/[^0-9.-]+/g, '');
+  const num = Number(str);
+  return isNaN(num) ? 0 : num;
+};
+
 const formatCurrency = (n) => new Intl.NumberFormat('vi-VN').format(n || 0) + '₫';
 
 async function searchProducts({ keyword = '', category = '', max_results = 5 }) {
@@ -574,6 +582,20 @@ async function createOrder({ customerName, customerPhone, customerAddress = "", 
     };
 
     const docRef = await addDoc(collection(db, "orders"), newOrder);
+
+    // Deduct stock
+    for (const item of items) {
+      if (item.productName) {
+        const pSnap = await getDocs(query(collection(db, "products"), orderBy("title", "asc")));
+        const allProds = pSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const found = allProds.find(p => (p.title || '').toLowerCase().includes(item.productName.toLowerCase()));
+        if (found && found.stock !== undefined) {
+          const newStock = Math.max(0, found.stock - (Number(item.quantity) || 1));
+          await updateDoc(doc(db, "products", found.id), { stock: newStock });
+        }
+      }
+    }
+
     return {
       success: true,
       message: `Đã tạo đơn hàng thành công! Mã đơn: ${newOrder.orderNumber}`,
@@ -614,11 +636,16 @@ Yêu cầu:
 - Dùng định dạng HTML cơ bản (các thẻ h3, p, ul, li, strong).
 - Chỉ trả về đoạn mã HTML thuần, KHÔNG BỌC TRONG markdown block \`\`\`html.`;
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
         const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${geminiApiKey}` },
-          body: JSON.stringify({ model: "gemini-2.5-flash", messages: [{ role: "user", content: prompt }], temperature: 0.7 })
+          body: JSON.stringify({ model: "gemini-2.5-flash", messages: [{ role: "user", content: prompt }], temperature: 0.7 }),
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
         
         if (response.ok) {
           const data = await response.json();
@@ -630,8 +657,8 @@ Yêu cầu:
       }
     }
 
-    const priceNum = Number(basePrice);
-    const discountNum = discountPrice ? Number(discountPrice) : priceNum;
+    const priceNum = sanitizeNumber(basePrice);
+    const discountNum = discountPrice ? sanitizeNumber(discountPrice) : priceNum;
 
     const newProduct = {
       title,

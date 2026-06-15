@@ -83,7 +83,7 @@ export const useAIAdvisor = (productContext, role = 'storefront') => {
   useEffect(() => {
     const fetchCats = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "products"));
+        const querySnapshot = await getDocs(query(collection(db, "products"), limit(200)));
         // Khởi tạo các danh mục mặc định cơ bản
         const cats = new Set(["Giải pháp AI", "Vật liệu xây dựng", "Phần mềm & Dịch vụ", "Thiết bị vệ sinh", "Trang trí nội thất", "Công cụ & Dụng cụ", "Điện tử", "Laptop", "Âm thanh"]);
         querySnapshot.forEach((doc) => {
@@ -110,7 +110,7 @@ export const useAIAdvisor = (productContext, role = 'storefront') => {
           getDocs(collection(db, "ai_knowledge_units")),
           getDocs(collection(db, "ai_knowledge_base")),
           getDocs(query(collection(db, "ai_consultations"), orderBy("createdAt", "desc"), limit(50))),
-          getDocs(query(collection(db, "products"), orderBy("title", "asc")))
+          getDocs(query(collection(db, "products"), orderBy("title", "asc"), limit(200)))
         ]);
 
         const knowledgeUnits = unitsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
