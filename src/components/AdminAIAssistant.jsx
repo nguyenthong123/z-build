@@ -40,9 +40,29 @@ const AdminAIAssistant = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const textareaRef = useRef(null);
+
+  const handleInput = (e) => {
+    setInput(e.target.value);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      onSendClick();
+    }
+  };
+
   const onSendClick = () => {
     if (!input.trim() || isTyping) return;
     handleSend(input);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
   };
 
   return (
@@ -78,13 +98,14 @@ const AdminAIAssistant = () => {
           </div>
 
           <div className="admin-ai-input-area">
-            <input 
-              type="text" 
+            <textarea 
+              ref={textareaRef}
               placeholder="VD: Tạo cho tôi 1 sản phẩm tên là 'Đèn LED âm trần', giá 120000..." 
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && onSendClick()}
+              onChange={handleInput}
+              onKeyDown={handleKeyDown}
               disabled={isTyping}
+              rows={1}
             />
             <button 
               className="admin-ai-send" 

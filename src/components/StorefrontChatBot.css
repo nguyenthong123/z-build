@@ -137,6 +137,25 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
+.sfcb-maximize-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.sfcb-maximize-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 /* Messages Area */
 .sfcb-messages {
   flex: 1;
@@ -457,20 +476,84 @@
 }
 
 /* Input Area */
-.sfcb-input-area {
-  padding: 12px 16px;
+.sfcb-input-container {
   display: flex;
-  gap: 10px;
-  align-items: center;
+  flex-direction: column;
   background: white;
   border-top: 1px solid #E2E8F0;
   flex-shrink: 0;
 }
 
-.sfcb-input-area input {
+.sfcb-image-preview {
+  padding: 12px 16px 0;
+  display: flex;
+  position: relative;
+  width: fit-content;
+}
+
+.sfcb-image-preview img {
+  height: 60px;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  object-fit: cover;
+}
+
+.sfcb-remove-image {
+  position: absolute;
+  top: 4px;
+  right: -8px;
+  width: 20px;
+  height: 20px;
+  background: #E11D48;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.sfcb-input-area {
+  padding: 12px 16px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  background: white;
+}
+
+.sfcb-attach-btn {
+  background: transparent;
+  border: none;
+  color: #64748B;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+  align-self: flex-end;
+  margin-bottom: 2px;
+}
+
+.sfcb-attach-btn:hover {
+  background: #F1F5F9;
+  color: #1A2130;
+}
+
+.sfcb-uploaded-img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.sfcb-input-area textarea {
   flex: 1;
   border: 1px solid #E2E8F0;
-  border-radius: 100px;
+  border-radius: 24px;
   padding: 12px 18px;
   font-size: 16px; /* Fix iOS auto-zoom */
   outline: none;
@@ -478,9 +561,14 @@
   color: #1A2130;
   transition: all 0.2s;
   -webkit-appearance: none; /* Fix iOS styling */
+  resize: none;
+  line-height: 1.5;
+  font-family: inherit;
+  max-height: 120px;
+  overflow-y: auto;
 }
 
-.sfcb-input-area input:focus {
+.sfcb-input-area textarea:focus {
   border-color: #DAA520;
   background: white;
 }
@@ -499,6 +587,7 @@
   flex-shrink: 0;
   transition: all 0.2s;
   box-shadow: 0 4px 12px rgba(218, 165, 32, 0.3);
+  align-self: flex-end;
 }
 
 .sfcb-send:hover {

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useAIAdvisor } from '../hooks/useAIAdvisor';
 
 // Sub-components
 import AdvisorSidebar from './advisor/AdvisorSidebar';
@@ -9,18 +8,54 @@ import ChatHistory from './advisor/ChatHistory';
 
 import './AIAdvisor.css';
 
-const AIAdvisor = ({ onNavigate }) => {
+const AIAdvisor = ({ onNavigate, advisorState }) => {
   const location = useLocation();
-  const productContext = location.state?.productContext || null;
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [isSidebarHidden, setIsSidebarHidden] = useState(false);
   const [activeTab, setActiveTab] = useState('analytics');
   const chatEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+
+  const handlePaste = (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.indexOf('image') === 0) {
+        const file = item.getAsFile();
+        setSelectedImage(file);
+        setImagePreview(URL.createObjectURL(file));
+        e.preventDefault();
+        break;
+      }
+    }
+  };
+
+  const handleImageSelect = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSelectedImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const clearImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const onSendClick = () => {
+    if ((!input.trim() && !selectedImage) || isTyping) return;
+    handleSend(input, selectedImage);
+    clearImage();
+  };
 
   const {
     messages, input, setInput, isTyping, activeModel, productSuggestions, userName,
     handleSend
-  } = useAIAdvisor(productContext);
+  } = advisorState;
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -90,24 +125,47 @@ const AIAdvisor = ({ onNavigate }) => {
         </div>
 
         <div className="chat-input-container" style={{ position: 'fixed', bottom: '0', left: isSidebarHidden || isMobile ? '0' : '260px', right: '0', background: 'white', padding: isMobile ? '10px 15px 15px' : '10px 40px 20px', borderTop: '1px solid #E2E8F0', zIndex: 10, transition: 'left 0.3s ease' }}>
+           {imagePreview && (
+             <div style={{ maxWidth: '1000px', margin: '0 auto 10px', display: 'flex', position: 'relative', width: 'max-content' }}>
+               <img src={imagePreview} alt="Preview" style={{ height: '80px', borderRadius: '10px', objectFit: 'cover' }} />
+               <button onClick={clearImage} style={{ position: 'absolute', top: '-10px', right: '-10px', background: 'white', border: '1px solid #ccc', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#666', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+               </button>
+             </div>
+           )}
            <div className="input-wrapper" style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', gap: '15px', background: '#F1F5F9', padding: '8px 12px', borderRadius: '100px', border: '1px solid #E2E8F0', alignItems: 'center' }}>
               <input 
+                type="file" 
+                accept="image/*" 
+                style={{ display: 'none' }} 
+                ref={fileInputRef} 
+                onChange={handleImageSelect} 
+              />
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94A3B8', padding: '10px' }}
+                title="Đính kèm hình ảnh"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+              </button>
+              <input 
                 type="text" 
-                placeholder="Nhập yêu cầu phân tích..." 
+                placeholder="Nhập yêu cầu phân tích, dán (Ctrl+V) ảnh..." 
                 value={input} 
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => {
                   if (e.key === 'Enter' && !e.nativeEvent.isComposing && !isTyping) {
-                     handleSend(input);
+                     onSendClick();
                   }
                 }}
-                style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '1.05rem', color: '#1A2130', padding: '10px 15px' }}
+                onPaste={handlePaste}
+                style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '1.05rem', color: '#1A2130', padding: '10px 5px' }}
                 disabled={isTyping}
               />
               <button 
-                onClick={() => handleSend(input)}
-                disabled={isTyping || !input.trim()}
-                style={{ background: (isTyping || !input.trim()) ? '#CBD5E1' : '#DAA520', color: 'white', border: 'none', width: '46px', height: '46px', borderRadius: '50%', fontWeight: 'bold', cursor: (isTyping || !input.trim()) ? 'not-allowed' : 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: (isTyping || !input.trim()) ? 'none' : '0 5px 15px rgba(218,165,32,0.4)', flexShrink: 0 }}
+                onClick={onSendClick}
+                disabled={isTyping || (!input.trim() && !selectedImage)}
+                style={{ background: (isTyping || (!input.trim() && !selectedImage)) ? '#CBD5E1' : '#DAA520', color: 'white', border: 'none', width: '46px', height: '46px', borderRadius: '50%', fontWeight: 'bold', cursor: (isTyping || (!input.trim() && !selectedImage)) ? 'not-allowed' : 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: (isTyping || (!input.trim() && !selectedImage)) ? 'none' : '0 5px 15px rgba(218,165,32,0.4)', flexShrink: 0 }}
               >
                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
               </button>

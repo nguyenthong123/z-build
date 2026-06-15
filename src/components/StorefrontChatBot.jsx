@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import './StorefrontChatBot.css';
 import TamAnChatWidget from './TamAnChatWidget';
 
-const StorefrontChatBot = ({ isOpen, setIsOpen, isLoggedIn, onLoginRequired, user }) => {
+const StorefrontChatBot = ({ isOpen, setIsOpen, isLoggedIn, onLoginRequired, user, onMaximize, advisorState }) => {
 
   const [hasOpened, setHasOpened] = useState(false);
 
@@ -68,7 +68,7 @@ const StorefrontChatBot = ({ isOpen, setIsOpen, isLoggedIn, onLoginRequired, use
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
         {isLoggedIn && hasOpened && (
-          <TamAnChatWidget isLoggedIn={isLoggedIn} user={user} />
+          <TamAnChatWidget isLoggedIn={isLoggedIn} user={user} onMaximize={onMaximize} advisorState={advisorState} />
         )}
       </div>
     </>

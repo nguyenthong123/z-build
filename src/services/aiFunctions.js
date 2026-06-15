@@ -236,7 +236,7 @@ export const AI_FUNCTIONS = [
     type: "function",
     function: {
       name: "update_product_details",
-      description: "Cập nhật chi tiết một sản phẩm (mô tả chuẩn SEO bằng HTML, quy cách, danh mục) và chuyển trạng thái sang Active.",
+      description: "Cập nhật chi tiết một sản phẩm (mô tả chuẩn SEO bằng HTML, quy cách, danh mục). Cần giữ nguyên trạng thái Nháp (Draft) để người dùng có thể tự kiểm tra và thêm hình ảnh.",
       parameters: {
         type: "object",
         properties: {
@@ -692,7 +692,7 @@ async function updateProductDetails({ product_id, description, category, specs }
     const productRef = doc(db, 'products', product_id);
     const updateData = {
       description: description || "",
-      status: "Active", // Chuyển sang hoạt động
+      // Giữ nguyên trạng thái Draft để người dùng tự thêm hình ảnh rồi mới Active
       updatedAt: new Date().toISOString()
     };
     if (category) updateData.category = category;
@@ -700,7 +700,7 @@ async function updateProductDetails({ product_id, description, category, specs }
 
     await updateDoc(productRef, updateData);
     
-    return { success: true, message: `Đã cập nhật chi tiết và kích hoạt sản phẩm ID ${product_id}.` };
+    return { success: true, message: `Đã cập nhật mô tả cho sản phẩm ID ${product_id} (Trạng thái vẫn là Nháp).` };
   } catch (err) {
     return { error: 'Lỗi cập nhật chi tiết sản phẩm: ' + err.message };
   }

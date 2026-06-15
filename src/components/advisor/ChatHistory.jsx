@@ -8,6 +8,18 @@ const ChatHistory = ({ messages, isTyping, chatEndRef, isMobile }) => {
     <div className="chat-history" style={{ padding: '20px 0' }}>
       {messages.map((m, i) => (
         <div key={i} style={{ marginBottom: isMobile ? '25px' : '40px', display: 'flex', flexDirection: 'column', alignItems: m.isBot ? 'flex-start' : 'flex-end', width: '100%' }}>
+          {m.image && (
+            <div style={{
+              maxWidth: isMobile ? '90%' : '80%',
+              marginBottom: '10px',
+              borderRadius: '20px',
+              overflow: 'hidden',
+              boxShadow: m.isBot ? 'none' : '0 10px 25px rgba(218,165,32,0.3)',
+              border: m.isBot ? '1px solid #E2E8F0' : 'none'
+            }}>
+              <img src={m.image} alt="Attachment" style={{ width: '100%', display: 'block', maxHeight: '400px', objectFit: 'cover' }} />
+            </div>
+          )}
           {m.text && (
             <div className="chat-msg-bubble" style={{ 
               maxWidth: m.isBot ? '100%' : (isMobile ? '90%' : '80%'), 

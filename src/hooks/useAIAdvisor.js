@@ -4,6 +4,42 @@ import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, li
 import Fuse from 'fuse.js';
 import { AI_FUNCTIONS, executeFunction } from '../services/aiFunctions';
 
+const deleteCloudinaryImage = async (secureUrl) => {
+  try {
+    const match = secureUrl.match(/\/v\d+\/(.+)\.[a-zA-Z]+$/);
+    if (!match) return;
+    const publicId = match[1];
+    
+    const apiSecret = import.meta.env.VITE_CLOUDINARY_API_SECRET;
+    const apiKey = import.meta.env.VITE_CLOUDINARY_API_KEY;
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    
+    if (!apiSecret || !apiKey || !cloudName) return;
+
+    const timestamp = Math.floor(Date.now() / 1000);
+    const strToSign = `public_id=${publicId}&timestamp=${timestamp}${apiSecret}`;
+    
+    const encoder = new TextEncoder();
+    const data = encoder.encode(strToSign);
+    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+    const formData = new FormData();
+    formData.append('public_id', publicId);
+    formData.append('timestamp', timestamp);
+    formData.append('api_key', apiKey);
+    formData.append('signature', signature);
+
+    await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`, {
+      method: 'POST',
+      body: formData
+    });
+  } catch (err) {
+    console.error("Failed to delete from Cloudinary:", err);
+  }
+};
+
 /**
  * Custom hook to manage AI Advisor state and logic.
  */
@@ -12,7 +48,24 @@ export const useAIAdvisor = (productContext, role = 'storefront') => {
   const [messages, setMessages] = useState(() => {
     try {
       const saved = localStorage.getItem(storageKey);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        let parsed = JSON.parse(saved);
+        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000);
+        const validMessages = [];
+        
+        for (const msg of parsed) {
+          if (msg.id < threeDaysAgo) {
+            if (msg.image) deleteCloudinaryImage(msg.image);
+          } else {
+            validMessages.push(msg);
+          }
+        }
+        
+        if (validMessages.length !== parsed.length) {
+          localStorage.setItem(storageKey, JSON.stringify(validMessages));
+        }
+        return validMessages;
+      }
     } catch (e) {
       console.error("Error loading AI messages", e);
     }
@@ -120,15 +173,32 @@ export const useAIAdvisor = (productContext, role = 'storefront') => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages, role]);
 
-  const callAI = useCallback(async (msgText, systemPrompt) => {
+  const callAI = useCallback(async (msgText, systemPrompt, imageUrl = null) => {
     const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
     
     if (!geminiApiKey) {
       return "⚠️ Hệ thống AI đang bảo trì: Chưa cấu hình VITE_GEMINI_API_KEY trên môi trường chạy.";
     }
 
-    const history = messages.map(m => ({ role: m.isBot ? "assistant" : "user", content: m.text }));
-    const apiMessages = [{ role: "system", content: systemPrompt }, ...history, { role: "user", content: msgText }];
+    const history = messages.map(m => {
+      let content = m.text;
+      if (!m.isBot && m.image && !m.image.startsWith('blob:')) {
+        content = [
+          { type: "text", text: m.text || "Phân tích hình ảnh này" },
+          { type: "image_url", image_url: { url: m.image } }
+        ];
+      }
+      return { role: m.isBot ? "assistant" : "user", content };
+    });
+    
+    let currentUserContent = msgText;
+    if (imageUrl) {
+      currentUserContent = [
+        { type: "text", text: msgText || "Tôi gửi bạn một hình ảnh." },
+        { type: "image_url", image_url: { url: imageUrl } }
+      ];
+    }
+    const apiMessages = [{ role: "system", content: systemPrompt }, ...history, { role: "user", content: currentUserContent }];
 
     // Gemini with Function Calling
     try {
@@ -170,12 +240,48 @@ export const useAIAdvisor = (productContext, role = 'storefront') => {
     }
   }, [messages]);
 
-  const handleSend = useCallback(async (msgText) => {
-    if (!msgText?.trim()) return;
-    const userMsg = { role: 'user', text: msgText, id: Date.now(), time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-    setMessages(prev => [...prev, userMsg]);
+  const handleSend = useCallback(async (msgText, imageFile = null) => {
+    if (!msgText?.trim() && !imageFile) return;
+    
     setInput("");
     setIsTyping(true);
+
+    const localPreviewUrl = imageFile ? URL.createObjectURL(imageFile) : null;
+    const tempId = Date.now();
+    const userMsg = { 
+      role: 'user', 
+      text: msgText || "Đã gửi hình ảnh", 
+      image: localPreviewUrl,
+      id: tempId, 
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+    };
+    
+    setMessages(prev => [...prev, userMsg]);
+
+    let imageUrl = null;
+    if (imageFile) {
+      try {
+        const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dtdgrcznj';
+        const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'zbuild';
+        const formData = new FormData();
+        formData.append('file', imageFile);
+        formData.append('upload_preset', uploadPreset);
+        
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+        if (data.secure_url) {
+          imageUrl = data.secure_url;
+          setMessages(prev => prev.map(m => m.id === tempId ? { ...m, image: imageUrl } : m));
+        } else {
+          console.error("Cloudinary error:", data);
+        }
+      } catch (err) {
+        console.error("Upload image failed:", err);
+      }
+    }
 
     try {
       const systemPrompt = role === 'admin'
@@ -185,7 +291,7 @@ export const useAIAdvisor = (productContext, role = 'storefront') => {
         - Khi tạo sản phẩm, nó sẽ tự động được lưu dưới dạng NHÁP để Admin duyệt sau.
         - Danh mục hiện có trong hệ thống: ${dbCategories.length > 0 ? dbCategories.join(', ') : 'Vật liệu xây dựng, Nội thất...'}. Nếu khách quên nhập danh mục, hãy nhắc họ chọn trong danh sách này.
         - LƯU Ý QUAN TRỌNG VỀ NGỮ CẢNH: NẾU người dùng đang trả lời bổ sung thông tin còn thiếu (ví dụ: bổ sung danh mục, giá cả) cho một yêu cầu tạo sản phẩm ở câu trước, bạn HÃY TỰ ĐỘNG nhớ và ghép thông tin mới này vào các thông tin cũ (tên, quy cách, giá) ở câu trước, sau đó GỌI LẠI function 'create_product' với đầy đủ thông tin.
-        - KHI NGƯỜI DÙNG YÊU CẦU KIỂM TRA/CẬP NHẬT SẢN PHẨM MỚI TỪ SHEET (SẢN PHẨM NHÁP): BƯỚC 1: Bắt buộc DỪNG LẠI và hỏi người dùng: "Tôi chuẩn bị tạo bài viết cho các sản phẩm nháp. Bạn có muốn cung cấp thêm thông tin chung (ví dụ: xuất xứ, chất liệu, bảo hành, công dụng nổi bật...) để tôi viết hay hơn không? Hay bạn muốn tôi tạo luôn?". KHÔNG ĐƯỢC làm tiếp bước sau nếu người dùng chưa trả lời câu hỏi này. BƯỚC 2: Khi người dùng trả lời (đưa thêm thông tin hoặc bảo tạo luôn), hãy gọi 'get_draft_products' để lấy danh sách. BƯỚC 3: Tự động suy luận và sinh đoạn mã HTML mô tả chuẩn SEO (kết hợp thông tin người dùng vừa cấp). BƯỚC 4: Gọi 'update_product_details' để cập nhật và kích hoạt chúng.
+        - KHI NGƯỜI DÙNG YÊU CẦU KIỂM TRA/CẬP NHẬT SẢN PHẨM MỚI TỪ SHEET (SẢN PHẨM NHÁP): BƯỚC 1: Bắt buộc DỪNG LẠI và hỏi người dùng: "Tôi chuẩn bị tạo bài viết cho các sản phẩm nháp. Bạn có muốn cung cấp thêm thông tin chung (ví dụ: xuất xứ, chất liệu, bảo hành, công dụng nổi bật...) để tôi viết hay hơn không? Hay bạn muốn tôi tạo luôn?". KHÔNG ĐƯỢC làm tiếp bước sau nếu người dùng chưa trả lời câu hỏi này. BƯỚC 2: Khi người dùng trả lời (đưa thêm thông tin hoặc bảo tạo luôn), hãy gọi 'get_draft_products' để lấy danh sách. BƯỚC 3: Tự động suy luận và sinh đoạn mã HTML mô tả chuẩn SEO (kết hợp thông tin người dùng vừa cấp). BƯỚC 4: Gọi 'update_product_details' để cập nhật (GIỮ NGUYÊN trạng thái Nháp, tuyệt đối không kích hoạt để Admin tự thêm ảnh).
         Hãy phản hồi ngắn gọn, chuyên nghiệp và đi thẳng vào vấn đề.
         Tài liệu nội bộ: ${getKnowledgeContext(msgText)}`
         : `Bạn là Giám Đốc Kinh Doanh B2B của Z-BUILD, tư vấn cho ĐẠI LÝ: ${userName}.
@@ -193,7 +299,7 @@ export const useAIAdvisor = (productContext, role = 'storefront') => {
         Tài liệu nội bộ: ${getKnowledgeContext(msgText)}`;
 
       // Try Gemini API
-      const botResult = await callAI(msgText, systemPrompt);
+      const botResult = await callAI(msgText, systemPrompt, imageUrl);
       
       let cleanResponse = botResult;
       let boardData = null;

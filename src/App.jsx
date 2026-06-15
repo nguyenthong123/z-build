@@ -14,6 +14,7 @@ import StorefrontChatBot from './components/StorefrontChatBot';
 import SEOHead from './components/SEOHead';
 import { useToast } from './context/ToastContext';
 import { useWishlist } from './context/WishlistContext';
+import { useAIAdvisor } from './hooks/useAIAdvisor';
 
 // Lazy-loaded components (code splitting for performance)
 const OrderHistory = lazy(() => import('./components/OrderHistory'));
@@ -138,6 +139,9 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isChatBotOpen, setIsChatBotOpen] = useState(false);
   const [detailProduct, setDetailProduct] = useState(null);
+  
+  const productContext = location.state?.productContext || null;
+  const storefrontAdvisorState = useAIAdvisor(productContext, 'storefront');
   
   // Admin sidebar navigation
   useEffect(() => {
@@ -567,7 +571,7 @@ function App() {
             <Profile user={user} onBack={() => navigate('/')} onNavigate={setView} onLogout={handleLogout} />
           } />
           <Route path="/advisor" element={
-            <AIAdvisor onNavigate={(target) => navigate(target === 'home' ? '/' : `/${target}`)} />
+            <AIAdvisor onNavigate={(target) => navigate(target === 'home' ? '/' : `/${target}`)} advisorState={storefrontAdvisorState} />
           } />
 
 
@@ -667,6 +671,8 @@ function App() {
           user={user}
           onLoginRequired={() => handleLoginRequired(location.pathname)}
           onAddToCart={handleAddToCart} 
+          onMaximize={() => { setIsChatBotOpen(false); navigate('/advisor'); }}
+          advisorState={storefrontAdvisorState}
         />
       )}
       {showMobileNav && (
