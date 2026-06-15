@@ -1,5 +1,4 @@
 import React from 'react';
-import AdminSidebar from './AdminSidebar';
 import { useProductForm } from '../hooks/useProductForm';
 
 // Sub-components
@@ -45,7 +44,6 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
 
   return (
     <div className="admin-product-page">
-      <AdminSidebar activePage="products" />
       <div className="admin-main-content">
         <header className="admin-content-header">
           <nav className="breadcrumb desktop-only">Quản trị / <span className="active">{editData ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}</span></nav>

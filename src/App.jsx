@@ -15,6 +15,8 @@ import SEOHead from './components/SEOHead';
 import { useToast } from './context/ToastContext';
 import { useWishlist } from './context/WishlistContext';
 import { useAIAdvisor } from './hooks/useAIAdvisor';
+import { useAuth } from './context/AuthContext';
+import { useStore } from './context/StoreContext';
 
 // Lazy-loaded components (code splitting for performance)
 const OrderHistory = lazy(() => import('./components/OrderHistory'));
@@ -34,6 +36,7 @@ const AdminAddProduct = lazy(() => import('./components/AdminAddProduct'));
 const AdminOrderManagement = lazy(() => import('./components/AdminOrderManagement'));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 const AdminCustomerManagement = lazy(() => import('./components/AdminCustomerManagement'));
+const AdminLayout = lazy(() => import('./components/AdminLayout'));
 const AdminSettings = lazy(() => import('./components/AdminSettings'));
 const AdminSidebar = lazy(() => import('./components/AdminSidebar'));
 const AdminProductDetailsForm = lazy(() => import('./components/AdminProductDetailsForm'));
@@ -104,7 +107,9 @@ function NotFound() {
 }
 
 // Home Page Component
-function HomePage({ onCategorySelect, selectedCategory, searchQuery, handleAddToCart, navigate }) {
+function HomePage({ handleAddToCart, navigate }) {
+  const { selectedCategory, handleCategorySelect } = useStore();
+  
   return (
     <>
       <SEOHead 
@@ -113,13 +118,11 @@ function HomePage({ onCategorySelect, selectedCategory, searchQuery, handleAddTo
         canonical="/"
       />
       <Hero />
-      <CategorySection onCategorySelect={onCategorySelect} activeCategory={selectedCategory} />
+      <CategorySection onCategorySelect={handleCategorySelect} activeCategory={selectedCategory} />
       <PromoBanner />
       <ProductGrid 
         onProductClick={(product) => navigate(`/product/${product.slug || product.id}`)} 
         onAddToCart={handleAddToCart} 
-        searchQuery={searchQuery}
-        category={selectedCategory}
       />
     </>
   );
@@ -129,39 +132,19 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const [user, setUser] = useState(null);
-  const [adminEmails, setAdminEmails] = useState((import.meta.env.VITE_ADMIN_EMAILS || 'nbt1024@gmail.com').split(','));
+  const { user, isAdmin } = useAuth();
+  
   const [intendedDestination, setIntendedDestination] = useState(null);
   const [orderData, setOrderData] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(null);
   const [isChatBotOpen, setIsChatBotOpen] = useState(false);
   const [detailProduct, setDetailProduct] = useState(null);
   
   const productContext = location.state?.productContext || null;
   const storefrontAdvisorState = useAIAdvisor(productContext, 'storefront');
   
-  // Admin sidebar navigation
-  useEffect(() => {
-    const handleNav = (e) => {
-      const page = e.detail;
-      const adminRoutes = {
-        'ai_knowledge': '/admin/ai-knowledge',
-        'ai-assistant': '/admin/ai-assistant',
-        'products': '/admin/products',
-        'orders': '/admin/orders',
-        'coupons': '/admin/coupons',
-        'affiliates': '/admin/affiliates',
-        'dashboard': '/admin/dashboard',
-        'settings': '/admin/settings'
-      };
-      if (adminRoutes[page]) navigate(adminRoutes[page]);
-    };
-    window.addEventListener('admin-nav', handleNav);
-    return () => window.removeEventListener('admin-nav', handleNav);
-  }, [navigate]);
+  // Admin sidebar navigation using React Router now.
 
   const [cartItems, setCartItems] = useState(() => {
     try {
@@ -173,22 +156,6 @@ function App() {
   useEffect(() => {
     localStorage.setItem('zbuild_cart', JSON.stringify(cartItems));
   }, [cartItems]);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        setUser({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          name: firebaseUser.displayName || 'User',
-          photoURL: firebaseUser.photoURL || null
-        });
-      } else {
-        setUser(null);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
 
   // Set up Firebase Cloud Messaging for Push Notifications
   useEffect(() => {
@@ -234,38 +201,6 @@ function App() {
     };
     setupMessaging();
   }, [user]);
-
-  useEffect(() => {
-    const fetchAdmins = async () => {
-      try {
-        const { doc, getDoc, setDoc, updateDoc } = await import('firebase/firestore');
-        const { db } = await import('./firebase');
-        const adminDocRef = doc(db, 'settings', 'admins');
-        const adminDoc = await getDoc(adminDocRef);
-        
-        let currentEmails = ['trunghieu.nd01@gmail.com', 'nbt1024@gmail.com'];
-        
-        if (adminDoc.exists()) {
-          const remoteEmails = adminDoc.data().emails || [];
-          if (!remoteEmails.includes('nbt1024@gmail.com')) {
-            const updated = [...remoteEmails, 'nbt1024@gmail.com'];
-            await updateDoc(adminDocRef, { emails: updated });
-            currentEmails = updated;
-          } else {
-            currentEmails = remoteEmails;
-          }
-        } else {
-          await setDoc(adminDocRef, { emails: currentEmails });
-        }
-        setAdminEmails(currentEmails);
-      } catch (error) {
-        console.error("Error fetching admins:", error);
-      }
-    };
-    fetchAdmins();
-  }, []);
-
-  const isAdmin = user && adminEmails.some(e => e.toLowerCase().trim() === user.email.toLowerCase().trim());
 
   const updateQuantity = (id, delta) => {
     setCartItems(prev => prev.map(item => 
@@ -384,25 +319,7 @@ function App() {
     }
   };
 
-  const handleSearch = (query) => {
-    setSearchQuery(query);
-    setSelectedCategory(null);
-    if (location.pathname !== '/') {
-      navigate('/');
-    }
-  };
-
-  const handleCategorySelect = (category) => {
-    setSelectedCategory(category);
-    setSearchQuery('');
-    if (location.pathname !== '/') {
-      navigate('/');
-    }
-    const productGrid = document.querySelector('.product-section');
-    if (productGrid) {
-      productGrid.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+  // State methods now from Context
 
   // Helper: Determine current "view" from pathname for MobileNav/Navbar compatibility
   const getViewFromPath = () => {
@@ -459,16 +376,12 @@ function App() {
       {isStorefront && (
         <Navbar 
           view={view} 
-          user={user}
-          isLoggedIn={!!user}
           cartCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
           wishlistCount={wishlistCount}
-          onLogoClick={() => { navigate('/'); setSelectedCategory(null); setSearchQuery(''); }} 
           onCartClick={() => navigate('/cart')}
           onWishlistClick={() => navigate('/wishlist')}
           onProfileClick={() => user ? navigate('/profile') : handleLoginRequired('/profile')}
           onLogout={handleLogout}
-          onSearch={handleSearch}
         />
       )}
       <main>
@@ -478,9 +391,6 @@ function App() {
           {/* === STOREFRONT ROUTES === */}
           <Route path="/" element={
             <HomePage 
-              onCategorySelect={handleCategorySelect}
-              selectedCategory={selectedCategory}
-              searchQuery={searchQuery}
               handleAddToCart={handleAddToCart}
               navigate={navigate}
             />
@@ -576,55 +486,57 @@ function App() {
 
 
           {/* === ADMIN ROUTES === */}
-          <Route path="/admin/dashboard" element={
-            <AdminDashboard onBack={() => navigate('/')} />
-          } />
-          <Route path="/admin/products" element={
-            <AdminProductList 
-              onBack={() => navigate('/')} 
-              onAddProduct={() => { setEditingProduct(null); navigate('/admin/add-product'); }} 
-              onEditProduct={(product) => { setEditingProduct(product); navigate('/admin/add-product'); }}
-              onPreviewProduct={(product) => navigate(`/product/${product.slug || product.id}`)}
-            />
-          } />
-          <Route path="/admin/add-product" element={
-            isAdmin ? (
-              <AdminAddProduct 
-                onBack={() => navigate('/admin/products')} 
-                editData={editingProduct}
-                onSave={() => { setEditingProduct(null); navigate('/admin/products'); }} 
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboard" element={
+              <AdminDashboard onBack={() => navigate('/')} />
+            } />
+            <Route path="products" element={
+              <AdminProductList 
+                onBack={() => navigate('/')} 
+                onAddProduct={() => { setEditingProduct(null); navigate('/admin/add-product'); }} 
+                onEditProduct={(product) => { setEditingProduct(product); navigate('/admin/add-product'); }}
+                onPreviewProduct={(product) => navigate(`/product/${product.slug || product.id}`)}
               />
-            ) : <Navigate to="/login" state={{ from: '/admin/add-product' }} replace />
-          } />
-          <Route path="/admin/orders" element={
-            <AdminOrderManagement
-              onBack={() => navigate('/')}
-              onViewOrderDetail={(order) => { setSelectedOrder(order); navigate('/admin/order-detail'); }}
-            />
-          } />
-          <Route path="/admin/order-detail" element={
-            <OrderDetail
-              order={selectedOrder}
-              onBack={() => navigate('/admin/orders')}
-              isAdmin={true}
-              onCancelSuccess={(orderId) => {
-                setSelectedOrder(prev => prev && prev.id === orderId ? { ...prev, status: 'cancelled' } : prev);
-                addToast('Đơn hàng đã được hủy thành công', 'success');
-              }}
-            />
-          } />
-          <Route path="/admin/ai-assistant" element={isAdmin ? <AdminAIAssistant onBack={() => navigate('/admin/dashboard')} /> : <Navigate to="/" />} />
-          <Route path="/admin/affiliates" element={isAdmin ? <AdminAffiliateManagement onBack={() => navigate('/admin/dashboard')} /> : <Navigate to="/" />} />
-          <Route path="/admin/customers" element={
-            <AdminCustomerManagement onBack={() => navigate('/')} />
-          } />
+            } />
+            <Route path="add-product" element={
+              isAdmin ? (
+                <AdminAddProduct 
+                  onBack={() => navigate('/admin/products')} 
+                  editData={editingProduct}
+                  onSave={() => { setEditingProduct(null); navigate('/admin/products'); }} 
+                />
+              ) : <Navigate to="/login" state={{ from: '/admin/add-product' }} replace />
+            } />
+            <Route path="orders" element={
+              <AdminOrderManagement
+                onBack={() => navigate('/')}
+                onViewOrderDetail={(order) => { setSelectedOrder(order); navigate('/admin/order-detail'); }}
+              />
+            } />
+            <Route path="order-detail" element={
+              <OrderDetail
+                order={selectedOrder}
+                onBack={() => navigate('/admin/orders')}
+                isAdmin={true}
+                onCancelSuccess={(orderId) => {
+                  setSelectedOrder(prev => prev && prev.id === orderId ? { ...prev, status: 'cancelled' } : prev);
+                  addToast('Đơn hàng đã được hủy thành công', 'success');
+                }}
+              />
+            } />
+            <Route path="ai-assistant" element={<div />} />
+            <Route path="affiliates" element={isAdmin ? <AdminAffiliateManagement onBack={() => navigate('/admin/dashboard')} /> : <Navigate to="/" />} />
+            <Route path="customers" element={
+              <AdminCustomerManagement onBack={() => navigate('/')} />
+            } />
 
-          <Route path="/admin/coupons" element={
-            <AdminCouponManagement onBack={() => navigate('/admin/dashboard')} />
-          } />
-          <Route path="/admin/settings" element={
-            isAdmin ? <AdminSettings onBack={() => navigate('/admin/dashboard')} /> : <Navigate to="/" />
-          } />
+            <Route path="coupons" element={
+              <AdminCouponManagement onBack={() => navigate('/admin/dashboard')} />
+            } />
+            <Route path="settings" element={
+              isAdmin ? <AdminSettings onBack={() => navigate('/admin/dashboard')} /> : <Navigate to="/" />
+            } />
+          </Route>
 
           <Route path="/chinh-sach-bao-mat" element={<PrivacyPolicyVN />} />
           <Route path="/dieu-khoan-su-dung" element={<TermsOfServiceVN />} />

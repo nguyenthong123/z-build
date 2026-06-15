@@ -29,7 +29,7 @@ const ChatHistory = ({ messages, isTyping, chatEndRef, isMobile }) => {
               color: m.isBot ? '#1A2130' : 'white',
               boxShadow: m.isBot ? 'none' : '0 10px 25px rgba(218,165,32,0.3)',
               fontSize: isMobile ? '1rem' : '1.05rem',
-              lineHeight: '1.7', width: m.isBot ? '100%' : 'auto', overflowX: 'auto'
+              lineHeight: '1.7', width: m.isBot ? '100%' : 'auto', wordBreak: 'break-word', whiteSpace: 'pre-wrap'
             }}>
               <ReactMarkdown 
                 remarkPlugins={[remarkGfm]}

@@ -2,16 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy, where, limit, startAfter } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useWishlist } from '../context/WishlistContext';
+import { useStore } from '../context/StoreContext';
 import Fuse from 'fuse.js';
 import './ProductGrid.css';
 
-const ProductGrid = ({ onProductClick, searchQuery, category }) => {
+const ProductGrid = ({ onProductClick }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [lastVisible, setLastVisible] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const { toggleWishlist, isInWishlist } = useWishlist();
+  const { searchQuery, selectedCategory: category } = useStore();
   
   const ITEMS_PER_PAGE = 12;
 
@@ -20,6 +22,73 @@ const ProductGrid = ({ onProductClick, searchQuery, category }) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, searchQuery]);
 
+  const fetchValidProducts = async (startDoc) => {
+    let currentStartDoc = startDoc;
+    let accumulated = [];
+    let newLastVisible = startDoc;
+    let moreDocsAvailable = true;
+
+    const isFuseSearch = searchQuery && searchQuery !== "trending";
+
+    while (accumulated.length < ITEMS_PER_PAGE && moreDocsAvailable) {
+      let q;
+      if (isFuseSearch) {
+        q = query(collection(db, "products"), orderBy("createdAt", "desc"));
+      } else {
+        if (currentStartDoc) {
+          if (searchQuery === "trending") {
+            q = query(collection(db, "products"), where("isTrending", "==", true), startAfter(currentStartDoc), limit(ITEMS_PER_PAGE));
+          } else if (category) {
+            q = query(collection(db, "products"), where("category", "==", category), startAfter(currentStartDoc), limit(ITEMS_PER_PAGE));
+          } else {
+            q = query(collection(db, "products"), orderBy("createdAt", "desc"), startAfter(currentStartDoc), limit(ITEMS_PER_PAGE));
+          }
+        } else {
+          if (searchQuery === "trending") {
+            q = query(collection(db, "products"), where("isTrending", "==", true), limit(ITEMS_PER_PAGE));
+          } else if (category) {
+            q = query(collection(db, "products"), where("category", "==", category), limit(ITEMS_PER_PAGE));
+          } else {
+            q = query(collection(db, "products"), orderBy("createdAt", "desc"), limit(ITEMS_PER_PAGE));
+          }
+        }
+      }
+
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        moreDocsAvailable = false;
+        break;
+      }
+
+      newLastVisible = snapshot.docs[snapshot.docs.length - 1];
+      currentStartDoc = newLastVisible;
+
+      let batch = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        tag: doc.data().category || 'NỔI BẬT',
+        name: doc.data().title,
+        price: doc.data().discountPrice || doc.data().basePrice,
+        oldPrice: doc.data().basePrice,
+        img: doc.data().image ? doc.data().image.replace('/upload/', '/upload/f_auto,q_auto,w_500,c_fill/') : 'https://placehold.co/400x400.png?text=ZBUILD'
+      }));
+
+      batch = batch.filter(p => p.status !== 'Draft' && p.status !== 'Inactive');
+      accumulated = [...accumulated, ...batch];
+
+      if (isFuseSearch || snapshot.docs.length < ITEMS_PER_PAGE) {
+        moreDocsAvailable = false;
+      }
+    }
+
+    return {
+      products: accumulated,
+      lastVisible: newLastVisible,
+      hasMore: moreDocsAvailable
+    };
+  };
+
   const fetchInitialProducts = async () => {
     setLoading(true);
     setProducts([]);
@@ -27,24 +96,10 @@ const ProductGrid = ({ onProductClick, searchQuery, category }) => {
     setHasMore(true);
 
     try {
-      let q;
-      // Trạng thái tìm kiếm: Cần tải toàn bộ (hoặc số lượng lớn) để Fuse.js hoạt động mượt
-      if (searchQuery && searchQuery !== "trending") {
-        q = query(collection(db, "products"), orderBy("createdAt", "desc"));
-      } 
-      // Trạng thái bình thường: Áp dụng phân trang limit()
-      else {
-        if (searchQuery === "trending") {
-          q = query(collection(db, "products"), where("isTrending", "==", true), limit(ITEMS_PER_PAGE));
-        } else if (category) {
-          q = query(collection(db, "products"), where("category", "==", category), limit(ITEMS_PER_PAGE));
-        } else {
-          q = query(collection(db, "products"), orderBy("createdAt", "desc"), limit(ITEMS_PER_PAGE));
-        }
-      }
-
-      const querySnapshot = await getDocs(q);
-      processProducts(querySnapshot, true);
+      const result = await fetchValidProducts(null);
+      setProducts(result.products);
+      setLastVisible(result.lastVisible);
+      setHasMore(result.hasMore);
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
@@ -56,51 +111,14 @@ const ProductGrid = ({ onProductClick, searchQuery, category }) => {
     if (!lastVisible || !hasMore || loadingMore) return;
     setLoadingMore(true);
     try {
-      let q;
-      if (searchQuery === "trending") {
-        q = query(collection(db, "products"), where("isTrending", "==", true), startAfter(lastVisible), limit(ITEMS_PER_PAGE));
-      } else if (category) {
-        q = query(collection(db, "products"), where("category", "==", category), startAfter(lastVisible), limit(ITEMS_PER_PAGE));
-      } else {
-        q = query(collection(db, "products"), orderBy("createdAt", "desc"), startAfter(lastVisible), limit(ITEMS_PER_PAGE));
-      }
-
-      const querySnapshot = await getDocs(q);
-      processProducts(querySnapshot, false);
+      const result = await fetchValidProducts(lastVisible);
+      setProducts(prev => [...prev, ...result.products]);
+      setLastVisible(result.lastVisible);
+      setHasMore(result.hasMore);
     } catch (error) {
       console.error("Error loading more:", error);
     } finally {
       setLoadingMore(false);
-    }
-  };
-
-  const processProducts = (querySnapshot, isInitial) => {
-    const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
-    if (lastDoc) setLastVisible(lastDoc);
-    
-    // Nếu đang tìm kiếm bằng Fuse thì không hiện nút "Load More"
-    if (searchQuery && searchQuery !== "trending") {
-      setHasMore(false);
-    } else {
-      setHasMore(querySnapshot.docs.length === ITEMS_PER_PAGE);
-    }
-
-    let productData = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      tag: doc.data().category || 'NỔI BẬT',
-      name: doc.data().title,
-      price: doc.data().discountPrice || doc.data().basePrice,
-      oldPrice: doc.data().basePrice,
-      img: doc.data().image ? doc.data().image.replace('/upload/', '/upload/f_auto,q_auto,w_500,c_fill/') : 'https://placehold.co/400x400.png?text=ZBUILD'
-    }));
-
-    productData = productData.filter(p => p.status !== 'Draft' && p.status !== 'Inactive');
-
-    if (isInitial) {
-      setProducts(productData);
-    } else {
-      setProducts(prev => [...prev, ...productData]);
     }
   };
 

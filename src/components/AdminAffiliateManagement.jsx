@@ -13,7 +13,6 @@ import {
   serverTimestamp,
   orderBy
 } from 'firebase/firestore';
-import AdminSidebar from './AdminSidebar';
 import './AdminAffiliateManagement.css';
 
 const AdminAffiliateManagement = () => {
@@ -194,7 +193,6 @@ const AdminAffiliateManagement = () => {
 
   return (
     <div className="admin-product-page">
-      <AdminSidebar activePage="affiliates" />
       <div className="admin-main-content">
         <header className={`admin-content-header ${!isHeaderVisible ? 'header-hidden' : ''}`}>
           <div className="header-nav">

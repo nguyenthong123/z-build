@@ -1,13 +1,26 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { useStore } from '../context/StoreContext';
 import NotificationBell from './NotificationBell';
 import './Navbar.css';
 
-const Navbar = ({ user, onLogoClick, onCartClick, onWishlistClick, onProfileClick, onLogout, isLoggedIn, view, onSearch, cartCount = 0, wishlistCount = 0 }) => {
+const Navbar = ({ onCartClick, onWishlistClick, onProfileClick, onLogout, view, cartCount = 0, wishlistCount = 0 }) => {
   const [searchValue, setSearchValue] = React.useState('');
   const { isDark, toggleTheme } = useTheme();
+  const { user, isLoggedIn } = useAuth();
+  const { handleSearch, setSelectedCategory, setSearchQuery } = useStore();
   const [isNavVisible, setIsNavVisible] = React.useState(true);
   const [lastScrollY, setLastScrollY] = React.useState(0);
+  const navigate = useNavigate();
+
+  const handleLogoClick = (e) => {
+    e.preventDefault();
+    navigate('/');
+    setSelectedCategory(null);
+    setSearchQuery('');
+  };
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -27,19 +40,19 @@ const Navbar = ({ user, onLogoClick, onCartClick, onWishlistClick, onProfileClic
   const handleSearchChange = (e) => {
     const val = e.target.value;
     setSearchValue(val);
-    onSearch(val);
+    handleSearch(val);
   };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
-      onSearch(searchValue);
+      handleSearch(searchValue);
     }
   };
 
   return (
     <nav className={`navbar ${view === 'product-detail' ? 'product-view' : ''} ${view === 'cart' ? 'cart-view' : ''} ${(view === 'order-history' || view === 'profile') ? 'profile-view' : ''} ${!isNavVisible ? 'nav-hidden' : ''}`}>
       <div className="container nav-content">
-        <div className="logo" onClick={onLogoClick} style={{ cursor: 'pointer' }}>
+        <div className="logo" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
           <div className="logo-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M19 3H5C3.89 3 3 3.9 3 5V19C3 20.1 3.89 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM7 7H17V9L10 15H17V17H7V15L14 9H7V7Z" fill="currentColor"/>
@@ -63,8 +76,8 @@ const Navbar = ({ user, onLogoClick, onCartClick, onWishlistClick, onProfileClic
         </div>
 
         <ul className="nav-links">
-          <li><a href="/" className={view === 'home' && !searchValue ? 'active' : ''} onClick={(e) => { e.preventDefault(); onLogoClick(); }}>Cửa hàng</a></li>
-          <li><a href="/" onClick={(e) => { e.preventDefault(); onSearch('deals'); }}>Khuyến mãi</a></li>
+          <li><a href="/" className={view === 'home' && !searchValue ? 'active' : ''} onClick={handleLogoClick}>Cửa hàng</a></li>
+          <li><a href="/" onClick={(e) => { e.preventDefault(); handleSearch('deals'); }}>Khuyến mãi</a></li>
         </ul>
 
         <div className="nav-actions">

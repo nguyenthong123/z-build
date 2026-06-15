@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, getDocs, doc, query, where, serverTimestamp, getDoc, runTransaction } from 'firebase/firestore';
+import { collection, getDocs, doc, query, where, serverTimestamp, getDoc, runTransaction, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import './Checkout.css';
 
@@ -27,6 +27,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
 
   const [paymentStep, setPaymentStep] = useState(1); // 1: Form, 2: QR Code
   const [generatedOrder, setGeneratedOrder] = useState(null);
+  const [orderNumber] = useState(() => 'ZB' + Date.now().toString(36).toUpperCase() + Math.floor(Math.random() * 1000));
 
   // Coupon state
   const [couponCode, setCouponCode] = useState('');
@@ -42,6 +43,43 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
     accountName: 'NGUYEN BA TRUNG'
   });
 
+  // Dynamic Shipping Settings
+  const [shippingSettings, setShippingSettings] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+  const [distanceKm, setDistanceKm] = useState(null);
+  const [isLocating, setIsLocating] = useState(false);
+
+  // Auto-fill user data if logged in
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user && user.uid) {
+        try {
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists()) {
+            const data = userDocSnap.data();
+            setFormData(prev => ({
+              ...prev,
+              email: data.email || user.email || prev.email,
+              firstName: data.firstName || prev.firstName,
+              lastName: data.lastName || prev.lastName,
+              address: data.address || prev.address,
+              city: data.city || prev.city,
+              state: data.state || prev.state,
+              zipCode: data.zipCode || prev.zipCode,
+              phone: data.phone || prev.phone,
+            }));
+          } else if (user.email) {
+            setFormData(prev => ({ ...prev, email: user.email }));
+          }
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+        }
+      }
+    };
+    fetchUserProfile();
+  }, [user]);
+
   useEffect(() => {
     const fetchBankInfo = async () => {
       try {
@@ -49,6 +87,9 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists() && docSnap.data().bankInfo) {
           setShopBankInfo(docSnap.data().bankInfo);
+        }
+        if (docSnap.exists() && docSnap.data().shippingSettings) {
+          setShippingSettings(docSnap.data().shippingSettings);
         }
       } catch (error) {
         console.error('Error fetching bank info:', error);
@@ -63,7 +104,77 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
   };
 
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-  const shippingCost = formData.shippingMethod === 'express' ? 50000 : 0;
+  
+  const getDistanceFromLatLonInKm = (lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const totalWeight = cartItems.reduce((acc, item) => {
+    const itemWeight = parseFloat(item.weight) || 1;
+    return acc + (itemWeight * item.quantity);
+  }, 0);
+
+  let shippingCost = 0;
+  if (formData.shippingMethod === 'express') {
+    if (distanceKm !== null && shippingSettings) {
+      const rules = shippingSettings.distanceRules || [];
+      const sortedRules = [...rules].sort((a, b) => (parseFloat(a.maxDistance) || 0) - (parseFloat(b.maxDistance) || 0));
+      
+      let matchedRule = null;
+      for (const rule of sortedRules) {
+        if (distanceKm <= parseFloat(rule.maxDistance)) {
+          matchedRule = rule;
+          break;
+        }
+      }
+      
+      const pricePerKg = matchedRule 
+        ? parseInt(matchedRule.pricePerKg) || 0
+        : parseInt(shippingSettings.fallbackPricePerKg || 10000);
+      
+      shippingCost = totalWeight * pricePerKg;
+    } else {
+      // If user hasn't located yet, show 0 or some base fallback
+      shippingCost = 0; 
+    }
+  }
+
+  const handleGetLocation = () => {
+    setIsLocating(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+          if (shippingSettings?.storeLat && shippingSettings?.storeLng) {
+            const d = getDistanceFromLatLonInKm(
+              parseFloat(shippingSettings.storeLat),
+              parseFloat(shippingSettings.storeLng),
+              position.coords.latitude,
+              position.coords.longitude
+            );
+            setDistanceKm(d);
+          }
+          setIsLocating(false);
+        },
+        (error) => {
+          alert('Không thể lấy vị trí. Vui lòng cho phép trình duyệt truy cập định vị.');
+          setIsLocating(false);
+        }
+      );
+    } else {
+      alert('Trình duyệt của bạn không hỗ trợ định vị.');
+      setIsLocating(false);
+    }
+  };
+
   const tax = subtotal * 0.08;
 
   // Coupon discount calculation
@@ -158,7 +269,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
     
     setIsSubmitting(true);
     try {
-      const orderNumber = 'ZB' + Date.now().toString(36).toUpperCase() + Math.floor(Math.random() * 1000);
+      // Validate items before proceeding
       const orderRef = doc(collection(db, 'orders'));
       
       let newTotal = 0;
@@ -283,6 +394,25 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
         };
       }); // End transaction
 
+      // Save profile data for future auto-fill if user is logged in
+      if (user && user.uid) {
+        try {
+          const userRef = doc(db, 'users', user.uid);
+          await setDoc(userRef, {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            address: formData.address,
+            city: formData.city,
+            state: formData.state,
+            zipCode: formData.zipCode,
+            phone: formData.phone,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        } catch (error) {
+          console.error("Error updating user profile:", error);
+        }
+      }
+
       // Send emails (non-blocking)
       try {
         const payload = {
@@ -332,8 +462,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
 
       if (formData.paymentMethod === 'bank-transfer') {
         setGeneratedOrder(finalOrderData);
-        setPaymentStep(2);
-        setIsSubmitting(false);
+        onOrderComplete(finalOrderData);
       } else {
         onOrderComplete(finalOrderData);
       }
@@ -484,6 +613,36 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
                   style={formErrors.phone ? { borderColor: '#e74c3c' } : {}}
                 />
                 {formErrors.phone && <span style={{ color: '#e74c3c', fontSize: '0.8rem', display: 'block', marginTop: '-8px', marginBottom: '8px' }}>{formErrors.phone}</span>}
+                <div style={{ marginTop: '10px' }}>
+                  <button 
+                    type="button" 
+                    className="btn-secondary" 
+                    style={{ padding: '8px 16px', fontSize: '0.9rem', width: 'auto' }}
+                    onClick={async () => {
+                      if (user) {
+                        try {
+                          await setDoc(doc(db, 'users', user.uid), {
+                            firstName: formData.firstName,
+                            lastName: formData.lastName,
+                            address: formData.address,
+                            city: formData.city,
+                            state: formData.state,
+                            zipCode: formData.zipCode,
+                            country: formData.country,
+                            phone: formData.phone
+                          }, { merge: true });
+                          alert('Đã lưu thông tin cơ bản!');
+                        } catch (err) {
+                          alert('Lỗi lưu thông tin: ' + err.message);
+                        }
+                      } else {
+                        alert('Bạn cần đăng nhập để lưu thông tin!');
+                      }
+                    }}
+                  >
+                    💾 Lưu thông tin cơ bản
+                  </button>
+                </div>
               </div>
             </section>
 
@@ -501,24 +660,52 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
                     onChange={handleInputChange}
                   />
                   <div className="method-info">
-                    <span className="name">Giao hàng tiêu chuẩn</span>
-                    <span className="desc">2-3 ngày làm việc</span>
+                    <span className="name">Lấy hàng tại kho</span>
+                    <span className="desc">Tới kho lấy hàng</span>
                   </div>
                   <span className="price">Miễn phí</span>
                 </label>
-                <label className={`method-option ${formData.shippingMethod === 'express' ? 'active' : ''}`}>
-                  <input 
-                    type="radio" 
-                    name="shippingMethod" 
-                    value="express"
-                    checked={formData.shippingMethod === 'express'}
-                    onChange={handleInputChange}
-                  />
-                  <div className="method-info">
-                    <span className="name">Giao hàng nhanh</span>
-                    <span className="desc">Giao hàng ngày mai</span>
+                <label className={`method-option ${formData.shippingMethod === 'express' ? 'active' : ''}`} style={{ flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <input 
+                        type="radio" 
+                        name="shippingMethod" 
+                        value="express"
+                        checked={formData.shippingMethod === 'express'}
+                        onChange={handleInputChange}
+                      />
+                      <div className="method-info">
+                        <span className="name">Giao tới nơi</span>
+                        <span className="desc">Giao hàng tận nơi</span>
+                      </div>
+                    </div>
+                    <span className="price">
+                      {distanceKm !== null ? `${shippingCost.toLocaleString('vi-VN')}₫` : 'Tính theo khoảng cách'}
+                    </span>
                   </div>
-                  <span className="price">50.000₫</span>
+                  
+                  {formData.shippingMethod === 'express' && (
+                    <div style={{ width: '100%', paddingLeft: '34px', marginTop: '12px' }}>
+                      <button 
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); handleGetLocation(); }}
+                        disabled={isLocating}
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.9rem', color: '#334155', cursor: 'pointer' }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={isLocating ? 'rotating' : ''}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        {isLocating ? 'Đang định vị...' : (distanceKm !== null ? 'Cập nhật lại vị trí giao hàng' : 'Lấy vị trí của tôi để tính phí giao hàng')}
+                      </button>
+                      
+                      {distanceKm !== null && (
+                        <div style={{ marginTop: '10px', fontSize: '0.85rem', color: '#64748b', background: '#f8fafc', padding: '8px', borderRadius: '6px', border: '1px dashed #cbd5e1' }}>
+                          <div style={{ marginBottom: '4px' }}>📏 Khoảng cách tới kho: <strong>{distanceKm.toFixed(1)} km</strong></div>
+                          <div style={{ marginBottom: '4px' }}>⚖️ Tổng trọng lượng: <strong>{totalWeight} kg</strong></div>
+                          <div>🚚 Chi phí ước tính: <strong style={{ color: '#E11D48' }}>{shippingCost.toLocaleString('vi-VN')}₫</strong></div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </label>
               </div>
             </section>
@@ -528,68 +715,69 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
                 <h3>Thanh toán</h3>
                 <p className="secure-tag">Tất cả các giao dịch đều được bảo mật và mã hóa.</p>
               </div>
-              <div className="payment-methods">
-                <div className="payment-tabs">
-                  <button 
-                    className={`tab ${formData.paymentMethod === 'bank-transfer' ? 'active' : ''}`}
-                    onClick={() => setFormData({...formData, paymentMethod: 'bank-transfer'})}
-                  >
-                    Chuyển khoản
-                  </button>
-                  <button 
-                    className={`tab ${formData.paymentMethod === 'credit-card' ? 'active' : ''}`}
-                    onClick={() => setFormData({...formData, paymentMethod: 'credit-card'})}
-                  >
-                    Credit Card
-                  </button>
-                  <button 
-                    className={`tab ${formData.paymentMethod === 'paypal' ? 'active' : ''}`}
-                    onClick={() => setFormData({...formData, paymentMethod: 'paypal'})}
-                  >
-                    PayPal
-                  </button>
-                </div>
-                
-                {formData.paymentMethod === 'bank-transfer' && (
-                  <div className="card-fields animate-fade-in">
-                    <div className="qr-hint-box" style={{ padding: '10px 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '8px', verticalAlign: 'middle' }}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                      Quét mã VietQR nhanh chóng sau khi xác nhận đơn hàng.
-                    </div>
+              <div className="shipping-methods" style={{ marginBottom: '20px' }}>
+                <label className={`method-option ${formData.paymentMethod === 'bank-transfer' ? 'active' : ''}`}>
+                  <input 
+                    type="radio" 
+                    name="paymentMethod" 
+                    value="bank-transfer"
+                    checked={formData.paymentMethod === 'bank-transfer'}
+                    onChange={handleInputChange}
+                  />
+                  <div className="method-info">
+                    <span className="name">Chuyển khoản (VietQR)</span>
+                    <span className="desc">Hệ thống duyệt đơn tự động</span>
                   </div>
-                )}
-                
-                {formData.paymentMethod === 'credit-card' && (
-                  <div className="card-fields animate-fade-in">
-                    <input 
-                      type="text" 
-                      name="cardNumber" 
-                      placeholder="Số thẻ" 
-                      className="full"
-                      value={formData.cardNumber}
-                      onChange={handleInputChange}
-                    />
-                    <div className="row">
-                      <input 
-                        type="text" 
-                        name="cardExpiry" 
-                        placeholder="Ngày hết hạn (MM/YY)" 
-                        className="half"
-                        value={formData.cardExpiry}
-                        onChange={handleInputChange}
-                      />
-                      <input 
-                        type="text" 
-                        name="cardCvv" 
-                        placeholder="Mã bảo mật" 
-                        className="half"
-                        value={formData.cardCvv}
-                        onChange={handleInputChange}
-                      />
-                    </div>
+                </label>
+                <label className={`method-option ${formData.paymentMethod === 'cod' ? 'active' : ''}`}>
+                  <input 
+                    type="radio" 
+                    name="paymentMethod" 
+                    value="cod"
+                    checked={formData.paymentMethod === 'cod'}
+                    onChange={handleInputChange}
+                  />
+                  <div className="method-info">
+                    <span className="name">Thanh toán khi nhận hàng (COD)</span>
+                    <span className="desc">Giao hàng tới nơi mới thu tiền</span>
                   </div>
-                )}
+                </label>
               </div>
+
+              {formData.paymentMethod === 'bank-transfer' && (
+                <div className="card-fields animate-fade-in">
+                  <div className="qr-hint-box" style={{ padding: '20px', backgroundColor: '#f8f9fa', border: '1px solid #e2e8f0', borderRadius: '12px', color: 'var(--text-main)', textAlign: 'center' }}>
+                    <div style={{ fontWeight: '600', marginBottom: '8px', color: '#1A2130', fontSize: '1.1rem' }}>
+                      Thanh toán chuyển khoản (VietQR)
+                    </div>
+                    <p style={{ margin: '0 0 15px 0', color: '#64748B', fontSize: '0.95rem' }}>
+                      Tổng tiền thanh toán: <strong style={{ color: '#E11D48', fontSize: '1.2rem' }}>{Number(total).toLocaleString('vi-VN')}₫</strong>
+                    </p>
+                    
+                    {shopBankInfo?.bankCode && shopBankInfo?.accountNumber && (
+                      <div style={{ background: '#fff', padding: '15px', borderRadius: '8px', display: 'inline-block', border: '1px solid #e2e8f0', marginBottom: '15px' }}>
+                        <img 
+                          src={`https://img.vietqr.io/image/${shopBankInfo.bankCode}-${shopBankInfo.accountNumber}-compact2.png?amount=${total}&addInfo=${orderNumber}&accountName=${encodeURIComponent(shopBankInfo.accountName || '')}`}
+                          alt="VietQR"
+                          style={{ width: '200px', height: '200px', objectFit: 'contain' }}
+                        />
+                      </div>
+                    )}
+                    
+                    <div style={{ textAlign: 'left', background: '#f1f5f9', padding: '15px', borderRadius: '8px', fontSize: '0.9rem', marginBottom: '15px' }}>
+                      <div style={{ marginBottom: '8px' }}><strong>Ngân hàng:</strong> {shopBankInfo?.bankName}</div>
+                      <div style={{ marginBottom: '8px' }}><strong>Số tài khoản:</strong> {shopBankInfo?.accountNumber}</div>
+                      <div style={{ marginBottom: '8px' }}><strong>Chủ tài khoản:</strong> {shopBankInfo?.accountName}</div>
+                      <div><strong>Nội dung:</strong> {orderNumber} <span style={{ color: '#E11D48', fontSize: '0.8rem', marginLeft: '5px' }}>(Hệ thống sẽ tự duyệt đơn)</span></div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#10b981' }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                      <span>Vui lòng quét mã trên để thanh toán trước khi bấm <b>Xác nhận đơn hàng</b>.</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </section>
 
             {paymentStep === 1 ? (
@@ -599,7 +787,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
                   Quay lại giỏ hàng
                 </button>
                 <button className="btn-primary-action" onClick={handlePlaceOrder} disabled={isSubmitting}>
-                  {isSubmitting ? 'Đang xử lý...' : (formData.paymentMethod === 'bank-transfer' ? 'Tiếp tục thanh toán' : 'Hoàn tất đặt hàng')}
+                  {isSubmitting ? 'Đang xử lý...' : 'Xác nhận đơn hàng'}
                 </button>
               </div>
             ) : (
@@ -743,7 +931,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
           THANH TOÁN BẢO MẬT SSL 256-BIT
         </div>
         <button className="btn-place-order" onClick={paymentStep === 1 ? handlePlaceOrder : () => onOrderComplete(generatedOrder)} disabled={isSubmitting}>
-          {isSubmitting ? 'ĐANG XỬ LÝ...' : (paymentStep === 1 ? (formData.paymentMethod === 'bank-transfer' ? 'TIẾP TỤC THANH TOÁN' : 'ĐẶT HÀNG') : 'TÔI ĐÃ THANH TOÁN')}
+          {isSubmitting ? 'ĐANG XỬ LÝ...' : (paymentStep === 1 ? 'XÁC NHẬN ĐƠN HÀNG' : 'TÔI ĐÃ THANH TOÁN')}
           {!isSubmitting && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>}
         </button>
       </div>

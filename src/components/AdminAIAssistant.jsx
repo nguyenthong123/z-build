@@ -1,13 +1,12 @@
 import React, { useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import AdminSidebar from './AdminSidebar';
-import { useAIAdvisor } from '../hooks/useAIAdvisor';
+import { useAdminAI } from '../context/AdminAIContext';
 import './AdminAIAssistant.css';
 
 const AdminAIAssistant = () => {
-  // Use 'admin' role to get admin capabilities and prompts
-  const { messages, input, setInput, isTyping, handleSend } = useAIAdvisor(null, 'admin');
+  // Use 'admin' role to get admin capabilities and prompts from context
+  const { messages, input, setInput, isTyping, handleSend } = useAdminAI();
   const chatEndRef = useRef(null);
 
   const displayMessages = messages.length === 0 ? [
@@ -67,7 +66,6 @@ const AdminAIAssistant = () => {
 
   return (
     <div className="admin-ai-assistant-page">
-      <AdminSidebar activePage="ai-assistant" />
       
       <div className="admin-ai-content">
         <header className="admin-ai-header">

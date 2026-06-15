@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
-import AdminSidebar from './AdminSidebar';
 import './AdminCustomerManagement.css';
 
 const TIERS = [
@@ -128,7 +127,6 @@ const AdminCustomerManagement = ({ onBack }) => {
 
   return (
     <div className="admin-product-page">
-      <AdminSidebar activePage="customers" />
 
       <div className="admin-main-content">
         <header className={`admin-content-header ${!isHeaderVisible ? 'header-hidden' : ''}`}>

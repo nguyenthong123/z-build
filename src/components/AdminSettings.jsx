@@ -1,8 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import AdminSidebar from './AdminSidebar';
 import './AdminSettings.css';
+
+const VIETNAMESE_BANKS = [
+  { code: 'vcb', name: 'Vietcombank' },
+  { code: 'vtb', name: 'VietinBank' },
+  { code: 'bidv', name: 'BIDV' },
+  { code: 'agribank', name: 'Agribank' },
+  { code: 'mbbank', name: 'MBBank' },
+  { code: 'techcombank', name: 'Techcombank' },
+  { code: 'acb', name: 'ACB' },
+  { code: 'vpbank', name: 'VPBank' },
+  { code: 'tpbank', name: 'TPBank' },
+  { code: 'sacombank', name: 'Sacombank' },
+  { code: 'hdbank', name: 'HDBank' },
+  { code: 'vib', name: 'VIB' },
+  { code: 'shb', name: 'SHB' },
+  { code: 'ocb', name: 'OCB' },
+  { code: 'msb', name: 'MSB' },
+  { code: 'seabank', name: 'SeABank' },
+  { code: 'eximbank', name: 'Eximbank' },
+  { code: 'lpbank', name: 'LPBank' },
+  { code: 'momo', name: 'MoMo' },
+];
 
 const AdminSettings = ({ onBack }) => {
   const [bankInfo, setBankInfo] = useState({
@@ -18,6 +39,12 @@ const AdminSettings = ({ onBack }) => {
   const [adminEmails, setAdminEmails] = useState([]);
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [googleSheetUrl, setGoogleSheetUrl] = useState('');
+  const [shippingSettings, setShippingSettings] = useState({
+    storeLat: '',
+    storeLng: '',
+    fallbackPricePerKg: 10000,
+    distanceRules: [{ maxDistance: 10, pricePerKg: 5000 }]
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState(null);
@@ -48,6 +75,10 @@ const AdminSettings = ({ onBack }) => {
           setGoogleSheetUrl("https://script.google.com/macros/s/AKfycbyjxwNzi7j1KMpLdrYFfPzYFYhEmFhb9ercrPho5CMXCTRKE_dx0iaoYOFwP8t20gZG/exec");
         }
 
+        if (docSnap.exists() && docSnap.data().shippingSettings) {
+          setShippingSettings(docSnap.data().shippingSettings);
+        }
+
         const adminDocRef = doc(db, 'settings', 'admins');
         const adminSnap = await getDoc(adminDocRef);
         if (adminSnap.exists() && adminSnap.data().emails) {
@@ -73,7 +104,7 @@ const AdminSettings = ({ onBack }) => {
     setIsSaving(true);
     try {
       const docRef = doc(db, 'storeSettings', 'main');
-      await setDoc(docRef, { bankInfo, openClawConfig, googleSheetUrl }, { merge: true });
+      await setDoc(docRef, { bankInfo, openClawConfig, googleSheetUrl, shippingSettings }, { merge: true });
 
       const adminDocRef = doc(db, 'settings', 'admins');
       await setDoc(adminDocRef, { emails: adminEmails }, { merge: true });
@@ -88,9 +119,31 @@ const AdminSettings = ({ onBack }) => {
     }
   };
 
+  const handleGetStoreLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setShippingSettings(prev => ({
+            ...prev,
+            storeLat: position.coords.latitude,
+            storeLng: position.coords.longitude
+          }));
+          setToast({ message: 'Lấy vị trí thành công!', type: 'success' });
+          setTimeout(() => setToast(null), 3000);
+        },
+        (error) => {
+          setToast({ message: 'Không thể lấy vị trí. Vui lòng cho phép quyền truy cập vị trí.', type: 'error' });
+          setTimeout(() => setToast(null), 3000);
+        }
+      );
+    } else {
+      setToast({ message: 'Trình duyệt của bạn không hỗ trợ định vị.', type: 'error' });
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
   return (
     <div className="admin-product-page">
-      <AdminSidebar activePage="settings" />
       <div className="admin-main-content">
         <header className="admin-content-header">
           <nav className="breadcrumb desktop-only">Quản trị / <span className="active">Cài đặt hệ thống</span></nav>
@@ -138,25 +191,28 @@ const AdminSettings = ({ onBack }) => {
                   <p>Thông tin này sẽ được sử dụng để tạo mã QR tự động ở phần thanh toán.</p>
                 </div>
                 <div className="settings-form-grid">
-                  <div className="setting-field">
-                    <label>Mã Ngân hàng (VD: vcb, vtb, bidv)</label>
-                    <input 
-                      type="text" 
+                  <div className="setting-field" style={{ gridColumn: '1 / -1' }}>
+                    <label>Ngân hàng nhận thanh toán</label>
+                    <select 
                       name="bankCode" 
                       value={bankInfo.bankCode} 
-                      onChange={handleChange} 
-                      placeholder="vcb"
-                    />
-                  </div>
-                  <div className="setting-field">
-                    <label>Tên Ngân hàng</label>
-                    <input 
-                      type="text" 
-                      name="bankName" 
-                      value={bankInfo.bankName} 
-                      onChange={handleChange} 
-                      placeholder="Vietcombank"
-                    />
+                      onChange={(e) => {
+                        const selectedBank = VIETNAMESE_BANKS.find(b => b.code === e.target.value);
+                        setBankInfo(prev => ({
+                          ...prev,
+                          bankCode: e.target.value,
+                          bankName: selectedBank ? selectedBank.name : e.target.value
+                        }));
+                      }} 
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e0e0e0', fontSize: '15px' }}
+                    >
+                      <option value="">-- Chọn ngân hàng --</option>
+                      {VIETNAMESE_BANKS.map(bank => (
+                        <option key={bank.code} value={bank.code}>
+                          {bank.name} ({bank.code.toUpperCase()})
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div className="setting-field">
                     <label>Số tài khoản</label>
@@ -227,6 +283,116 @@ const AdminSettings = ({ onBack }) => {
                   </div>
                   <p className="field-hint" style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
                     * Khóa này dùng để cấp quyền cho Bot kết nối vào API tạo sản phẩm. Bot cần gửi Header <code>x-api-key</code> trùng khớp với mã này.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="settings-panel" style={{ marginTop: '24px' }}>
+              <div className="settings-section">
+                <div className="settings-section-header">
+                  <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16l-3-2-3 2-3-2-3 2z"/></svg> Cấu hình Vận chuyển (Giao tới nơi)</h3>
+                  <p>Cài đặt phí vận chuyển dựa trên khoảng cách từ kho đến khách hàng.</p>
+                </div>
+                
+                <div className="setting-field">
+                  <label>Vĩ độ Kho hàng (Lat)</label>
+                  <input 
+                    type="number" 
+                    value={shippingSettings.storeLat} 
+                    onChange={(e) => setShippingSettings(prev => ({ ...prev, storeLat: parseFloat(e.target.value) || '' }))}
+                    placeholder="VD: 10.762622"
+                  />
+                </div>
+                <div className="setting-field">
+                  <label>Kinh độ Kho hàng (Lng)</label>
+                  <input 
+                    type="number" 
+                    value={shippingSettings.storeLng} 
+                    onChange={(e) => setShippingSettings(prev => ({ ...prev, storeLng: parseFloat(e.target.value) || '' }))}
+                    placeholder="VD: 106.660172"
+                  />
+                </div>
+                
+                <button type="button" className="btn-secondary" onClick={handleGetStoreLocation} style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> Lấy vị trí hiện tại của tôi (Làm vị trí Kho)
+                </button>
+
+                <div className="setting-field">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <label style={{ margin: 0 }}>Các mốc phí vận chuyển</label>
+                    <button 
+                      type="button" 
+                      className="btn-secondary"
+                      onClick={() => setShippingSettings(prev => ({
+                        ...prev,
+                        distanceRules: [...(prev.distanceRules || []), { maxDistance: '', pricePerKg: '' }]
+                      }))}
+                      style={{ padding: '4px 10px', fontSize: '13px' }}
+                    >
+                      + Thêm mốc mới
+                    </button>
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {(shippingSettings.distanceRules || []).map((rule, idx) => (
+                      <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'center', background: '#f8f9fa', padding: '10px', borderRadius: '8px' }}>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontSize: '13px', color: '#666', display: 'block', marginBottom: '4px' }}>Dưới bao nhiêu Km?</span>
+                          <input 
+                            type="number" 
+                            placeholder="VD: 10"
+                            value={rule.maxDistance}
+                            onChange={(e) => {
+                              const newRules = [...shippingSettings.distanceRules];
+                              newRules[idx].maxDistance = e.target.value !== '' ? parseFloat(e.target.value) : '';
+                              setShippingSettings(prev => ({ ...prev, distanceRules: newRules }));
+                            }}
+                          />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontSize: '13px', color: '#666', display: 'block', marginBottom: '4px' }}>Giá 1 kg (VNĐ)</span>
+                          <input 
+                            type="number" 
+                            placeholder="VD: 5000"
+                            value={rule.pricePerKg}
+                            onChange={(e) => {
+                              const newRules = [...shippingSettings.distanceRules];
+                              newRules[idx].pricePerKg = e.target.value !== '' ? parseInt(e.target.value) : '';
+                              setShippingSettings(prev => ({ ...prev, distanceRules: newRules }));
+                            }}
+                          />
+                        </div>
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const newRules = [...shippingSettings.distanceRules];
+                            newRules.splice(idx, 1);
+                            setShippingSettings(prev => ({ ...prev, distanceRules: newRules }));
+                          }}
+                          style={{ background: 'none', border: 'none', color: '#E11D48', cursor: 'pointer', padding: '5px', marginTop: '20px' }}
+                          title="Xóa mốc này"
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                      </div>
+                    ))}
+                    {(!shippingSettings.distanceRules || shippingSettings.distanceRules.length === 0) && (
+                      <div style={{ fontSize: '13px', color: '#666', fontStyle: 'italic', padding: '10px' }}>Chưa có mốc phí nào.</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="setting-field" style={{ marginTop: '15px' }}>
+                  <label>Đơn giá mặc định khi vượt mốc (VNĐ/kg)</label>
+                  <input 
+                    type="number" 
+                    value={shippingSettings.fallbackPricePerKg} 
+                    onChange={(e) => setShippingSettings(prev => ({ ...prev, fallbackPricePerKg: parseInt(e.target.value) || 0 }))}
+                    placeholder="10000"
+                  />
+                  <p className="field-hint" style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
+                    * Áp dụng nếu khoảng cách lớn hơn tất cả các mốc bạn đã cấu hình ở trên.
                   </p>
                 </div>
               </div>

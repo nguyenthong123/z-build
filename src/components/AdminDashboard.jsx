@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
-import AdminSidebar from './AdminSidebar';
 import './AdminDashboard.css';
 
 const AdminDashboard = ({ onBack }) => {
@@ -229,7 +228,6 @@ const AdminDashboard = ({ onBack }) => {
   if (loading) {
     return (
       <div className="admin-product-page">
-        <AdminSidebar activePage="dashboard" />
         <div className="admin-main-content">
           <div className="loading-container">Đang tải dashboard...</div>
         </div>
@@ -239,7 +237,6 @@ const AdminDashboard = ({ onBack }) => {
 
   return (
     <div className="admin-product-page">
-      <AdminSidebar activePage="dashboard" />
       <div className="admin-main-content">
         <header className={`admin-content-header ${!isHeaderVisible ? 'header-hidden' : ''}`}>
           <nav className="breadcrumb desktop-only">Quản trị / <span className="active">Dashboard</span></nav>

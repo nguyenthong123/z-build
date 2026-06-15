@@ -1,0 +1,45 @@
+.admin-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-color, #f4f6f8);
+}
+
+.admin-main {
+  flex: 1;
+  padding: 24px;
+  min-height: 100vh;
+}
+
+.admin-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+@media (max-width: 1024px) {
+  /* Let flexbox handle it */
+}
+
+@media (max-width: 768px) {
+  .admin-main {
+    padding: 16px;
+    padding-bottom: 80px; /* Mobile nav space */
+  }
+}
+
+.admin-ai-persistent-wrapper {
+  flex: 1;
+  height: 100vh;
+  overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+  /* Let flexbox handle it */
+}
+
+@media (max-width: 768px) {
+  /* Let flexbox handle it */
+}

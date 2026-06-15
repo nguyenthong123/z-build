@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, orderBy, doc, updateDoc, serverTimestamp, addDoc } from 'firebase/firestore';
+import { collection, getDocs, getDoc, query, orderBy, doc, updateDoc, serverTimestamp, addDoc, limit, startAfter } from 'firebase/firestore';
 import { db } from '../firebase';
-import AdminSidebar from './AdminSidebar';
 import './AdminOrderManagement.css';
 
 const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
@@ -18,11 +17,21 @@ const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
     fetchOrders();
   }, []);
 
-  const fetchOrders = async () => {
+  const ITEMS_PER_PAGE = 20;
+  const [lastVisible, setLastVisible] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const fetchOrders = async (reset = false) => {
     setLoading(true);
     try {
-      const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+      const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(ITEMS_PER_PAGE));
       const snapshot = await getDocs(q);
+      
+      const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+      setLastVisible(lastDoc || null);
+      setHasMore(snapshot.docs.length === ITEMS_PER_PAGE);
+
       const data = snapshot.docs.map(d => ({
         id: d.id,
         ...d.data(),
@@ -30,7 +39,7 @@ const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
       }));
       setOrders(data);
       
-      // Tính stats
+      // Tính stats (Dựa trên dữ liệu đang hiển thị)
       const s = { total: data.length, pending: 0, confirmed: 0, shipping: 0, delivered: 0, cancelled: 0, revenue: 0 };
       data.forEach(o => {
         if (s[o.status] !== undefined) s[o.status]++;
@@ -41,6 +50,45 @@ const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
       console.error('Error fetching orders:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMoreOrders = async () => {
+    if (!lastVisible || !hasMore || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const q = query(
+        collection(db, 'orders'), 
+        orderBy('createdAt', 'desc'), 
+        startAfter(lastVisible),
+        limit(ITEMS_PER_PAGE)
+      );
+      const snapshot = await getDocs(q);
+      
+      const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+      setLastVisible(lastDoc || null);
+      setHasMore(snapshot.docs.length === ITEMS_PER_PAGE);
+
+      const newData = snapshot.docs.map(d => ({
+        id: d.id,
+        ...d.data(),
+        createdAt: d.data().createdAt?.toDate ? d.data().createdAt.toDate() : new Date()
+      }));
+      
+      const updatedOrders = [...orders, ...newData];
+      setOrders(updatedOrders);
+      
+      // Recalc stats
+      const s = { total: updatedOrders.length, pending: 0, confirmed: 0, shipping: 0, delivered: 0, cancelled: 0, revenue: 0 };
+      updatedOrders.forEach(o => {
+        if (s[o.status] !== undefined) s[o.status]++;
+        if (o.status === 'delivered') s.revenue += (o.total || 0);
+      });
+      setStats(s);
+    } catch (err) {
+      console.error('Error loading more orders:', err);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -123,8 +171,68 @@ const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
     if (dateFilter === 'month') {
       return orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
     }
-    return true;
+    return false;
   };
+
+  const handleSyncBank = async () => {
+    setIsSyncing(true);
+    try {
+      const docSnap = await getDoc(doc(db, 'storeSettings', 'main'));
+      let apiUrl = '';
+      if (docSnap.exists() && docSnap.data().googleSheetUrl) {
+        apiUrl = docSnap.data().googleSheetUrl;
+      }
+      if (!apiUrl) {
+        apiUrl = 'https://script.google.com/macros/s/AKfycbwKEEu9Yapfdpt_MpCneQvR4BRORrIK9NHv6EJYoJbtH9ocOrxeh-1tOzI3lmFLaT41/exec';
+      }
+
+      const res = await fetch(apiUrl);
+      const dataObj = await res.json();
+      const transactions = dataObj.data || [];
+
+      let syncedCount = 0;
+
+      for (const order of orders) {
+        if (order.status === 'pending' && order.paymentMethod === 'bank-transfer') {
+          const match = transactions.find(t => {
+            const amountStr = t['Phát sinh'] || '';
+            const desc = (t['Nội dung'] || '').toUpperCase();
+            const orderNum = (order.orderNumber || '').toUpperCase();
+            
+            const parsedAmount = parseInt(amountStr.replace(/[^\d]/g, ''), 10);
+            return amountStr.includes('+') && parsedAmount === order.total && orderNum && desc.includes(orderNum);
+          });
+
+          if (match) {
+            const orderRef = doc(db, 'orders', order.id);
+            await updateDoc(orderRef, {
+              status: 'processing',
+              paymentStatus: 'paid',
+              updatedAt: serverTimestamp()
+            });
+            syncedCount++;
+          }
+        }
+      }
+
+      if (syncedCount > 0) {
+        alert(`Đã đồng bộ thành công! Tìm thấy và tự động duyệt ${syncedCount} đơn hàng chuyển khoản.`);
+        fetchOrders(true);
+      } else {
+        alert('Không tìm thấy giao dịch ngân hàng nào khớp với các đơn hàng đang chờ duyệt.');
+      }
+    } catch (err) {
+      console.error('Lỗi đồng bộ:', err);
+      alert('Có lỗi khi đồng bộ giao dịch ngân hàng: ' + err.message);
+    }
+    setIsSyncing(false);
+  };
+
+  const currentMonthOrders = orders.filter(o => {
+    const orderDate = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+    const now = new Date();
+    return orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
+  });
 
   const filteredOrders = orders.filter(o => {
     const matchTab = activeTab === 'all' || o.status === activeTab;
@@ -209,7 +317,6 @@ const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
 
   return (
     <div className="admin-product-page">
-      <AdminSidebar activePage="orders" />
 
       <div className="admin-main-content">
         <header className={`admin-content-header ${!isHeaderVisible ? 'header-hidden' : ''}`}>
@@ -237,6 +344,15 @@ const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
                 <button className="export-btn" onClick={exportToCSV}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
                   <span className="desktop-only">Xuất CSV</span>
+                </button>
+                <button 
+                  className="btn-primary" 
+                  onClick={handleSyncBank}
+                  disabled={isSyncing}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={isSyncing ? 'rotating' : ''}><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l-5.65 1.64"/></svg>
+                  {isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ Ngân hàng'}
                 </button>
               </div>
             </div>
@@ -429,6 +545,22 @@ const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
                   </div>
                 ))}
               </div>
+
+              {hasMore && (
+                <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                  <button 
+                    onClick={loadMoreOrders}
+                    disabled={loadingMore}
+                    style={{
+                      padding: '10px 24px', background: 'var(--adv-gold)', color: 'white',
+                      border: 'none', borderRadius: '8px', fontWeight: 600, cursor: loadingMore ? 'not-allowed' : 'pointer',
+                      opacity: loadingMore ? 0.7 : 1
+                    }}
+                  >
+                    {loadingMore ? 'Đang tải...' : 'Xem thêm đơn hàng'}
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>

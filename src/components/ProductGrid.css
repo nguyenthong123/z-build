@@ -3,14 +3,14 @@
 }
 
 .product-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 30px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 24px;
+  width: 100%;
 }
 
 .product-card {
-  width: 280px; /* Chiều rộng thẻ sản phẩm ổn định */
+  width: 100%; /* Flexible width inside grid */
   background-color: var(--card-bg);
   border-radius: 20px;
   overflow: hidden;

@@ -260,14 +260,16 @@
   margin-top: 4px;
 }
 
+.sfcb-msg.assistant {
+  max-width: 100%; /* Changed from 95% to 100% to allow tables to fit better, we rely on content max-width */
+}
+
 .sfcb-msg-content {
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-
-.sfcb-msg.assistant {
-  max-width: 95%; /* Wider for tables */
+  max-width: calc(100vw - 60px); /* Prevent expansion beyond screen on mobile */
+  overflow: hidden;
 }
 
 .sfcb-msg-bubble {
@@ -276,6 +278,7 @@
   font-size: 0.9rem;
   line-height: 1.6;
   word-break: break-word;
+  overflow-x: auto;
 }
 
 /* Table Styles in Chat */
@@ -643,6 +646,10 @@
   .sfcb-msg-bubble table {
     display: block;
     overflow-x: auto;
+  }
+
+  .sfcb-maximize-btn {
+    margin-right: 50px; /* Tránh đè lên nút close absolute */
   }
 
   /* Ensure input is always visible and doesn't zoom */

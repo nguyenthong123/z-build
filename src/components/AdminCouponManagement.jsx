@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import AdminSidebar from './AdminSidebar';
 import './AdminProductList.css';
 import './AdminCouponManagement.css';
 
@@ -134,7 +133,6 @@ const AdminCouponManagement = ({ onBack }) => {
 
   return (
     <div className="admin-product-page">
-      <AdminSidebar activePage="coupons" />
       
       <div className="admin-main-content">
         <header className="admin-content-header">

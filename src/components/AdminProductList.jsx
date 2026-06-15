@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc, startAfter, limit, addDoc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc, startAfter, limit, addDoc, getDoc, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import './AdminProductList.css';
-import AdminSidebar from './AdminSidebar';
 
 const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => {
   const [activeTab] = useState('All');
@@ -59,21 +58,16 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
       if (data.success && data.products) {
         let updatedCount = 0;
         
-        // Fetch existing products
-        const existingProductsSnap = await getDocs(collection(db, "products"));
-        const existingProductsMap = new Map();
-        existingProductsSnap.forEach(doc => {
-          const name = (doc.data().title || '').toLowerCase().trim();
-          existingProductsMap.set(name, doc.id);
-        });
-
         for (const sheetProduct of data.products) {
           if (!sheetProduct.name) continue;
-          const productNameLower = sheetProduct.name.toLowerCase().trim();
           
-          if (existingProductsMap.has(productNameLower)) {
+          const slug = sheetProduct.name.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+          const q = query(collection(db, "products"), where("slug", "==", slug), limit(1));
+          const snap = await getDocs(q);
+          
+          if (!snap.empty) {
             // Update price
-            const productId = existingProductsMap.get(productNameLower);
+            const productId = snap.docs[0].id;
             const priceString = String(sheetProduct.price).replace(/[^\d]/g, '');
             const newPrice = Number(priceString);
             
@@ -126,20 +120,15 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
       if (data.success && data.products) {
         let updatedCount = 0;
         
-        // Fetch existing products
-        const existingProductsSnap = await getDocs(collection(db, "products"));
-        const existingProductsMap = new Map();
-        existingProductsSnap.forEach(doc => {
-          const name = (doc.data().title || '').toLowerCase().trim();
-          existingProductsMap.set(name, doc.id);
-        });
-
         for (const sheetProduct of data.products) {
           if (!sheetProduct.name) continue;
-          const productNameLower = sheetProduct.name.toLowerCase().trim();
           
-          if (existingProductsMap.has(productNameLower)) {
-            const productId = existingProductsMap.get(productNameLower);
+          const slug = sheetProduct.name.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+          const q = query(collection(db, "products"), where("slug", "==", slug), limit(1));
+          const snap = await getDocs(q);
+          
+          if (!snap.empty) {
+            const productId = snap.docs[0].id;
             const productRef = doc(db, "products", productId);
             
             const updateData = {};
@@ -192,21 +181,20 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
       if (data.success && data.products) {
         let createdCount = 0;
         
-        // Fetch existing products to avoid duplicates
-        const existingProductsSnap = await getDocs(collection(db, "products"));
-        const existingProductNames = new Set(existingProductsSnap.docs.map(d => (d.data().title || '').toLowerCase().trim()));
-
         for (const sheetProduct of data.products) {
           if (!sheetProduct.name) continue;
-          const productNameLower = sheetProduct.name.toLowerCase().trim();
           
-          if (!existingProductNames.has(productNameLower)) {
+          const slug = sheetProduct.name.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+          const q = query(collection(db, "products"), where("slug", "==", slug), limit(1));
+          const snap = await getDocs(q);
+          
+          if (snap.empty) {
             try {
               const priceString = sheetProduct.price ? String(sheetProduct.price).replace(/[^\d]/g, '') : '0';
               const priceNum = Number(priceString);
               const newProduct = {
                 title: sheetProduct.name,
-                slug: sheetProduct.name.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-'),
+                slug: slug,
                 category: sheetProduct.category || "Chung",
                 basePrice: priceNum,
                 discountPrice: priceNum,
@@ -223,7 +211,6 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                 createdBy: "Sheet_Import"
               };
               await addDoc(collection(db, "products"), newProduct);
-              existingProductNames.add(productNameLower); // Prevent duplicates in the same sync
               createdCount++;
             } catch (e) {
               console.error("Error creating product:", sheetProduct.name, e);
@@ -374,8 +361,11 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
   const filteredProducts = products.filter(p => {
     const matchesTab = activeTab === 'All' || p.status === activeTab;
     const matchesCategory = selectedCategory === 'All' || (p.category || 'Chưa phân loại') === selectedCategory;
-    const matchesSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (p.sku || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const removeAccents = (str) => {
+      return str ? str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() : '';
+    };
+    const matchesSearch = removeAccents(p.name).includes(removeAccents(searchQuery)) || 
+                          removeAccents(p.sku).includes(removeAccents(searchQuery));
     return matchesTab && matchesCategory && matchesSearch;
   });
 
@@ -397,7 +387,6 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
 
   return (
     <div className="admin-product-page">
-      <AdminSidebar activePage="products" />
       
       <div className="admin-main-content">
         <header className={`admin-content-header ${!isHeaderVisible ? 'header-hidden' : ''}`}>
