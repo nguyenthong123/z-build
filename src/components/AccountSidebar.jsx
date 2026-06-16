@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './AccountSidebar.css';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
@@ -36,19 +36,41 @@ const AccountSidebar = ({ user, activeView, onViewChange, onLogout }) => {
     )}
   ];
 
+  const [imgError, setImgError] = useState(false);
+  const displayName = user?.name || user?.displayName || 'Khách';
+  const initial = displayName.charAt(0).toUpperCase();
+
   return (
     <aside className="account-sidebar">
       <div className="account-user-card">
-        <div className="user-avatar-small">
-          {user?.photoURL ? (
-            <img src={user.photoURL} alt={user.displayName} style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+        <div 
+          className="user-avatar-small" 
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            background: imgError || !user?.photoURL ? 'linear-gradient(135deg, #FFB800 0%, #FF9800 100%)' : 'transparent', 
+            color: '#fff', 
+            fontSize: '18px', 
+            fontWeight: 'bold',
+            borderRadius: '50%',
+            overflow: 'hidden'
+          }}
+        >
+          {user?.photoURL && !imgError ? (
+            <img 
+              src={user.photoURL} 
+              alt={displayName} 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              onError={() => setImgError(true)}
+            />
           ) : (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>{initial}</span>
           )}
         </div>
         <div className="user-info-text">
           <span className="label">TÀI KHOẢN</span>
-          <h3>{user?.name || 'Khách'}</h3>
+          <h3>{displayName}</h3>
         </div>
       </div>
       <nav className="sidebar-nav">

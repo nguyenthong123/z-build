@@ -43,8 +43,8 @@ const deleteCloudinaryImage = async (secureUrl) => {
 /**
  * Custom hook to manage AI Advisor state and logic.
  */
-export const useAIAdvisor = (productContext, role = 'storefront') => {
-  const storageKey = `zbuild_ai_messages_${role}`;
+export const useStorefrontAI = (productContext) => {
+  const storageKey = `zbuild_ai_messages_storefront`;
   const [messages, setMessages] = useState(() => {
     try {
       const saved = localStorage.getItem(storageKey);
@@ -94,8 +94,7 @@ export const useAIAdvisor = (productContext, role = 'storefront') => {
         console.error("Error fetching categories:", error);
       }
     };
-    if (role === 'admin') fetchCats();
-  }, [role]);
+  }, []);
 
   const [productSuggestions, setProductSuggestions] = useState([]);
   const [knowledgeBase, setKnowledgeBase] = useState({ all_units: [], raw_docs: [], performance: [] });
@@ -171,9 +170,9 @@ export const useAIAdvisor = (productContext, role = 'storefront') => {
     results.slice(0, 20).forEach(r => contextText += `- [Chuyên mục: ${r.item.category || 'Chung'}] Nội dung: ${r.item.content}\n---\n`);
     return contextText + "==========================\n";
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages, role]);
+  }, [messages]);
 
-  const callAI = useCallback(async (msgText, systemPrompt, imageUrl = null) => {
+  const callAI = useCallback(async (msgText, systemPrompt, imageUrl = null, allowedTools = AI_FUNCTIONS) => {
     const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
     
     if (!geminiApiKey) {
@@ -204,7 +203,7 @@ export const useAIAdvisor = (productContext, role = 'storefront') => {
     try {
       let res = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
         method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${geminiApiKey}` },
-        body: JSON.stringify({ model: "gemini-2.5-flash", messages: apiMessages, tools: AI_FUNCTIONS, tool_choice: "auto", temperature: 0.3 })
+        body: JSON.stringify({ model: "gemini-2.5-flash", messages: apiMessages, tools: allowedTools, tool_choice: "auto", temperature: 0.3 })
       });
       if (res.ok) {
         let d = await res.json();
@@ -222,7 +221,7 @@ export const useAIAdvisor = (productContext, role = 'storefront') => {
           apiMessages.push(...toolResults);
           const followUp = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
             method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${geminiApiKey}` },
-            body: JSON.stringify({ model: "gemini-2.5-flash", messages: apiMessages, tools: AI_FUNCTIONS, tool_choice: "auto", temperature: 0.3 })
+            body: JSON.stringify({ model: "gemini-2.5-flash", messages: apiMessages, tools: allowedTools, tool_choice: "auto", temperature: 0.3 })
           });
           if (!followUp.ok) break;
           d = await followUp.json();
@@ -284,22 +283,16 @@ export const useAIAdvisor = (productContext, role = 'storefront') => {
     }
 
     try {
-      const systemPrompt = role === 'admin'
-        ? `Bạn là Trợ lý AI Quản trị của Z-BUILD, hỗ trợ Admin quản lý hệ thống.
-        🔧 NĂNG LỰC ĐẶC BIỆT: Bạn CÓ QUYỀN TRUY CẬP VÀ BẮT BUỘC PHẢI SỬ DỤNG tools (function calling) để thực hiện các tác vụ.
-        - Khi người dùng yêu cầu tạo sản phẩm, BẠN PHẢI GỌI function 'create_product'. Tuyệt đối KHÔNG ĐƯỢC tự ý trả lời "đã tạo" mà không gọi function.
-        - Khi tạo sản phẩm, nó sẽ tự động được lưu dưới dạng NHÁP để Admin duyệt sau.
-        - Danh mục hiện có trong hệ thống: ${dbCategories.length > 0 ? dbCategories.join(', ') : 'Vật liệu xây dựng, Nội thất...'}. Nếu khách quên nhập danh mục, hãy nhắc họ chọn trong danh sách này.
-        - LƯU Ý QUAN TRỌNG VỀ NGỮ CẢNH: NẾU người dùng đang trả lời bổ sung thông tin còn thiếu (ví dụ: bổ sung danh mục, giá cả) cho một yêu cầu tạo sản phẩm ở câu trước, bạn HÃY TỰ ĐỘNG nhớ và ghép thông tin mới này vào các thông tin cũ (tên, quy cách, giá) ở câu trước, sau đó GỌI LẠI function 'create_product' với đầy đủ thông tin.
-        - KHI NGƯỜI DÙNG YÊU CẦU KIỂM TRA/CẬP NHẬT SẢN PHẨM MỚI TỪ SHEET (SẢN PHẨM NHÁP): BƯỚC 1: Bắt buộc DỪNG LẠI và hỏi người dùng: "Tôi chuẩn bị tạo bài viết cho các sản phẩm nháp. Bạn có muốn cung cấp thêm thông tin chung (ví dụ: xuất xứ, chất liệu, bảo hành, công dụng nổi bật...) để tôi viết hay hơn không? Hay bạn muốn tôi tạo luôn?". KHÔNG ĐƯỢC làm tiếp bước sau nếu người dùng chưa trả lời câu hỏi này. BƯỚC 2: Khi người dùng trả lời (đưa thêm thông tin hoặc bảo tạo luôn), hãy gọi 'get_draft_products' để lấy danh sách. BƯỚC 3: Tự động suy luận và sinh đoạn mã HTML mô tả chuẩn SEO (kết hợp thông tin người dùng vừa cấp). BƯỚC 4: Gọi 'update_product_details' để cập nhật (GIỮ NGUYÊN trạng thái Nháp, tuyệt đối không kích hoạt để Admin tự thêm ảnh).
-        Hãy phản hồi ngắn gọn, chuyên nghiệp và đi thẳng vào vấn đề.
-        Tài liệu nội bộ: ${getKnowledgeContext(msgText)}`
-        : `Bạn là Giám Đốc Kinh Doanh B2B của Z-BUILD, tư vấn cho ĐẠI LÝ: ${userName}.
+      const systemPrompt = `Bạn là Giám Đốc Kinh Doanh B2B của Z-BUILD, tư vấn cho ĐẠI LÝ: ${userName}.
         🔧 NĂNG LỰC ĐẶC BIỆT - FUNCTION CALLING: Sử dụng tools khi cần thông tin real-time về sản phẩm, đơn hàng, thống kê.
+        - Nếu khách hàng yêu cầu THÊM, MUA, ĐẶT HÀNG, LÊN ĐƠN sản phẩm, hãy gọi function 'add_to_cart_batch'.
         Tài liệu nội bộ: ${getKnowledgeContext(msgText)}`;
 
       // Try Gemini API
-      const botResult = await callAI(msgText, systemPrompt, imageUrl);
+      const adminFunctions = ['create_product', 'get_store_stats', 'get_draft_products', 'update_product_details', 'update_product_stock'];
+      const allowedTools = AI_FUNCTIONS.filter(f => !adminFunctions.includes(f.function.name));
+
+      const botResult = await callAI(msgText, systemPrompt, imageUrl, allowedTools);
       
       let cleanResponse = botResult;
       let boardData = null;
@@ -323,7 +316,7 @@ export const useAIAdvisor = (productContext, role = 'storefront') => {
     } finally {
       setIsTyping(false);
     }
-  }, [userName, getKnowledgeContext, callAI, role, dbCategories]);
+  }, [userName, getKnowledgeContext, callAI, dbCategories]);
 
   // Handle Product Context
   useEffect(() => {

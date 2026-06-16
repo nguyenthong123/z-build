@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import './Cart.css';
 
 const Cart = ({ onBack, onCheckout, cartItems, updateQuantity, removeItem, clearCart }) => {
@@ -8,10 +10,26 @@ const Cart = ({ onBack, onCheckout, cartItems, updateQuantity, removeItem, clear
     }
   };
 
+  const [shippingSettings, setShippingSettings] = useState(null);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const docRef = doc(db, 'settings', 'general');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && docSnap.data().shippingSettings) {
+          setShippingSettings(docSnap.data().shippingSettings);
+        }
+      } catch (error) {
+        console.error("Error fetching shipping settings:", error);
+      }
+    };
+    fetchSettings();
+  }, []);
+
   const subtotal = Math.round(cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0));
-  const shipping = 0; // Free shipping
-  const tax = Math.round(subtotal * 0.08);
-  const total = subtotal + shipping + tax;
+  const shipping = 0; // Temp display value
+  const total = subtotal + shipping;
 
   if (cartItems.length === 0) {
     return (
@@ -119,18 +137,51 @@ const Cart = ({ onBack, onCheckout, cartItems, updateQuantity, removeItem, clear
                 </div>
                 <div className="summary-row">
                   <span>Phí vận chuyển</span>
-                  <span className="free">MIỄN PHÍ</span>
+                  <span style={{ fontSize: '13px', color: '#64748B' }}>Chưa tính (Xem lúc thanh toán)</span>
                 </div>
-                <div className="summary-row">
-                  <span>Thuế Ước tính</span>
-                  <span>{Number(tax).toLocaleString('vi-VN')}₫</span>
-                </div>
+
               </div>
               
               <div className="summary-total">
                 <span>Tổng cộng</span>
                 <span>{Number(total).toLocaleString('vi-VN')}₫</span>
               </div>
+
+              {shippingSettings && shippingSettings.shippingDiscountRules && shippingSettings.shippingDiscountRules.length > 0 && (
+                <div className="shipping-promo-box" style={{ marginTop: '20px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '12px', padding: '15px' }}>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                    Ưu đãi vận chuyển
+                  </h4>
+                  <ul style={{ margin: 0, padding: 0, listStyle: 'none', fontSize: '13px', color: '#15803D' }}>
+                    {[...shippingSettings.shippingDiscountRules]
+                      .sort((a, b) => (parseFloat(b.minOrderValue) || 0) - (parseFloat(a.minOrderValue) || 0))
+                      .map((rule, idx) => {
+                        const minVal = parseFloat(rule.minOrderValue) || 0;
+                        const pct = parseFloat(rule.discountPercent) || 0;
+                        const isAchieved = subtotal >= minVal;
+                        
+                        let displayVal = `${(minVal / 1000000).toLocaleString('vi-VN')}tr`;
+                        if (minVal < 1000000) {
+                          displayVal = `${(minVal / 1000).toLocaleString('vi-VN')}k`;
+                        }
+                        
+                        return (
+                          <li key={idx} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', opacity: isAchieved ? 1 : 0.7 }}>
+                            <span>
+                              {isAchieved ? <svg width="14" height="14" style={{marginRight:'4px', display:'inline-block', verticalAlign:'text-bottom', color:'#059669'}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg> : "• "} 
+                              Đơn từ {displayVal}:
+                            </span>
+                            <strong style={{ background: isAchieved ? '#DCFCE7' : 'transparent', padding: '2px 6px', borderRadius: '4px' }}>Giảm {pct}%</strong>
+                          </li>
+                        );
+                      })}
+                  </ul>
+                  <div style={{ marginTop: '10px', fontSize: '11.5px', color: '#166534', fontStyle: 'italic', borderTop: '1px dashed #BBF7D0', paddingTop: '10px' }}>
+                    * Phí giao hàng chi tiết sẽ được tính dựa trên khoảng cách tại bước thanh toán.
+                  </div>
+                </div>
+              )}
 
 
               <button className="btn-checkout" onClick={onCheckout}>

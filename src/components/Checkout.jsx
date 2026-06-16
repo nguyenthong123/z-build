@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, getDocs, doc, query, where, serverTimestamp, getDoc, runTransaction, setDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, query, where, serverTimestamp, getDoc, runTransaction, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import './Checkout.css';
 
@@ -34,6 +34,53 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
+  const [autoCheckoutTriggered, setAutoCheckoutTriggered] = useState(false);
+  const [pollingTimeout, setPollingTimeout] = useState(false);
+  const [bankTransactionInfo, setBankTransactionInfo] = useState(null);
+
+  // Timeout for App Script polling (10 minutes)
+  useEffect(() => {
+    if (formData.paymentMethod !== 'bank-transfer' || !orderNumber) return;
+    const timer = setTimeout(() => setPollingTimeout(true), 600000);
+    return () => clearTimeout(timer);
+  }, [formData.paymentMethod, orderNumber]);
+
+  // Auto-checkout polling from App Script URL
+  useEffect(() => {
+    if (formData.paymentMethod !== 'bank-transfer' || !orderNumber || pollingTimeout) return;
+
+    const checkPayment = async () => {
+      if (document.visibilityState === 'hidden') return;
+      try {
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKEEu9Yapfdpt_MpCneQvR4BRORrIK9NHv6EJYoJbtH9ocOrxeh-1tOzI3lmFLaT41/exec';
+        const res = await fetch(SCRIPT_URL);
+        const json = await res.json();
+        
+        if (json && json.data && Array.isArray(json.data)) {
+          // Check if any transaction matches the orderNumber in "Nội dung"
+          const hasPaid = json.data.find(tx => tx['Nội dung'] && tx['Nội dung'].includes(orderNumber));
+          if (hasPaid && !autoCheckoutTriggered) {
+            setBankTransactionInfo(hasPaid);
+            setAutoCheckoutTriggered(true);
+          }
+        }
+      } catch (err) {
+        console.error('Error checking payment:', err);
+      }
+    };
+
+    // Check immediately, then every 10 seconds
+    checkPayment();
+    const intervalId = setInterval(checkPayment, 10000);
+
+    return () => clearInterval(intervalId);
+  }, [formData.paymentMethod, orderNumber, autoCheckoutTriggered]);
+
+  useEffect(() => {
+    if (autoCheckoutTriggered && !isSubmitting && paymentStep === 1) {
+      handlePlaceOrder();
+    }
+  }, [autoCheckoutTriggered]);
 
   // Shop's Bank Info (Configurable)
   const [shopBankInfo, setShopBankInfo] = useState({
@@ -141,6 +188,24 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
         : parseInt(shippingSettings.fallbackPricePerKg || 10000);
       
       shippingCost = totalWeight * pricePerKg;
+
+      // Áp dụng khuyến mãi giảm phí ship theo giá trị đơn hàng (nhiều mốc)
+      if (shippingSettings.shippingDiscountRules && shippingSettings.shippingDiscountRules.length > 0) {
+        // Sắp xếp các mốc giảm dần theo giá trị đơn hàng
+        const sortedRules = [...shippingSettings.shippingDiscountRules].sort((a, b) => 
+          (parseFloat(b.minOrderValue) || 0) - (parseFloat(a.minOrderValue) || 0)
+        );
+        
+        for (const rule of sortedRules) {
+          const minOrder = parseFloat(rule.minOrderValue) || 0;
+          const discountPct = parseFloat(rule.discountPercent) || 0;
+          
+          if (subtotal >= minOrder && discountPct > 0) {
+            shippingCost = Math.round(shippingCost - (shippingCost * discountPct / 100));
+            break; // Chỉ áp dụng mốc cao nhất thỏa mãn
+          }
+        }
+      }
     } else {
       // If user hasn't located yet, show 0 or some base fallback
       shippingCost = 0; 
@@ -165,7 +230,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
           setIsLocating(false);
         },
         (error) => {
-          alert('Không thể lấy vị trí. Vui lòng cho phép trình duyệt truy cập định vị.');
+          alert('Không thể lấy vị trí. V vui lòng cho phép trình duyệt truy cập định vị.');
           setIsLocating(false);
         }
       );
@@ -174,8 +239,6 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
       setIsLocating(false);
     }
   };
-
-  const tax = subtotal * 0.08;
 
   // Coupon discount calculation
   const calculateDiscount = () => {
@@ -192,7 +255,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
     return 0;
   };
   const discount = calculateDiscount();
-  const total = subtotal + shippingCost + tax - discount;
+  const total = subtotal + shippingCost - discount;
 
   // Validate coupon from Firestore
   const handleApplyCoupon = async () => {
@@ -300,9 +363,12 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
           const buyQty = cartItems[i].quantity;
           
           // Stock validation
-          const currentStock = Number(pData.stock) || 0;
-          if (currentStock < buyQty) {
-            throw new Error(`Sản phẩm "${pData.title}" chỉ còn ${currentStock} trong kho.`);
+          let newStock = undefined;
+          if (pData.stock !== undefined && pData.trackInventory !== false) {
+            const currentStock = Number(pData.stock);
+            // [UX] Không chặn đặt hàng khi hết tồn kho để tránh mất Sale. 
+            // Cửa hàng có thể nhập thêm hàng và giao trễ cho khách.
+            newStock = currentStock - buyQty;
           }
           
           // Price validation (use discountPrice if > 0, else basePrice)
@@ -315,7 +381,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
           
           itemsToBuy.push({
             ref: productRefs[i],
-            newStock: currentStock - buyQty,
+            newStock: newStock,
             id: cartItems[i].id,
             name: pData.title,
             price: realPrice,
@@ -354,7 +420,9 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
 
         // 3. Writes
         for (const item of itemsToBuy) {
-          transaction.update(item.ref, { stock: item.newStock });
+          if (item.newStock !== undefined) {
+            transaction.update(item.ref, { stock: item.newStock });
+          }
         }
         
         if (appliedCoupon && couponSnap && couponSnap.exists()) {
@@ -370,6 +438,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
             id, name, price, quantity, image, variant
           })),
           shippingAddress,
+          bankTransaction: bankTransactionInfo || null,
           subtotal: newSubtotal,
           shippingCost,
           tax: newTax,
@@ -780,68 +849,22 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
               )}
             </section>
 
-            {paymentStep === 1 ? (
-              <div className="form-footer desktop-only">
-                <button className="btn-return" onClick={onBack}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                  Quay lại giỏ hàng
-                </button>
-                <button className="btn-primary-action" onClick={handlePlaceOrder} disabled={isSubmitting}>
-                  {isSubmitting ? 'Đang xử lý...' : 'Xác nhận đơn hàng'}
-                </button>
-              </div>
-            ) : (
-              <div className="qr-payment-step animate-fade-in" style={{ marginTop: '20px' }}>
-                <div className="qr-container">
-                  <h3>Mã QR Thanh Toán</h3>
-                  <p className="qr-instructions">
-                    Vui lòng quét mã bên dưới bằng ứng dụng ngân hàng của bạn để thanh toán <b>{Number(total).toLocaleString('vi-VN')}₫</b>
-                  </p>
-                  
-                  <div className="qr-image-wrapper">
-                    <img 
-                      src={`https://img.vietqr.io/image/${shopBankInfo.bankCode}-${shopBankInfo.accountNumber}-compact.png?amount=${total}&addInfo=${generatedOrder?.orderNumber}&accountName=${encodeURIComponent(shopBankInfo.accountName)}`} 
-                      alt="VietQR Code" 
-                      className="qr-image"
-                    />
-                  </div>
-
-                  <div className="bank-info-box">
-                    <div className="bank-info-item">
-                      <span className="label">Ngân hàng:</span>
-                      <span className="value">{shopBankInfo.bankName}</span>
-                    </div>
-                    <div className="bank-info-item">
-                      <span className="label">Số tài khoản:</span>
-                      <span className="value">{shopBankInfo.accountNumber}</span>
-                    </div>
-                    <div className="bank-info-item">
-                      <span className="label">Chủ tài khoản:</span>
-                      <span className="value">{shopBankInfo.accountName}</span>
-                    </div>
-                    <div className="bank-info-item">
-                      <span className="label">Số tiền:</span>
-                      <span className="value">{Number(total).toLocaleString('vi-VN')}₫</span>
-                    </div>
-                    <div className="bank-info-item">
-                      <span className="label">Nội dung:</span>
-                      <span className="value">{generatedOrder?.orderNumber}</span>
-                    </div>
-                    <div className="copy-hint">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-                      Nội dung chuyển khoản đã được tạo tự động
-                    </div>
-                  </div>
-
-                  <button 
-                    className="btn-confirm-payment" 
-                    onClick={() => onOrderComplete(generatedOrder)}
-                  >
-                    Tôi đã thanh toán xong
-                  </button>
+            <div className="form-footer desktop-only">
+              <button className="btn-return" onClick={onBack}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Quay lại giỏ hàng
+              </button>
+              {formData.paymentMethod === 'bank-transfer' && !pollingTimeout ? (
+                <div className="waiting-payment" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#10B981', fontWeight: '500', background: '#ECFDF5', padding: '12px 20px', borderRadius: '8px', border: '1px solid #A7F3D0' }}>
+                  <div style={{ width: '18px', height: '18px', border: '3px solid #10B981', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                  Hệ thống đang chờ nhận tiền...
                 </div>
-              </div>
-            )}
+              ) : (
+                <button className="btn-primary-action" onClick={handlePlaceOrder} disabled={isSubmitting}>
+                  {isSubmitting ? 'Đang xử lý...' : (formData.paymentMethod === 'bank-transfer' ? 'Tôi đã thanh toán xong' : 'Xác nhận đơn hàng')}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Summary Side */}
@@ -902,10 +925,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
                   <span>Vận chuyển</span>
                   <span className={shippingCost === 0 ? 'free' : ''}>{shippingCost === 0 ? 'Miễn phí' : `${Number(shippingCost).toLocaleString('vi-VN')}₫`}</span>
                 </div>
-                <div className="line">
-                  <span>Thuế ước tính</span>
-                  <span>{Number(tax).toLocaleString('vi-VN')}₫</span>
-                </div>
+
                 {discount > 0 && (
                   <div className="line discount-line">
                     <span>Giảm giá ({appliedCoupon?.code})</span>
@@ -930,10 +950,17 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           THANH TOÁN BẢO MẬT SSL 256-BIT
         </div>
-        <button className="btn-place-order" onClick={paymentStep === 1 ? handlePlaceOrder : () => onOrderComplete(generatedOrder)} disabled={isSubmitting}>
-          {isSubmitting ? 'ĐANG XỬ LÝ...' : (paymentStep === 1 ? 'XÁC NHẬN ĐƠN HÀNG' : 'TÔI ĐÃ THANH TOÁN')}
-          {!isSubmitting && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>}
-        </button>
+        {formData.paymentMethod === 'bank-transfer' && paymentStep === 1 && !pollingTimeout ? (
+          <div className="waiting-payment" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', color: '#10B981', fontWeight: '500', background: '#ECFDF5', padding: '15px', borderRadius: '8px', border: '1px solid #A7F3D0', margin: '20px 0' }}>
+            <div style={{ width: '18px', height: '18px', border: '3px solid #10B981', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+            Hệ thống đang chờ nhận tiền...
+          </div>
+        ) : (
+          <button className="btn-place-order" onClick={paymentStep === 1 ? handlePlaceOrder : () => onOrderComplete(generatedOrder)} disabled={isSubmitting}>
+            {isSubmitting ? 'Đang xử lý...' : (paymentStep === 1 ? (formData.paymentMethod === 'bank-transfer' ? 'Tôi đã thanh toán xong' : 'Xác nhận đơn hàng') : 'Tiếp tục mua sắm')}
+            {!isSubmitting && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>}
+          </button>
+        )}
       </div>
     </div>
   );

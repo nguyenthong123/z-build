@@ -248,6 +248,21 @@ export const AI_FUNCTIONS = [
         required: ["product_id", "description"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_product_stock",
+      description: "Cập nhật số lượng tồn kho của một sản phẩm dựa theo tên sản phẩm. Rất hữu ích khi Admin muốn thêm/bớt tồn kho nhanh chóng.",
+      parameters: {
+        type: "object",
+        properties: {
+          product_name: { type: "string", description: "Tên sản phẩm cần cập nhật tồn kho" },
+          new_stock: { type: "number", description: "Số lượng tồn kho mới (chính xác số lượng, không phải số lượng thêm/bớt)" }
+        },
+        required: ["product_name", "new_stock"]
+      }
+    }
   }
 ];
 
@@ -733,6 +748,28 @@ async function updateProductDetails({ product_id, description, category, specs }
   }
 }
 
+async function updateProductStock({ product_name, new_stock }) {
+  try {
+    const snap = await getDocs(collection(db, 'products'));
+    const allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    
+    const kw = (product_name || '').toLowerCase();
+    const found = allProducts.find(p => (p.title || '').toLowerCase().includes(kw));
+    
+    if (found) {
+      await updateDoc(doc(db, "products", found.id), { 
+        stock: Number(new_stock),
+        trackInventory: true
+      });
+      return { success: true, message: `Đã cập nhật tồn kho của "${found.title}" thành ${new_stock}.` };
+    } else {
+      return { success: false, error: `Không tìm thấy sản phẩm nào khớp với tên "${product_name}".` };
+    }
+  } catch (err) {
+    return { error: 'Lỗi cập nhật tồn kho: ' + err.message };
+  }
+}
+
 // ============ FUNCTION EXECUTOR ============
 
 export async function executeFunction(name, args) {
@@ -752,6 +789,7 @@ export async function executeFunction(name, args) {
     case 'create_product': return await createProduct(parsedArgs);
     case 'get_draft_products': return await getDraftProducts(parsedArgs);
     case 'update_product_details': return await updateProductDetails(parsedArgs);
+    case 'update_product_stock': return await updateProductStock(parsedArgs);
     default: return { error: `Function "${name}" không tồn tại` };
   }
 }

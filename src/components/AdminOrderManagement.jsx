@@ -11,7 +11,7 @@ const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
   const [dateFilter, setDateFilter] = useState('all');
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [updatingId, setUpdatingId] = useState(null);
-  const [stats, setStats] = useState({ total: 0, pending: 0, confirmed: 0, shipping: 0, delivered: 0, cancelled: 0, revenue: 0 });
+  const [stats, setStats] = useState({ total: 0, pending: 0, confirmed: 0, shipping: 0, delivered: 0, cancelled: 0, return_requested: 0, returned: 0, revenue: 0 });
 
   useEffect(() => {
     fetchOrders();
@@ -40,7 +40,7 @@ const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
       setOrders(data);
       
       // Tính stats (Dựa trên dữ liệu đang hiển thị)
-      const s = { total: data.length, pending: 0, confirmed: 0, shipping: 0, delivered: 0, cancelled: 0, revenue: 0 };
+      const s = { total: data.length, pending: 0, confirmed: 0, shipping: 0, delivered: 0, cancelled: 0, return_requested: 0, returned: 0, revenue: 0 };
       data.forEach(o => {
         if (s[o.status] !== undefined) s[o.status]++;
         if (o.status === 'delivered') s.revenue += (o.total || 0);
@@ -79,7 +79,7 @@ const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
       setOrders(updatedOrders);
       
       // Recalc stats
-      const s = { total: updatedOrders.length, pending: 0, confirmed: 0, shipping: 0, delivered: 0, cancelled: 0, revenue: 0 };
+      const s = { total: updatedOrders.length, pending: 0, confirmed: 0, shipping: 0, delivered: 0, cancelled: 0, return_requested: 0, returned: 0, revenue: 0 };
       updatedOrders.forEach(o => {
         if (s[o.status] !== undefined) s[o.status]++;
         if (o.status === 'delivered') s.revenue += (o.total || 0);
@@ -116,7 +116,7 @@ const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
       // Recalc stats
       const updated = orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
-      const s = { total: updated.length, pending: 0, confirmed: 0, shipping: 0, delivered: 0, cancelled: 0, revenue: 0 };
+      const s = { total: updated.length, pending: 0, confirmed: 0, shipping: 0, delivered: 0, cancelled: 0, return_requested: 0, returned: 0, revenue: 0 };
       updated.forEach(o => {
         if (s[o.status] !== undefined) s[o.status]++;
         if (o.status === 'delivered') s.revenue += (o.total || 0);
@@ -131,22 +131,22 @@ const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
   };
 
   const getNextStatus = (current) => {
-    const flow = { pending: 'confirmed', confirmed: 'shipping', shipping: 'delivered' };
+    const flow = { pending: 'confirmed', confirmed: 'shipping', shipping: 'delivered', return_requested: 'returned' };
     return flow[current] || null;
   };
 
   const getStatusLabel = (s) => {
-    const map = { pending: 'Chờ xác nhận', confirmed: 'Đã xác nhận', shipping: 'Đang giao', delivered: 'Đã giao', cancelled: 'Đã hủy' };
+    const map = { pending: 'Chờ xác nhận', confirmed: 'Đã xác nhận', shipping: 'Đang giao', delivered: 'Đã giao', cancelled: 'Đã hủy', return_requested: 'Yêu cầu trả hàng', returned: 'Đã hoàn hàng' };
     return map[s] || s;
   };
 
   const getStatusColor = (s) => {
-    const map = { pending: '#FFB800', confirmed: '#2196F3', shipping: '#9C27B0', delivered: '#4CAF50', cancelled: '#F44336' };
+    const map = { pending: '#FFB800', confirmed: '#2196F3', shipping: '#9C27B0', delivered: '#4CAF50', cancelled: '#F44336', return_requested: '#E65100', returned: '#D32F2F' };
     return map[s] || '#888';
   };
 
   const getNextActionLabel = (s) => {
-    const map = { pending: 'Xác nhận', confirmed: 'Giao hàng', shipping: 'Đã giao' };
+    const map = { pending: 'Xác nhận', confirmed: 'Giao hàng', shipping: 'Đã giao', return_requested: 'Xác nhận thu hồi' };
     return map[s] || null;
   };
 
@@ -294,7 +294,9 @@ const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
     { key: 'confirmed', label: 'Đã xác nhận', count: stats.confirmed },
     { key: 'shipping', label: 'Đang giao', count: stats.shipping },
     { key: 'delivered', label: 'Đã giao', count: stats.delivered },
-    { key: 'cancelled', label: 'Đã hủy', count: stats.cancelled }
+    { key: 'cancelled', label: 'Đã hủy', count: stats.cancelled },
+    { key: 'return_requested', label: 'Yêu cầu trả hàng', count: stats.return_requested },
+    { key: 'returned', label: 'Đã trả hàng', count: stats.returned }
   ];
 
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
@@ -483,9 +485,16 @@ const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
                         </td>
                         <td className="price-text">{formatCurrency(order.total)}</td>
                         <td>
-                          <span className="aom-status-badge" style={{ backgroundColor: getStatusColor(order.status) + '18', color: getStatusColor(order.status), borderColor: getStatusColor(order.status) }}>
-                            {getStatusLabel(order.status)}
-                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span className="aom-status-badge" style={{ backgroundColor: getStatusColor(order.status) + '18', color: getStatusColor(order.status), borderColor: getStatusColor(order.status), alignSelf: 'flex-start' }}>
+                              {getStatusLabel(order.status)}
+                            </span>
+                            {order.status === 'return_requested' && order.returnReason && (
+                              <span style={{ fontSize: '11px', color: '#E65100', background: '#FFF3E0', padding: '2px 6px', borderRadius: '4px', maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={order.returnReason}>
+                                Lý do: {order.returnReason}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="aom-date">{formatDate(order.createdAt)}</td>
                         <td className="text-right">
@@ -515,7 +524,7 @@ const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
               <div className="mobile-only aom-mobile-list">
                 {filteredOrders.map(order => (
                   <div className="aom-mobile-card" key={order.id} onClick={() => onViewOrderDetail && onViewOrderDetail(order)}>
-                    <div className="aom-mc-header">
+                    <div className="aom-mc-header" style={order.status === 'return_requested' ? { flexWrap: 'wrap', gap: '8px' } : {}}>
                       <div className="aom-mc-left">
                         <span className="aom-mc-id">#{order.orderNumber || order.id.substring(0, 8)}</span>
                         <span className="aom-mc-date">{formatDate(order.createdAt)}</span>
@@ -523,6 +532,11 @@ const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
                       <span className="aom-status-badge" style={{ backgroundColor: getStatusColor(order.status) + '18', color: getStatusColor(order.status), borderColor: getStatusColor(order.status) }}>
                         {getStatusLabel(order.status)}
                       </span>
+                      {order.status === 'return_requested' && order.returnReason && (
+                        <div style={{ width: '100%', fontSize: '12px', color: '#E65100', background: '#FFF3E0', padding: '4px 8px', borderRadius: '4px' }}>
+                          <strong>Lý do trả hàng:</strong> {order.returnReason}
+                        </div>
+                      )}
                     </div>
                     <div className="aom-mc-body">
                       <div className="aom-mc-customer">

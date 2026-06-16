@@ -14,7 +14,7 @@ import StorefrontChatBot from './components/StorefrontChatBot';
 import SEOHead from './components/SEOHead';
 import { useToast } from './context/ToastContext';
 import { useWishlist } from './context/WishlistContext';
-import { useAIAdvisor } from './hooks/useAIAdvisor';
+import { useStorefrontAI } from './hooks/useStorefrontAI';
 import { useAuth } from './context/AuthContext';
 import { useStore } from './context/StoreContext';
 
@@ -142,7 +142,7 @@ function App() {
   const [detailProduct, setDetailProduct] = useState(null);
   
   const productContext = location.state?.productContext || null;
-  const storefrontAdvisorState = useAIAdvisor(productContext, 'storefront');
+  const storefrontAdvisorState = useStorefrontAI(productContext);
   
   // Admin sidebar navigation using React Router now.
 
@@ -474,6 +474,15 @@ function App() {
               onCancelSuccess={(orderId) => {
                 setSelectedOrder(prev => prev && prev.id === orderId ? { ...prev, status: 'cancelled' } : prev);
                 addToast('Đơn hàng đã được hủy thành công', 'success');
+              }}
+              onEditOrder={(items) => {
+                setCartItems(items);
+                navigate('/cart');
+                addToast('Đã khôi phục giỏ hàng, bạn có thể chỉnh sửa và đặt lại', 'info');
+              }}
+              onReturnSuccess={(orderId, reason) => {
+                setSelectedOrder(prev => prev && prev.id === orderId ? { ...prev, status: 'return_requested', returnReason: reason } : prev);
+                addToast('Đã gửi yêu cầu trả hàng', 'success');
               }}
             />
           } />

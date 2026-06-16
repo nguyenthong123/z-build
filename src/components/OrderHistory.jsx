@@ -34,15 +34,18 @@ const OrderHistory = ({ user, onBack, onViewDetails, onNavigate, onLogout }) => 
             total: data.total || 0,
             itemCount: data.items?.length || 0,
             items: (data.items || []).map(item => ({
+              id: item.id,
               name: item.name,
               image: item.image || 'https://placehold.co/200',
               price: item.price,
-              quantity: item.quantity
+              quantity: item.quantity,
+              variant: item.variant || ''
             })),
             shippingAddress: data.shippingAddress || {},
             paymentMethod: data.paymentMethod || 'N/A',
             shippingMethod: data.shippingMethod || 'standard',
-            createdAt: data.createdAt
+            createdAt: data.createdAt,
+            returnReason: data.returnReason || ''
           };
         });
         setOrders(orderData);
@@ -63,6 +66,8 @@ const OrderHistory = ({ user, onBack, onViewDetails, onNavigate, onLogout }) => 
       case 'shipping': return 'Đang vận chuyển';
       case 'delivered': return 'Đã giao';
       case 'cancelled': return 'Đã hủy';
+      case 'return_requested': return 'Yêu cầu trả hàng';
+      case 'returned': return 'Đã trả hàng';
       default: return status;
     }
   };
@@ -71,7 +76,7 @@ const OrderHistory = ({ user, onBack, onViewDetails, onNavigate, onLogout }) => 
     const matchesTab = activeTab === 'Tất cả đơn hàng' || 
                       (activeTab === 'Đang xử lý' && (order.status === 'pending' || order.status === 'confirmed' || order.status === 'shipping')) ||
                       (activeTab === 'Đã hoàn thành' && order.status === 'delivered') ||
-                      (activeTab === 'Đã hủy' && order.status === 'cancelled');
+                      (activeTab === 'Đã hủy' && (order.status === 'cancelled' || order.status === 'return_requested' || order.status === 'returned'));
     const matchesSearch = (order.orderNumber || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
                          order.items.some(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesTab && matchesSearch;
@@ -83,7 +88,9 @@ const OrderHistory = ({ user, onBack, onViewDetails, onNavigate, onLogout }) => 
       case 'pending':
       case 'confirmed': return '#FF9800';
       case 'shipping': return '#2196F3';
-      case 'cancelled': return '#F44336';
+      case 'cancelled': 
+      case 'returned': return '#F44336';
+      case 'return_requested': return '#E65100';
       default: return '#666';
     }
   };
@@ -168,6 +175,11 @@ const OrderHistory = ({ user, onBack, onViewDetails, onNavigate, onLogout }) => 
                           <div className="milestone-text">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={getStatusColor(order.status)} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                             <span>Đơn hàng đã bị hủy</span>
+                          </div>
+                        ) : order.status === 'return_requested' || order.status === 'returned' ? (
+                          <div className="milestone-text">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={getStatusColor(order.status)} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M2.13 15.57a9 9 0 1 0 1.63-7.5l-2.26 2.26"/></svg>
+                            <span>{order.status === 'return_requested' ? 'Đang chờ xử lý trả hàng' : 'Đã hoàn tất trả hàng'}</span>
                           </div>
                         ) : (
                           <div className="milestone-text">

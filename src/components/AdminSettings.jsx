@@ -25,6 +25,14 @@ const VIETNAMESE_BANKS = [
   { code: 'momo', name: 'MoMo' },
 ];
 
+const formatCurrencyToWords = (num) => {
+  if (!num || isNaN(num)) return '';
+  if (num >= 1000000000) return `${(num / 1000000000).toLocaleString('vi-VN')} tỷ`;
+  if (num >= 1000000) return `${(num / 1000000).toLocaleString('vi-VN')} triệu`;
+  if (num >= 1000) return `${(num / 1000).toLocaleString('vi-VN')} ngàn`;
+  return `${num.toLocaleString('vi-VN')} đ`;
+};
+
 const AdminSettings = ({ onBack }) => {
   const [bankInfo, setBankInfo] = useState({
     bankCode: '',
@@ -43,7 +51,8 @@ const AdminSettings = ({ onBack }) => {
     storeLat: '',
     storeLng: '',
     fallbackPricePerKg: 10000,
-    distanceRules: [{ maxDistance: 10, pricePerKg: 5000 }]
+    distanceRules: [{ maxDistance: 10, pricePerKg: 5000 }],
+    shippingDiscountRules: []
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -393,6 +402,81 @@ const AdminSettings = ({ onBack }) => {
                   />
                   <p className="field-hint" style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
                     * Áp dụng nếu khoảng cách lớn hơn tất cả các mốc bạn đã cấu hình ở trên.
+                  </p>
+                </div>
+
+                <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '1px solid #eee' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                    <h4 style={{ margin: 0, color: '#111' }}>🎁 Khuyến mãi vận chuyển theo giá trị đơn hàng</h4>
+                    <button 
+                      type="button" 
+                      className="btn-secondary"
+                      onClick={() => setShippingSettings(prev => ({
+                        ...prev,
+                        shippingDiscountRules: [...(prev.shippingDiscountRules || []), { minOrderValue: '', discountPercent: '' }]
+                      }))}
+                      style={{ padding: '4px 10px', fontSize: '13px' }}
+                    >
+                      + Thêm mốc mới
+                    </button>
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {(shippingSettings.shippingDiscountRules || []).map((rule, idx) => (
+                      <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'center', background: '#fff3cd', padding: '10px', borderRadius: '8px', border: '1px solid #ffeeba' }}>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontSize: '13px', color: '#666', display: 'block', marginBottom: '4px' }}>Đơn hàng từ (VNĐ)</span>
+                          <input 
+                            type="number" 
+                            placeholder="VD: 15000000"
+                            value={rule.minOrderValue}
+                            onChange={(e) => {
+                              const newRules = [...shippingSettings.shippingDiscountRules];
+                              newRules[idx].minOrderValue = e.target.value !== '' ? parseInt(e.target.value) : '';
+                              setShippingSettings(prev => ({ ...prev, shippingDiscountRules: newRules }));
+                            }}
+                          />
+                          {rule.minOrderValue !== '' && rule.minOrderValue !== undefined && (
+                            <span style={{ fontSize: '12px', color: '#d97706', display: 'block', marginTop: '4px', fontWeight: 600 }}>
+                              💡 Tương đương: {formatCurrencyToWords(rule.minOrderValue)}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontSize: '13px', color: '#666', display: 'block', marginBottom: '4px' }}>Giảm phí vận chuyển (%)</span>
+                          <input 
+                            type="number" 
+                            placeholder="VD: 50"
+                            value={rule.discountPercent}
+                            min="0"
+                            max="100"
+                            onChange={(e) => {
+                              const newRules = [...shippingSettings.shippingDiscountRules];
+                              newRules[idx].discountPercent = e.target.value !== '' ? parseInt(e.target.value) : '';
+                              setShippingSettings(prev => ({ ...prev, shippingDiscountRules: newRules }));
+                            }}
+                          />
+                        </div>
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const newRules = [...shippingSettings.shippingDiscountRules];
+                            newRules.splice(idx, 1);
+                            setShippingSettings(prev => ({ ...prev, shippingDiscountRules: newRules }));
+                          }}
+                          style={{ background: 'none', border: 'none', color: '#E11D48', cursor: 'pointer', padding: '5px', marginTop: '20px' }}
+                          title="Xóa mốc này"
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                      </div>
+                    ))}
+                    {(!shippingSettings.shippingDiscountRules || shippingSettings.shippingDiscountRules.length === 0) && (
+                      <div style={{ fontSize: '13px', color: '#666', fontStyle: 'italic', padding: '10px' }}>Chưa có cấu hình khuyến mãi vận chuyển nào.</div>
+                    )}
+                  </div>
+                  <p className="field-hint" style={{ fontSize: '12px', color: '#666', marginTop: '10px' }}>
+                    * Hệ thống sẽ tự động chọn mốc khuyến mãi tốt nhất phù hợp với giá trị đơn hàng.
                   </p>
                 </div>
               </div>
