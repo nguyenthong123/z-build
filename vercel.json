@@ -1,7 +1,6 @@
 {
-  "framework": null,
+  "buildCommand": "npx next build && ls -la out/",
   "outputDirectory": "out",
-  "buildCommand": "next build",
   "installCommand": "npm install",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
