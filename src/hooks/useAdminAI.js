@@ -302,11 +302,14 @@ export const useAdminAI = () => {
 - update_order_status: Đổi trạng thái đơn hàng (confirmed/shipping/delivered/cancelled)
 - get_customer_info: Tra cứu khách hàng + lịch sử mua
 - manage_coupon: Tạo/vô hiệu mã giảm giá
+- export_products_excel: Xuất toàn bộ SP ra file Excel (.xlsx)
+- sync_prices_from_sheet: Đồng bộ giá từ Google Sheet (nhập link → tự động cập nhật giá theo ID)
 - get_draft_products: Xem SP nháp
 - get_store_stats: Thống kê cửa hàng
 - search_products / get_product_detail / count_products / check_order_status / get_order_history: Tra cứu
 
-📋 QUY TRÌNH TẠO SP TỪ YOUTUBE: 1) Gọi analyze_youtube_link → 2) Dùng kết quả gọi create_product với đầy đủ title, category, basePrice, specs, videoUrl, status.
+📋 QUY TRÌNH XUẤT EXCEL: Admin bảo "xuất Excel" hoặc "tải danh sách sản phẩm" → Gọi export_products_excel.
+📋 QUY TRÌNH ĐỒNG BỘ GIÁ TỪ SHEET: Admin gửi link Google Sheet → Gọi sync_prices_from_sheet(sheet_url, match_field="id"). Sheet cần publish CSV và có cột: id/title + giá. TẠO SP TỪ YOUTUBE: 1) Gọi analyze_youtube_link → 2) Dùng kết quả gọi create_product với đầy đủ title, category, basePrice, specs, videoUrl, status.
 📋 QUY TRÌNH TẠO SP TỪ ẢNH: 1) Lấy imageUrl từ ảnh admin gửi → 2) Gọi create_product với imageUrl + thông tin admin cung cấp.
 📋 QUY TRÌNH XỬ LÝ SP NHÁP: 1) Hỏi admin thông tin bổ sung → 2) get_draft_products → 3) Sinh HTML SEO → 4) update_product_details.
 

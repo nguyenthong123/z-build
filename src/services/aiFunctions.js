@@ -445,6 +445,36 @@ export const STOREFRONT_AI_FUNCTIONS = [
         required: ["youtube_url"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "export_products_excel",
+      description: "Xuất toàn bộ danh sách sản phẩm ra file Excel (.xlsx). Hỗ trợ lọc theo category và trạng thái.",
+      parameters: {
+        type: "object",
+        properties: {
+          category: { type: "string", description: "Lọc theo danh mục (tùy chọn)" },
+          status: { type: "string", description: "Lọc theo trạng thái: Draft, Active, Inactive (tùy chọn)" }
+        },
+        required: []
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "sync_prices_from_sheet",
+      description: "Đồng bộ giá sản phẩm từ Google Sheet. Admin gửi link sheet, AI đọc và cập nhật giá dựa theo ID hoặc tên sản phẩm.",
+      parameters: {
+        type: "object",
+        properties: {
+          sheet_url: { type: "string", description: "Link Google Sheet (dạng published CSV hoặc share link)" },
+          match_field: { type: "string", description: "Cột để so khớp: id hoặc title (mặc định: id)" }
+        },
+        required: ["sheet_url"]
+      }
+    }
   }
 ];
 
@@ -1097,6 +1127,162 @@ async function analyzeYouTubeLink({ youtube_url }) {
   } catch (err) { return { error: "Lỗi phân tích YouTube: " + err.message }; }
 }
 
+async function exportProductsExcel({ category = "", status = "" }) {
+  try {
+    const snap = await getDocs(collection(db, "products"));
+    let allP = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    
+    if (category) {
+      allP = allP.filter(p => (p.category || "").toLowerCase().includes(category.toLowerCase()));
+    }
+    if (status) {
+      const s = status.toLowerCase();
+      allP = allP.filter(p => (p.status || "").toLowerCase() === s);
+    }
+    
+    if (allP.length === 0) {
+      return { error: "Không có sản phẩm nào khớp điều kiện lọc." };
+    }
+    
+    const rows = allP.map(p => ({
+      ID: p.id,
+      "Tên sản phẩm": p.title || "",
+      "Danh mục": p.category || "",
+      "Giá gốc": p.basePrice || p.price || 0,
+      "Giá KM": p.discountPrice || p.price || 0,
+      "Tồn kho": p.stock || 0,
+      "Trạng thái": p.status || "Draft",
+      "Quy cách": p.specs || "",
+      "Đóng gói": p.packaging || "",
+      "Slug": p.slug || "",
+    }));
+    
+    // Generate XLSX in browser - trigger download directly
+    if (typeof window !== "undefined") {
+      try {
+        const XLSX = await import("xlsx");
+        const ws = XLSX.utils.json_to_sheet(rows);
+        ws["!cols"] = [
+          { wch: 22 }, { wch: 35 }, { wch: 18 }, { wch: 14 },
+          { wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 15 }, { wch: 30 }
+        ];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "San Pham");
+        const buf = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+        const filename = "san-pham-zbuild-" + new Date().toISOString().slice(0, 10) + ".xlsx";
+        // Trigger browser download
+        const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        return {
+          success: true,
+          message: "Da xuat " + allP.length + " san pham ra file Excel: " + filename,
+          total: allP.length,
+          filename: filename
+        };
+      } catch (xerr) {
+        console.warn("XLSX error:", xerr);
+      }
+    }
+    
+    return {
+      success: true,
+      message: "Da lay " + allP.length + " san pham (dang JSON, cai xlsx de xuat Excel).",
+      total: allP.length,
+      products: rows.slice(0, 20)
+    };
+  } catch (err) { return { error: "Lỗi xuất Excel: " + err.message }; }
+}
+
+async function syncPricesFromSheet({ sheet_url, match_field = "id" }) {
+  try {
+    if (!sheet_url || (!sheet_url.includes("docs.google.com") && !sheet_url.includes("spreadsheets"))) {
+      return { error: "Link khong hop le. Vui long gui link Google Sheet (da publish CSV hoac share)." };
+    }
+    
+    let csvUrl = sheet_url;
+    const idMatch = sheet_url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    if (idMatch) {
+      const sheetId = idMatch[1];
+      const gidMatch = sheet_url.match(/gid=(\d+)/);
+      csvUrl = "https://docs.google.com/spreadsheets/d/" + sheetId + "/export?format=csv" + (gidMatch ? "&gid=" + gidMatch[1] : "");
+    }
+    
+    const res = await fetch(csvUrl);
+    if (!res.ok) {
+      return { error: "Khong the doc sheet. Hay dam bao sheet da duoc publish ra web (File -> Share -> Publish to web -> CSV)." };
+    }
+    const csvText = await res.text();
+    
+    const lines = csvText.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) return { error: "Sheet trong hoac chi co 1 dong." };
+    
+    const headers = lines[0].split(",").map(h => h.trim().toLowerCase());
+    const idIdx = headers.findIndex(h => h === "id" || h === "product_id" || h === "productid");
+    const titleIdx = headers.findIndex(h => h === "title" || h === "ten" || h === "name" || h === "ten san pham");
+    const priceIdx = headers.findIndex(h => h === "price" || h === "gia" || h === "base_price" || h === "discount_price" || h === "gia moi");
+    const discountIdx = headers.findIndex(h => h === "discount_price" || h === "gia km" || h === "discount");
+    
+    if (match_field === "id" && idIdx === -1) {
+      return { error: "Khong tim thay cot 'id' trong sheet. Dung match_field='title' de so khop theo ten, hoac them cot ID vao sheet." };
+    }
+    if (match_field === "title" && titleIdx === -1) {
+      return { error: "Khong tim thay cot 'title' trong sheet. Dung match_field='id' de so khop theo ID." };
+    }
+    if (priceIdx === -1) {
+      return { error: "Khong tim thay cot 'price/gia' trong sheet. Hay them cot gia." };
+    }
+    
+    const snap = await getDocs(collection(db, "products"));
+    const allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    
+    let updated = 0;
+    let notFound = 0;
+    const updates = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(",").map(c => c.trim().replace(/^"|"$/g, ""));
+      const matchVal = (match_field === "id" ? cols[idIdx] : cols[titleIdx]) || "";
+      if (!matchVal) continue;
+      
+      const priceVal = sanitizeNumber(cols[priceIdx]);
+      if (priceVal <= 0) continue;
+      
+      let found;
+      if (match_field === "id") {
+        found = allProducts.find(p => p.id === matchVal || p.id.includes(matchVal));
+      } else {
+        found = allProducts.find(p => (p.title || "").toLowerCase().includes(matchVal.toLowerCase()));
+      }
+      
+      if (found) {
+        const update = { price: priceVal, basePrice: priceVal, updatedAt: new Date().toISOString() };
+        if (discountIdx !== -1 && cols[discountIdx]) {
+          const discVal = sanitizeNumber(cols[discountIdx]);
+          if (discVal > 0) { update.discountPrice = discVal; update.price = discVal; }
+        }
+        await updateDoc(doc(db, "products", found.id), update);
+        updates.push({ id: found.title, oldPrice: found.price, newPrice: update.price });
+        updated++;
+      } else {
+        notFound++;
+      }
+    }
+    
+    return {
+      success: true,
+      message: "Da dong bo " + updated + " san pham" + (notFound > 0 ? ", " + notFound + " san pham khong tim thay" : "") + ".",
+      updated: updated,
+      not_found: notFound,
+      changes: updates.slice(0, 10)
+    };
+  } catch (err) { return { error: "Lỗi đồng bộ giá từ sheet: " + err.message }; }
+}
+
 // ============ FUNCTION EXECUTOR ============
 
 export async function executeFunction(name, args) {
@@ -1124,6 +1310,8 @@ export async function executeFunction(name, args) {
     case "get_customer_info": return await getCustomerInfo(parsedArgs);
     case "manage_coupon": return await manageCoupon(parsedArgs);
     case "analyze_youtube_link": return await analyzeYouTubeLink(parsedArgs);
+    case "export_products_excel": return await exportProductsExcel(parsedArgs);
+    case "sync_prices_from_sheet": return await syncPricesFromSheet(parsedArgs);
     default: return { error: `Function "${name}" không tồn tại` };
   }
 }
