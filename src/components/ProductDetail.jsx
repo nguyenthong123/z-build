@@ -524,6 +524,52 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
                   Trải nghiệm Demo
                 </button>
               )}
+              <button
+                className="btn-compare"
+                onClick={() => {
+                  if (!product?.id) return;
+                  try {
+                    const current = JSON.parse(localStorage.getItem('compareList') || '[]');
+                    if (!current.includes(product.id)) {
+                      const updated = [...current, product.id].slice(0, 3);
+                      localStorage.setItem('compareList', JSON.stringify(updated));
+                      window.dispatchEvent(new Event('compareListUpdated'));
+                    }
+                    navigate('/compare');
+                  } catch {}
+                }}
+                style={{
+                  flex: '1',
+                  background: 'var(--card-bg)',
+                  color: 'var(--text-main)',
+                  fontWeight: '600',
+                  padding: '18px',
+                  borderRadius: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  fontSize: '1rem',
+                  border: '1px solid var(--divider)',
+                  cursor: 'pointer',
+                  transition: 'var(--transition-fast)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--primary-yellow)';
+                  e.currentTarget.style.background = '#FFF9E6';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--divider)';
+                  e.currentTarget.style.background = 'var(--card-bg)';
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 6h18M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
+                  <rect x="6" y="11" width="5" height="8" rx="1"/>
+                  <rect x="13" y="11" width="5" height="8" rx="1"/>
+                </svg>
+                So sánh
+              </button>
               <button className="btn-add-cart" onClick={() => onAddToCart(product, quantity)}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
                 Thêm vào giỏ hàng

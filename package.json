@@ -4,17 +4,22 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "next dev",
+    "build": "next build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "next start",
+    "export": "next build"
   },
   "dependencies": {
     "firebase": "^12.10.0",
     "fuse.js": "^7.1.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
+    "i18next": "^26.3.1",
+    "i18next-browser-languagedetector": "^8.2.1",
+    "next": "^16.2.9",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "react-helmet-async": "^3.0.0",
+    "react-i18next": "^17.0.8",
     "react-markdown": "^10.1.0",
     "react-quill-new": "^3.8.3",
     "react-router-dom": "^7.13.1",

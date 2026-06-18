@@ -7,7 +7,7 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [adminEmails, setAdminEmails] = useState((import.meta.env.VITE_ADMIN_EMAILS || 'nbt1024@gmail.com').split(','));
+  const [adminEmails, setAdminEmails] = useState((process.env.NEXT_PUBLIC_ADMIN_EMAILS || 'nbt1024@gmail.com').split(','));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

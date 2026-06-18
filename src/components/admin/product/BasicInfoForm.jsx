@@ -15,7 +15,7 @@ const BasicInfoForm = ({ title, slug, description, onChange, onDescriptionChange
     
     setIsGenerating(true);
     try {
-      const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
       if (!geminiApiKey) {
         alert("Vui lòng cấu hình VITE_GEMINI_API_KEY trong file .env.local!");
         setIsGenerating(false);

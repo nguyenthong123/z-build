@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { db, auth } from '../firebase';
 import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, limit } from 'firebase/firestore';
 import Fuse from 'fuse.js';
-import { AI_FUNCTIONS, executeFunction } from '../services/aiFunctions';
+import { STOREFRONT_AI_FUNCTIONS, executeFunction } from '../services/aiFunctions';
 
 const deleteCloudinaryImage = async (secureUrl) => {
   try {
@@ -10,9 +10,9 @@ const deleteCloudinaryImage = async (secureUrl) => {
     if (!match) return;
     const publicId = match[1];
     
-    const apiSecret = import.meta.env.VITE_CLOUDINARY_API_SECRET;
-    const apiKey = import.meta.env.VITE_CLOUDINARY_API_KEY;
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const apiSecret = process.env.NEXT_PUBLIC_CLOUDINARY_API_SECRET;
+    const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
     
     if (!apiSecret || !apiKey || !cloudName) return;
 
@@ -172,8 +172,8 @@ export const useStorefrontAI = (productContext) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
-  const callAI = useCallback(async (msgText, systemPrompt, imageUrl = null, allowedTools = AI_FUNCTIONS) => {
-    const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  const callAI = useCallback(async (msgText, systemPrompt, imageUrl = null, allowedTools = STOREFRONT_AI_FUNCTIONS) => {
+    const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     
     if (!geminiApiKey) {
       return "⚠️ Hệ thống AI đang bảo trì: Chưa cấu hình VITE_GEMINI_API_KEY trên môi trường chạy.";
@@ -260,8 +260,8 @@ export const useStorefrontAI = (productContext) => {
     let imageUrl = null;
     if (imageFile) {
       try {
-        const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dtdgrcznj';
-        const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'zbuild';
+        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dtdgrcznj';
+        const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'zbuild';
         const formData = new FormData();
         formData.append('file', imageFile);
         formData.append('upload_preset', uploadPreset);
@@ -289,8 +289,7 @@ export const useStorefrontAI = (productContext) => {
         Tài liệu nội bộ: ${getKnowledgeContext(msgText)}`;
 
       // Try Gemini API
-      const adminFunctions = ['create_product', 'get_store_stats', 'get_draft_products', 'update_product_details', 'update_product_stock'];
-      const allowedTools = AI_FUNCTIONS.filter(f => !adminFunctions.includes(f.function.name));
+      const allowedTools = STOREFRONT_AI_FUNCTIONS;
 
       const botResult = await callAI(msgText, systemPrompt, imageUrl, allowedTools);
       

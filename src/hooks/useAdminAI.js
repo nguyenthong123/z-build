@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { db, auth } from '../firebase';
 import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, limit } from 'firebase/firestore';
 import Fuse from 'fuse.js';
-import { AI_FUNCTIONS, executeFunction } from '../services/aiFunctions';
+import { ADMIN_AI_FUNCTIONS, executeFunction } from '../services/aiFunctions';
 
 const deleteCloudinaryImage = async (secureUrl) => {
   try {
@@ -10,9 +10,9 @@ const deleteCloudinaryImage = async (secureUrl) => {
     if (!match) return;
     const publicId = match[1];
     
-    const apiSecret = import.meta.env.VITE_CLOUDINARY_API_SECRET;
-    const apiKey = import.meta.env.VITE_CLOUDINARY_API_KEY;
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const apiSecret = process.env.NEXT_PUBLIC_CLOUDINARY_API_SECRET;
+    const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
     
     if (!apiSecret || !apiKey || !cloudName) return;
 
@@ -173,8 +173,8 @@ export const useAdminAI = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
-  const callAI = useCallback(async (msgText, systemPrompt, imageUrl = null, allowedTools = AI_FUNCTIONS) => {
-    const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  const callAI = useCallback(async (msgText, systemPrompt, imageUrl = null, allowedTools = ADMIN_AI_FUNCTIONS) => {
+    const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     
     if (!geminiApiKey) {
       return "⚠️ Hệ thống AI đang bảo trì: Chưa cấu hình VITE_GEMINI_API_KEY trên môi trường chạy.";
@@ -261,8 +261,8 @@ export const useAdminAI = () => {
     let imageUrl = null;
     if (imageFile) {
       try {
-        const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dtdgrcznj';
-        const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'zbuild';
+        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dtdgrcznj';
+        const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'zbuild';
         const formData = new FormData();
         formData.append('file', imageFile);
         formData.append('upload_preset', uploadPreset);
@@ -284,19 +284,38 @@ export const useAdminAI = () => {
     }
 
     try {
-      const systemPrompt = `Bạn là Trợ lý AI Quản trị của Z-BUILD, hỗ trợ Admin quản lý hệ thống.
-        🔧 NĂNG LỰC ĐẶC BIỆT: Bạn CÓ QUYỀN TRUY CẬP VÀ BẮT BUỘC PHẢI SỬ DỤNG tools (function calling) để thực hiện các tác vụ.
-        - Khi người dùng yêu cầu tạo sản phẩm, BẠN PHẢI GỌI function 'create_product'. Tuyệt đối KHÔNG ĐƯỢC tự ý trả lời "đã tạo" mà không gọi function.
-        - Khi người dùng yêu cầu sửa/cập nhật số lượng tồn kho của sản phẩm, BẠN PHẢI GỌI function 'update_product_stock'.
-        - Khi tạo sản phẩm, nó sẽ tự động được lưu dưới dạng NHÁP để Admin duyệt sau.
-        - Danh mục hiện có trong hệ thống: ${dbCategories.length > 0 ? dbCategories.join(', ') : 'Vật liệu xây dựng, Nội thất...'}. Nếu khách quên nhập danh mục, hãy nhắc họ chọn trong danh sách này.
-        - LƯU Ý QUAN TRỌNG VỀ NGỮ CẢNH: NẾU người dùng đang trả lời bổ sung thông tin còn thiếu (ví dụ: bổ sung danh mục, giá cả) cho một yêu cầu tạo sản phẩm ở câu trước, bạn HÃY TỰ ĐỘNG nhớ và ghép thông tin mới này vào các thông tin cũ (tên, quy cách, giá) ở câu trước, sau đó GỌI LẠI function 'create_product' với đầy đủ thông tin.
-        - KHI NGƯỜI DÙNG YÊU CẦU KIỂM TRA/CẬP NHẬT SẢN PHẨM MỚI TỪ SHEET (SẢN PHẨM NHÁP): BƯỚC 1: Bắt buộc DỪNG LẠI và hỏi người dùng: "Tôi chuẩn bị tạo bài viết cho các sản phẩm nháp. Bạn có muốn cung cấp thêm thông tin chung (ví dụ: xuất xứ, chất liệu, bảo hành, công dụng nổi bật...) để tôi viết hay hơn không? Hay bạn muốn tôi tạo luôn?". KHÔNG ĐƯỢC làm tiếp bước sau nếu người dùng chưa trả lời câu hỏi này. BƯỚC 2: Khi người dùng trả lời (đưa thêm thông tin hoặc bảo tạo luôn), hãy gọi 'get_draft_products' để lấy danh sách. BƯỚC 3: Tự động suy luận và sinh đoạn mã HTML mô tả chuẩn SEO (kết hợp thông tin người dùng vừa cấp). BƯỚC 4: Gọi 'update_product_details' để cập nhật (GIỮ NGUYÊN trạng thái Nháp, tuyệt đối không kích hoạt để Admin tự thêm ảnh).
-        Hãy phản hồi ngắn gọn, chuyên nghiệp và đi thẳng vào vấn đề.
-        Tài liệu nội bộ: ${getKnowledgeContext(msgText)}`;
+      const systemPrompt = `Bạn là Trợ lý AI Quản trị của Z-BUILD, hỗ trợ Admin quản lý toàn bộ hệ thống. Bạn CÓ QUYỀN và BẮT BUỘC PHẢI SỬ DỤNG function calling.
+
+📸 TẠO SẢN PHẨM NHANH (CÓ ẢNH & VIDEO):
+- Khi admin gửi ẢNH + mô tả: tự động lấy URL ảnh (đã upload sẵn) truyền vào imageUrl của create_product.
+- Khi admin gửi LINK YOUTUBE: GỌI NGAY 'analyze_youtube_link' để phân tích → dùng kết quả (title, category, description, specs, videoUrl) để gọi create_product.
+- Admin nói "đăng luôn" / "active" → truyền status="Active" vào create_product (mặc định là "Draft").
+- Nếu admin gửi ảnh kèm text như "tạo sản phẩm tên X giá Y" → tạo luôn với imageUrl từ ảnh đã gửi.
+
+⚡ TẤT CẢ CHỨC NĂNG QUẢN TRỊ:
+- create_product: Tạo SP mới (có ảnh imageUrl, video videoUrl, status Draft/Active)
+- update_product_price: Sửa giá SP
+- update_product_status: Đổi Draft→Active→Inactive
+- update_product_stock: Cập nhật tồn kho
+- update_product_details: Cập nhật mô tả HTML SEO
+- delete_product: Xoá SP (cẩn thận!)
+- update_order_status: Đổi trạng thái đơn hàng (confirmed/shipping/delivered/cancelled)
+- get_customer_info: Tra cứu khách hàng + lịch sử mua
+- manage_coupon: Tạo/vô hiệu mã giảm giá
+- get_draft_products: Xem SP nháp
+- get_store_stats: Thống kê cửa hàng
+- search_products / get_product_detail / count_products / check_order_status / get_order_history: Tra cứu
+
+📋 QUY TRÌNH TẠO SP TỪ YOUTUBE: 1) Gọi analyze_youtube_link → 2) Dùng kết quả gọi create_product với đầy đủ title, category, basePrice, specs, videoUrl, status.
+📋 QUY TRÌNH TẠO SP TỪ ẢNH: 1) Lấy imageUrl từ ảnh admin gửi → 2) Gọi create_product với imageUrl + thông tin admin cung cấp.
+📋 QUY TRÌNH XỬ LÝ SP NHÁP: 1) Hỏi admin thông tin bổ sung → 2) get_draft_products → 3) Sinh HTML SEO → 4) update_product_details.
+
+Danh mục hiện có: ${dbCategories.length > 0 ? dbCategories.join(', ') : 'Vật liệu xây dựng, Nội thất...'}.
+GHI NHỚ NGỮ CẢNH: Nếu admin bổ sung thông tin cho yêu cầu trước, tự động ghép và gọi lại function.
+Phản hồi ngắn gọn, tiếng Việt, chuyên nghiệp.`;
 
       // Try Gemini API
-      const allowedTools = AI_FUNCTIONS;
+      const allowedTools = ADMIN_AI_FUNCTIONS;
 
       const botResult = await callAI(msgText, systemPrompt, imageUrl, allowedTools);
       

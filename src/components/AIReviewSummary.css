@@ -1,0 +1,159 @@
+/* AI Review Summary Card — Luxe Design System */
+.ai-review-summary {
+  background: linear-gradient(135deg, #FFF9E6 0%, #FFFDF5 50%, #FFF9E6 100%);
+  border: 1px solid #F0E0A0;
+  border-radius: 20px;
+  padding: 28px 32px;
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+  animation: aiFadeSlideIn 0.5s ease-out;
+  box-shadow: 0 4px 24px rgba(218, 165, 32, 0.08);
+}
+
+.ai-review-summary::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(218, 165, 32, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Header Row */
+.ai-summary-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.ai-summary-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #DAA520, #FFB800);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 3px 12px rgba(218, 165, 32, 0.3);
+}
+
+.ai-summary-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1A1A1A;
+  letter-spacing: -0.01em;
+}
+
+.ai-summary-badge {
+  background: linear-gradient(135deg, #DAA520, #FFB800);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 100px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* Body */
+.ai-summary-body {
+  position: relative;
+}
+
+.ai-summary-text {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: #3A3A3A;
+  font-weight: 500;
+  white-space: pre-wrap;
+}
+
+/* Loading Skeleton */
+.ai-summary-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-summary-skeleton {
+  height: 14px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #F0E8D0 25%, #FFF5E0 50%, #F0E8D0 75%);
+  background-size: 200% 100%;
+  animation: aiShimmer 1.5s infinite;
+}
+
+.ai-summary-skeleton-1 {
+  width: 100%;
+}
+
+.ai-summary-skeleton-2 {
+  width: 85%;
+}
+
+.ai-summary-skeleton-3 {
+  width: 55%;
+}
+
+/* Error */
+.ai-summary-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #B8860B;
+  font-weight: 500;
+}
+
+.ai-summary-error svg {
+  flex-shrink: 0;
+  color: #DAA520;
+}
+
+/* Animations */
+@keyframes aiFadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes aiShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .ai-review-summary {
+    padding: 20px 18px;
+    border-radius: 16px;
+    margin-bottom: 24px;
+  }
+
+  .ai-summary-title {
+    font-size: 0.95rem;
+  }
+
+  .ai-summary-text {
+    font-size: 0.9rem;
+    line-height: 1.65;
+  }
+}

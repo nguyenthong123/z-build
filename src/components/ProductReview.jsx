@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, onSnapshot, query, where, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, where, getDocs, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import './ProductReview.css';
 import { useToast } from '../context/ToastContext';
+import AIReviewSummary from './AIReviewSummary';
 
 const ProductReview = ({ productId, isLoggedIn, onLoginRequired }) => {
   const [reviews, setReviews] = useState([]);
@@ -12,8 +13,45 @@ const ProductReview = ({ productId, isLoggedIn, onLoginRequired }) => {
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [hasPurchased, setHasPurchased] = useState(false);
+  const [checkingPurchase, setCheckingPurchase] = useState(true);
   const { addToast } = useToast();
   const currentUser = auth.currentUser;
+
+  // Check if current user has purchased this product
+  useEffect(() => {
+    if (!currentUser || !productId) {
+      setCheckingPurchase(false);
+      setHasPurchased(false);
+      return;
+    }
+
+    const checkPurchase = async () => {
+      setCheckingPurchase(true);
+      try {
+        const pId = String(productId).trim();
+        const ordersQuery = query(
+          collection(db, 'orders'),
+          where('userId', '==', currentUser.uid)
+        );
+        const snapshot = await getDocs(ordersQuery);
+        
+        const purchased = snapshot.docs.some(doc => {
+          const items = doc.data().items || [];
+          return items.some(item => String(item.id || item.productId).trim() === pId);
+        });
+        
+        setHasPurchased(purchased);
+      } catch (err) {
+        console.error('Error checking purchase:', err);
+        setHasPurchased(false);
+      } finally {
+        setCheckingPurchase(false);
+      }
+    };
+
+    checkPurchase();
+  }, [productId, currentUser]);
 
   useEffect(() => {
     // Debug log
@@ -185,7 +223,7 @@ const ProductReview = ({ productId, isLoggedIn, onLoginRequired }) => {
 
       {/* Write Review Card */}
       <div className="review-form-container" style={{ background: '#f8f9fa', padding: '35px', borderRadius: '24px', marginBottom: '50px', border: '1px solid #eee', position: 'relative' }}>
-        {!isLoggedIn && (
+        {!isLoggedIn ? (
           <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(255,255,255,0.9)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '24px', backdropFilter: 'blur(4px)' }}>
             <div style={{ textAlign: 'center' }}>
               <p style={{ fontWeight: '700', marginBottom: '15px', fontSize: '1.1rem' }}>Vui lòng đăng nhập để gửi đánh giá</p>
@@ -195,6 +233,20 @@ const ProductReview = ({ productId, isLoggedIn, onLoginRequired }) => {
               >
                 Đăng nhập ngay
               </button>
+            </div>
+          </div>
+        ) : checkingPurchase ? (
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(255,255,255,0.9)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '24px', backdropFilter: 'blur(4px)' }}>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontWeight: '700', marginBottom: '5px', fontSize: '1.1rem', color: '#666' }}>Đang kiểm tra đơn hàng...</p>
+            </div>
+          </div>
+        ) : !hasPurchased && (
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(255,255,255,0.9)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '24px', backdropFilter: 'blur(4px)' }}>
+            <div style={{ textAlign: 'center', padding: '10px' }}>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#DAA520" strokeWidth="1.5" style={{ marginBottom: '10px', opacity: 0.8 }}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <p style={{ fontWeight: '700', marginBottom: '5px', fontSize: '1.1rem', color: '#1a1a1a' }}>Bạn cần mua sản phẩm này trước khi đánh giá</p>
+              <p style={{ fontSize: '0.9rem', color: '#888', margin: 0 }}>Chỉ khách hàng đã mua mới có thể để lại nhận xét.</p>
             </div>
           </div>
         )}
@@ -218,7 +270,7 @@ const ProductReview = ({ productId, isLoggedIn, onLoginRequired }) => {
           </div>
           <button 
             type="submit" 
-            disabled={submitting || !isLoggedIn}
+            disabled={submitting || !isLoggedIn || checkingPurchase || !hasPurchased}
             style={{ 
               padding: '16px 45px', 
               borderRadius: '14px', 
@@ -226,7 +278,7 @@ const ProductReview = ({ productId, isLoggedIn, onLoginRequired }) => {
               color: 'white', 
               border: 'none', 
               fontWeight: '700', 
-              cursor: (submitting || !isLoggedIn) ? 'not-allowed' : 'pointer',
+              cursor: (submitting || !isLoggedIn || checkingPurchase || !hasPurchased) ? 'not-allowed' : 'pointer',
               fontSize: '1rem'
             }}
           >
@@ -234,6 +286,11 @@ const ProductReview = ({ productId, isLoggedIn, onLoginRequired }) => {
           </button>
         </form>
       </div>
+
+      {/* AI Review Summary */}
+      {reviews.length > 0 && !loading && (
+        <AIReviewSummary reviews={reviews} loading={loading} />
+      )}
 
       {/* Reviews List */}
       <div className="reviews-list">

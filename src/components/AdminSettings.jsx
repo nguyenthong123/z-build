@@ -73,7 +73,7 @@ const AdminSettings = ({ onBack }) => {
           setOpenClawConfig(docSnap.data().openClawConfig);
         } else {
           setOpenClawConfig({ 
-            apiUrl: import.meta.env.VITE_OPENCLAW_API_URL || 'http://localhost:8000/chat',
+            apiUrl: process.env.NEXT_PUBLIC_OPENCLAW_API_URL || 'http://localhost:8000/chat',
             botApiKey: 'bot_zbuild_2026'
           });
         }
@@ -93,7 +93,7 @@ const AdminSettings = ({ onBack }) => {
         if (adminSnap.exists() && adminSnap.data().emails) {
           setAdminEmails(adminSnap.data().emails);
         } else {
-          setAdminEmails((import.meta.env.VITE_ADMIN_EMAILS || 'nbt1024@gmail.com').split(','));
+          setAdminEmails((process.env.NEXT_PUBLIC_ADMIN_EMAILS || 'nbt1024@gmail.com').split(','));
         }
       } catch (err) {
         console.error('Lỗi khi tải cài đặt:', err);

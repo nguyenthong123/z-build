@@ -13,21 +13,299 @@
  */
 
 import { db } from '../firebase';
-import { collection, getDocs, query, orderBy, doc, getDoc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, where, doc, getDoc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { calculateConstructionMaterials } from './MaterialService';
 
 // ============ FUNCTION DEFINITIONS (cho DeepSeek/OpenAI tools format) ============
 
-export const AI_FUNCTIONS = [
+// ============================================================
+// ADMIN AI FUNCTIONS — Quản trị: tạo/sửa sản phẩm, tồn kho, thống kê
+// ============================================================
+// ============================================================
+// ADMIN AI FUNCTIONS — Quản trị: tạo/sửa sản phẩm, tồn kho, thống kê
+// ============================================================
+export const ADMIN_AI_FUNCTIONS = [
+  {
+    type: "function",
+    function: {
+      name: "create_product",
+      description: "Tạo sản phẩm mới. Hỗ trợ: ảnh (imageUrl từ upload), video YouTube (videoUrl), trạng thái (status: Draft/Active). Nếu người dùng gửi ảnh hoặc link YouTube, hãy dùng analyze_youtube_link trước rồi gọi create_product với đầy đủ thông tin.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Tên sản phẩm (KHÔNG bao gồm quy cách vào tên)" },
+          category: { type: "string", description: "Danh mục sản phẩm. Bắt buộc nhập." },
+          basePrice: { type: "number", description: "Giá gốc của sản phẩm" },
+          discountPrice: { type: "number", description: "Giá khuyến mãi (tùy chọn)" },
+          stock: { type: "number", description: "Số lượng tồn kho ban đầu (mặc định 100)" },
+          weight: { type: "string", description: "Trọng lượng riêng" },
+          packaging: { type: "string", description: "Quy cách đóng gói" },
+          specs: { type: "string", description: "Quy cách sản phẩm" },
+          shortDesc: { type: "string", description: "Mô tả ngắn gọn" },
+          imageUrl: { type: "string", description: "URL ảnh sản phẩm (nếu admin gửi kèm ảnh, tự động lấy từ tin nhắn)" },
+          videoUrl: { type: "string", description: "Link YouTube video sản phẩm (nếu có)" },
+          status: { type: "string", description: "Trạng thái: Draft (nháp, mặc định) hoặc Active (đăng luôn)" }
+        },
+        required: ["title", "basePrice", "category"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_product_stock",
+      description: "Cập nhật số lượng tồn kho của một sản phẩm dựa theo tên.",
+      parameters: {
+        type: "object",
+        properties: {
+          product_name: { type: "string", description: "Tên sản phẩm cần cập nhật tồn kho" },
+          new_stock: { type: "number", description: "Số lượng tồn kho mới" }
+        },
+        required: ["product_name", "new_stock"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_draft_products",
+      description: "Lấy danh sách các sản phẩm đang ở trạng thái nháp.",
+      parameters: { type: "object", properties: {} }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_product_details",
+      description: "Cập nhật chi tiết một sản phẩm (mô tả SEO HTML, quy cách, danh mục).",
+      parameters: {
+        type: "object",
+        properties: {
+          product_id: { type: "string", description: "ID của sản phẩm cần cập nhật" },
+          description: { type: "string", description: "Đoạn mã HTML mô tả" },
+          category: { type: "string", description: "Danh mục sản phẩm" },
+          specs: { type: "string", description: "Thông số kỹ thuật/quy cách" }
+        },
+        required: ["product_id", "description"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_store_stats",
+      description: "Lấy thống kê tổng quan cửa hàng: tổng sản phẩm, đơn hàng, doanh thu.",
+      parameters: { type: "object", properties: {} }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "search_products",
+      description: "Tìm kiếm sản phẩm trong cửa hàng theo tên hoặc danh mục.",
+      parameters: {
+        type: "object",
+        properties: {
+          keyword: { type: "string", description: "Từ khóa tìm kiếm" },
+          category: { type: "string", description: "Danh mục (nếu biết)" },
+          max_results: { type: "number", description: "Số kết quả tối đa, mặc định 5" }
+        },
+        required: ["keyword"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_product_detail",
+      description: "Lấy chi tiết một sản phẩm: giá bán, tồn kho, mô tả.",
+      parameters: {
+        type: "object",
+        properties: {
+          product_name: { type: "string", description: "Tên sản phẩm cần tra cứu" },
+          product_id: { type: "string", description: "ID sản phẩm (nếu biết)" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "count_products",
+      description: "Đếm số lượng sản phẩm trong cửa hàng.",
+      parameters: {
+        type: "object",
+        properties: {
+          category: { type: "string", description: "Danh mục cần đếm (bỏ trống = tất cả)" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "check_order_status",
+      description: "Kiểm tra trạng thái đơn hàng theo mã đơn hoặc email.",
+      parameters: {
+        type: "object",
+        properties: {
+          order_number: { type: "string", description: "Mã đơn hàng" },
+          customer_email: { type: "string", description: "Email khách hàng" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_order_history",
+      description: "Lấy lịch sử đơn hàng gần đây.",
+      parameters: {
+        type: "object",
+        properties: {
+          customer_email: { type: "string", description: "Email khách hàng (bỏ trống = tất cả)" },
+          status_filter: { type: "string", description: "Lọc theo trạng thái" },
+          max_results: { type: "number", description: "Số lượng đơn, mặc định 10" }
+        }
+      }
+    }
+  }
+];
+
+// ============================================================
+// STOREFRONT AI FUNCTIONS — Tư vấn khách hàng, báo giá, đơn hàng
+// ============================================================
+export const STOREFRONT_AI_FUNCTIONS = [
+  {
+    type: "function",
+    function: {
+      name: "search_products",
+      description: "Tìm kiếm sản phẩm trong cửa hàng Zbuild theo tên hoặc danh mục.",
+      parameters: {
+        type: "object",
+        properties: {
+          keyword: { type: "string", description: "Từ khóa tìm kiếm" },
+          category: { type: "string", description: "Danh mục (nếu biết)" },
+          max_results: { type: "number", description: "Số kết quả tối đa, mặc định 5" }
+        },
+        required: ["keyword"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_product_detail",
+      description: "Lấy chi tiết một sản phẩm: giá bán, tồn kho, mô tả.",
+      parameters: {
+        type: "object",
+        properties: {
+          product_name: { type: "string", description: "Tên sản phẩm cần tra cứu" },
+          product_id: { type: "string", description: "ID sản phẩm (nếu biết)" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "count_products",
+      description: "Đếm số lượng sản phẩm trong cửa hàng.",
+      parameters: {
+        type: "object",
+        properties: {
+          category: { type: "string", description: "Danh mục cần đếm (bỏ trống = tất cả)" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "check_order_status",
+      description: "Kiểm tra trạng thái đơn hàng theo mã đơn hoặc email.",
+      parameters: {
+        type: "object",
+        properties: {
+          order_number: { type: "string", description: "Mã đơn hàng" },
+          customer_email: { type: "string", description: "Email khách hàng" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_order_history",
+      description: "Lấy lịch sử đơn hàng gần đây.",
+      parameters: {
+        type: "object",
+        properties: {
+          customer_email: { type: "string", description: "Email khách hàng (bỏ trống = tất cả)" },
+          status_filter: { type: "string", description: "Lọc theo trạng thái" },
+          max_results: { type: "number", description: "Số lượng đơn, mặc định 10" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "generate_quotation",
+      description: "Tạo báo giá tự động cho khách hàng dựa trên danh sách sản phẩm.",
+      parameters: {
+        type: "object",
+        properties: {
+          items: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                product_name: { type: "string" },
+                quantity: { type: "number" }
+              },
+              required: ["product_name", "quantity"]
+            }
+          },
+          customer_name: { type: "string" }
+        },
+        required: ["items"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "add_to_cart_batch",
+      description: "Thêm danh sách sản phẩm vào giỏ hàng sau khi khách đồng ý chốt đơn từ báo giá.",
+      parameters: {
+        type: "object",
+        properties: {
+          items: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                product_name: { type: "string" },
+                quantity: { type: "number" }
+              },
+              required: ["product_name", "quantity"]
+            }
+          }
+        },
+        required: ["items"]
+      }
+    }
+  },
   {
     type: "function",
     function: {
       name: "calculate_construction_materials",
-      description: "Tính toán số lượng vật tư cần thiết (thạch cao, khung xương, phụ kiện) cho các hạng mục thi công.",
+      description: "Tính toán số lượng vật tư cần thiết cho các hạng mục thi công.",
       parameters: {
         type: "object",
         properties: {
-          projectType: { type: "string", description: "Loại hạng mục thi công: 'Trần thả', 'Trần chìm', 'Vách ngăn', 'Sàn nhẹ'" },
+          projectType: { type: "string", description: "Loại hạng mục: Trần thả, Trần chìm, Vách ngăn, Sàn nhẹ" },
           area: { type: "number", description: "Diện tích cần thi công (m2)" }
         },
         required: ["projectType", "area"]
@@ -38,16 +316,15 @@ export const AI_FUNCTIONS = [
     type: "function",
     function: {
       name: "create_order",
-      description: "Tạo đơn hàng mới vào hệ thống khi khách hàng chốt đơn mua hàng.",
+      description: "Tạo đơn hàng mới khi khách hàng chốt đơn mua hàng.",
       parameters: {
         type: "object",
         properties: {
-          customerName: { type: "string", description: "Tên khách hàng" },
-          customerPhone: { type: "string", description: "Số điện thoại" },
-          customerAddress: { type: "string", description: "Địa chỉ giao hàng" },
+          customerName: { type: "string" },
+          customerPhone: { type: "string" },
+          customerAddress: { type: "string" },
           items: {
             type: "array",
-            description: "Danh sách sản phẩm trong đơn",
             items: {
               type: "object",
               properties: {
@@ -65,206 +342,118 @@ export const AI_FUNCTIONS = [
   {
     type: "function",
     function: {
-      name: "create_product",
-      description: "Tạo sản phẩm mới vào danh mục sản phẩm của hệ thống (Ví dụ: khách hàng yêu cầu thêm mã hàng mới).",
+      name: "update_product_price",
+      description: "Cập nhật giá của sản phẩm (giá gốc và/hoặc giá khuyến mãi).",
       parameters: {
         type: "object",
         properties: {
-          title: { type: "string", description: "Tên sản phẩm (Lưu ý: KHÔNG bao gồm quy cách vào tên)" },
-          category: { 
-            type: "string", 
-            description: "Danh mục sản phẩm. Bắt buộc nhập. Nếu người dùng chưa cung cấp, HÃY DỪNG LẠI và yêu cầu họ cung cấp (hãy gợi ý dựa trên 'Danh mục hiện có' trong System Prompt)." 
-          },
-          basePrice: { type: "number", description: "Giá gốc của sản phẩm" },
-          discountPrice: { type: "number", description: "Giá khuyến mãi (tùy chọn)" },
-          stock: { type: "number", description: "Số lượng tồn kho ban đầu (mặc định 100)" },
-          weight: { type: "string", description: "Trọng lượng riêng (VD: 5.4kg)" },
-          packaging: { type: "string", description: "Quy cách đóng gói (Ví dụ: 10 tấm/hộp)" },
-          specs: { type: "string", description: "Quy cách sản phẩm (Ví dụ: 400x3000, 1.22mx2.44mx18mm...)" },
-          shortDesc: { type: "string", description: "Mô tả ngắn gọn hoặc yêu cầu của khách về sản phẩm (để AI tự động mở rộng thành bài viết)" }
+          product_name: { type: "string", description: "Tên sản phẩm cần cập nhật giá" },
+          base_price: { type: "number", description: "Giá gốc mới" },
+          discount_price: { type: "number", description: "Giá khuyến mãi mới (tùy chọn)" }
         },
-        required: ["title", "basePrice", "category"]
+        required: ["product_name", "base_price"]
       }
     }
   },
   {
     type: "function",
     function: {
-      name: "search_products",
-      description: "Tìm kiếm sản phẩm trong cửa hàng Zbuild theo tên hoặc danh mục. Trả về danh sách sản phẩm khớp.",
+      name: "update_product_status",
+      description: "Đổi trạng thái sản phẩm: Nháp (Draft) thành Hoạt động (Active) hoặc Ngừng (Inactive).",
       parameters: {
         type: "object",
         properties: {
-          keyword: { type: "string", description: "Từ khóa tìm kiếm (tên sản phẩm hoặc mô tả)" },
-          category: { type: "string", description: "Danh mục sản phẩm (nếu biết)" },
-          max_results: { type: "number", description: "Số kết quả tối đa trả về, mặc định 5" }
+          product_name: { type: "string", description: "Tên sản phẩm cần đổi trạng thái" },
+          status: { type: "string", description: "Trạng thái mới: Draft, Active, Inactive" }
         },
-        required: ["keyword"]
+        required: ["product_name", "status"]
       }
     }
   },
   {
     type: "function",
     function: {
-      name: "get_product_detail",
-      description: "Lấy chi tiết một sản phẩm cụ thể theo tên hoặc ID: giá bán, giá nhập, tồn kho, mô tả, hình ảnh.",
+      name: "delete_product",
+      description: "Xóa sản phẩm khỏi hệ thống. Chỉ dùng khi admin yêu cầu rõ ràng.",
       parameters: {
         type: "object",
         properties: {
-          product_name: { type: "string", description: "Tên sản phẩm cần tra cứu" },
-          product_id: { type: "string", description: "ID sản phẩm (nếu biết)" }
-        }
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "count_products",
-      description: "Đếm số lượng sản phẩm trong cửa hàng, có thể filter theo danh mục.",
-      parameters: {
-        type: "object",
-        properties: {
-          category: { type: "string", description: "Danh mục cần đếm (bỏ trống = đếm tất cả)" }
-        }
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "check_order_status",
-      description: "Kiểm tra trạng thái đơn hàng theo mã đơn hoặc email khách hàng.",
-      parameters: {
-        type: "object",
-        properties: {
-          order_number: { type: "string", description: "Mã đơn hàng (VD: ZBMMYIT7C093)" },
-          customer_email: { type: "string", description: "Email khách hàng" }
-        }
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_order_history",
-      description: "Lấy lịch sử đơn hàng gần đây của cửa hàng hoặc theo email khách hàng.",
-      parameters: {
-        type: "object",
-        properties: {
-          customer_email: { type: "string", description: "Email khách hàng (bỏ trống = tất cả đơn)" },
-          status_filter: { type: "string", description: "Lọc theo trạng thái: pending, confirmed, shipping, delivered, cancelled" },
-          max_results: { type: "number", description: "Số lượng đơn trả về, mặc định 10" }
-        }
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "generate_quotation",
-      description: "Tạo báo giá tự động cho khách hàng dựa trên danh sách sản phẩm và số lượng yêu cầu.",
-      parameters: {
-        type: "object",
-        properties: {
-          items: {
-            type: "array",
-            description: "Danh sách sản phẩm cần báo giá",
-            items: {
-              type: "object",
-              properties: {
-                product_name: { type: "string", description: "Tên sản phẩm" },
-                quantity: { type: "number", description: "Số lượng" }
-              },
-              required: ["product_name", "quantity"]
-            }
-          },
-          customer_name: { type: "string", description: "Tên khách hàng (cho tiêu đề báo giá)" }
+          product_name: { type: "string", description: "Tên sản phẩm cần xóa" }
         },
-        required: ["items"]
+        required: ["product_name"]
       }
     }
   },
   {
     type: "function",
     function: {
-      name: "add_to_cart_batch",
-      description: "Thêm một danh sách các sản phẩm vào giỏ hàng của khách hàng sau khi khách hàng đồng ý chốt đơn từ báo giá.",
+      name: "update_order_status",
+      description: "Cập nhật trạng thái đơn hàng: pending sang confirmed/shipping/delivered/cancelled.",
       parameters: {
         type: "object",
         properties: {
-          items: {
-            type: "array",
-            description: "Danh sách sản phẩm cần thêm vào giỏ",
-            items: {
-              type: "object",
-              properties: {
-                product_name: { type: "string", description: "Tên sản phẩm" },
-                quantity: { type: "number", description: "Số lượng" }
-              },
-              required: ["product_name", "quantity"]
-            }
-          }
+          order_number: { type: "string", description: "Mã đơn hàng" },
+          new_status: { type: "string", description: "Trạng thái mới: confirmed, shipping, delivered, cancelled" }
         },
-        required: ["items"]
+        required: ["order_number", "new_status"]
       }
     }
   },
   {
     type: "function",
     function: {
-      name: "get_store_stats",
-      description: "Lấy thống kê tổng quan cửa hàng: tổng sản phẩm, tổng đơn hàng, doanh thu, đơn chờ xử lý.",
-      parameters: {
-        type: "object",
-        properties: {}
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_draft_products",
-      description: "Lấy danh sách các sản phẩm đang ở trạng thái nháp (Draft) hoặc chưa có mô tả chi tiết để tiến hành cập nhật.",
-      parameters: {
-        type: "object",
-        properties: {}
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "update_product_details",
-      description: "Cập nhật chi tiết một sản phẩm (mô tả chuẩn SEO bằng HTML, quy cách, danh mục). Cần giữ nguyên trạng thái Nháp (Draft) để người dùng có thể tự kiểm tra và thêm hình ảnh.",
+      name: "get_customer_info",
+      description: "Tra cứu thông tin và lịch sử mua hàng của một khách hàng.",
       parameters: {
         type: "object",
         properties: {
-          product_id: { type: "string", description: "ID của sản phẩm cần cập nhật" },
-          description: { type: "string", description: "Đoạn mã HTML mô tả chi tiết sản phẩm (KHÔNG bọc trong markdown ```html)" },
-          category: { type: "string", description: "Danh mục sản phẩm" },
-          specs: { type: "string", description: "Thông số kỹ thuật/quy cách" }
+          customer_email: { type: "string", description: "Email khách hàng cần tra cứu" }
         },
-        required: ["product_id", "description"]
+        required: ["customer_email"]
       }
     }
   },
   {
     type: "function",
     function: {
-      name: "update_product_stock",
-      description: "Cập nhật số lượng tồn kho của một sản phẩm dựa theo tên sản phẩm. Rất hữu ích khi Admin muốn thêm/bớt tồn kho nhanh chóng.",
+      name: "manage_coupon",
+      description: "Tạo mới hoặc vô hiệu hóa mã giảm giá.",
       parameters: {
         type: "object",
         properties: {
-          product_name: { type: "string", description: "Tên sản phẩm cần cập nhật tồn kho" },
-          new_stock: { type: "number", description: "Số lượng tồn kho mới (chính xác số lượng, không phải số lượng thêm/bớt)" }
+          action: { type: "string", description: "create hoặc deactivate" },
+          code: { type: "string", description: "Mã giảm giá (VD: SUMMER2026)" },
+          discount_type: { type: "string", description: "(khi create) Loại: percentage hoặc fixed" },
+          discount_value: { type: "number", description: "(khi create) Giá trị giảm: % hoặc số tiền" },
+          min_order: { type: "number", description: "(khi create) Đơn tối thiểu" },
+          max_uses: { type: "number", description: "(khi create) Số lần sử dụng tối đa" }
         },
-        required: ["product_name", "new_stock"]
+        required: ["action", "code"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "analyze_youtube_link",
+      description: "Phân tích link YouTube để lấy tiêu đề, mô tả, thumbnail và dùng thông tin tạo sản phẩm.",
+      parameters: {
+        type: "object",
+        properties: {
+          youtube_url: { type: "string", description: "Link YouTube cần phân tích" }
+        },
+        required: ["youtube_url"]
       }
     }
   }
 ];
+
+
+
+// Backward compatibility
+export const AI_FUNCTIONS = [...ADMIN_AI_FUNCTIONS, ...STOREFRONT_AI_FUNCTIONS].filter((v, i, a) => 
+  a.findIndex(t => t.function.name === v.function.name) === i
+);
 
 // ============ FUNCTION IMPLEMENTATIONS ============
 
@@ -637,11 +826,11 @@ const slugify = (text) => {
 
 export async function createProduct(args) {
   try {
-    const { title, category, basePrice, discountPrice, stock = 100, weight = "", shortDesc = "", specs = "", packaging = "" } = args;
+    const { title, category, basePrice, discountPrice, stock = 100, weight = "", shortDesc = "", specs = "", packaging = "", imageUrl = "", videoUrl = "", status = "Draft" } = args;
 
     // Tự động sinh nội dung chi tiết bài viết sản phẩm bằng AI
     let description = "";
-    const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (geminiApiKey) {
       try {
         const prompt = `Viết một bài mô tả sản phẩm chuyên nghiệp, hấp dẫn, chuẩn SEO cho sản phẩm có tên là "${title}".
@@ -686,11 +875,12 @@ Yêu cầu:
       specs,
       packaging,
       weight,
-      status: "Draft", // Viết hoa chữ D để khớp với getStatusColor
+      status: (status === "Active" ? "Active" : "Draft"), // Hỗ trợ tạo Active luôn nếu admin yêu cầu
       stock: Number(stock),
       trackInventory: true,
-      image: "",
-      extraImages: [],
+      image: imageUrl || "",
+      videoUrl: videoUrl || "",
+      extraImages: imageUrl ? [imageUrl] : [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       createdBy: "AI_Bot"
@@ -699,7 +889,9 @@ Yêu cầu:
     const docRef = await addDoc(collection(db, "products"), newProduct);
     return {
       success: true,
-      message: `Đã lưu NHÁP sản phẩm "${title}". Bạn có thể vào phần Quản lý Sản phẩm để up thêm hình ảnh và chuyển sang trạng thái Hoạt động.`,
+      message: status === "Active" 
+        ? `Đã tạo và KÍCH HOẠT sản phẩm "${title}" thành công! Vào Store để xem ngay.` 
+        : `Đã lưu NHÁP sản phẩm "${title}". Vào Quản lý Sản phẩm để duyệt và thêm ảnh.`,
       productId: docRef.id,
       slug: newProduct.slug
     };
@@ -770,6 +962,141 @@ async function updateProductStock({ product_name, new_stock }) {
   }
 }
 
+
+async function updateProductPrice({ product_name, base_price, discount_price }) {
+  try {
+    const snap = await getDocs(collection(db, "products"));
+    const allP = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const kw = (product_name || "").toLowerCase();
+    const found = allP.find(p => (p.title || "").toLowerCase().includes(kw));
+    if (!found) return { error: "Không tìm thấy sản phẩm: " + product_name }
+    const update = { price: sanitizeNumber(base_price), basePrice: sanitizeNumber(base_price), updatedAt: new Date().toISOString() };
+    if (discount_price !== undefined) { update.discountPrice = sanitizeNumber(discount_price); update.price = sanitizeNumber(discount_price); }
+    await updateDoc(doc(db, "products", found.id), update);
+    return { success: true, message: "Đã cập nhật giá " + found.title + ": " + formatCurrency(update.price) };
+  } catch (err) { return { error: "Lỗi cập nhật giá: " + err.message }; }
+}
+
+async function updateProductStatus({ product_name, status }) {
+  try {
+    const snap = await getDocs(collection(db, "products"));
+    const allP = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const kw = (product_name || "").toLowerCase();
+    const found = allP.find(p => (p.title || "").toLowerCase().includes(kw));
+    if (!found) return { error: "Không tìm thấy sản phẩm: " + product_name }
+    const validStatuses = ["Draft", "Active", "Inactive"];
+    const newStatus = validStatuses.find(s => s.toLowerCase() === (status || "").toLowerCase()) || status;
+    await updateDoc(doc(db, "products", found.id), { status: newStatus, updatedAt: new Date().toISOString() });
+    return { success: true, message: "Da doi trang thai " + found.title + " -> " + newStatus };
+  } catch (err) { return { error: "Lỗi cập nhật trạng thái: " + err.message }; }
+}
+
+async function deleteProduct({ product_name }) {
+  try {
+    const snap = await getDocs(collection(db, "products"));
+    const allP = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const kw = (product_name || "").toLowerCase();
+    const found = allP.find(p => (p.title || "").toLowerCase().includes(kw));
+    if (!found) return { error: "Không tìm thấy sản phẩm: " + product_name }
+    await deleteDoc(doc(db, "products", found.id));
+    return { success: true, message: "Da xoa san pham: " + found.title };
+  } catch (err) { return { error: "Lỗi xóa sản phẩm: " + err.message }; }
+}
+
+async function updateOrderStatus({ order_number, new_status }) {
+  try {
+    const snap = await getDocs(query(collection(db, "orders"), orderBy("createdAt", "desc")));
+    const orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const num = (order_number || "").toUpperCase();
+    const found = orders.find(o => (o.orderNumber || "").toUpperCase().includes(num) || o.id.toUpperCase().includes(num));
+    if (!found) return { error: "Không tìm thấy đơn hàng: " + order_number }
+    const validStatuses = ["pending", "confirmed", "shipping", "delivered", "cancelled"];
+    const newS = validStatuses.find(s => s === (new_status || "").toLowerCase()) || new_status;
+    if (!validStatuses.includes(newS)) return { error: "Trạng thái không hợp lệ. Dùng: " + validStatuses.join(", ") }
+    await updateDoc(doc(db, "orders", found.id), { status: newS, updatedAt: new Date().toISOString() });
+    return { success: true, message: "Da cap nhat don " + (found.orderNumber || found.id.substring(0,8)) + " -> " + newS };
+  } catch (err) { return { error: "Lỗi cập nhật đơn hàng: " + err.message }; }
+}
+
+async function getCustomerInfo({ customer_email }) {
+  try {
+    const [userSnap, ordersSnap] = await Promise.all([
+      getDocs(query(collection(db, "users"), where("email", "==", customer_email), limit(1))),
+      getDocs(query(collection(db, "orders"), where("userEmail", "==", customer_email), orderBy("createdAt", "desc"), limit(10)))
+    ]);
+    const user = userSnap.docs.length > 0 ? userSnap.docs[0].data() : null;
+    const orders = ordersSnap.docs.map(d => ({ id: d.id, ...d.data(), createdAt: d.data().createdAt?.toDate?.() }));
+    const totalSpent = orders.filter(o => o.status === "delivered").reduce((s, o) => s + (o.total || 0), 0);
+    return {
+      customer: user ? { name: user.displayName || user.name, email: user.email, phone: user.phone || "N/A" } : { email: customer_email },
+      total_orders: orders.length,
+      total_spent: formatCurrency(totalSpent),
+      recent_orders: orders.slice(0, 5).map(o => ({
+        id: o.orderNumber || o.id.substring(0,8),
+        status: o.status,
+        total: formatCurrency(o.total),
+        date: o.createdAt ? new Intl.DateTimeFormat("vi-VN").format(o.createdAt) : "N/A"
+      }))
+    };
+  } catch (err) { return { error: "Lỗi tra cứu khách hàng: " + err.message }; }
+}
+
+async function manageCoupon({ action, code, discount_type, discount_value, min_order, max_uses }) {
+  try {
+    if (action === "deactivate") {
+      const snap = await getDocs(query(collection(db, "coupons"), where("code", "==", code), limit(1)));
+      if (snap.empty) return { error: "Không tìm thấy mã: " + code }
+      await updateDoc(doc(db, "coupons", snap.docs[0].id), { active: false, updatedAt: new Date().toISOString() });
+      return { success: true, message: "Da vo hieu hoa ma: " + code };
+    }
+    if (action === "create") {
+      if (!discount_type || !discount_value) return { error: "Thiếu discount_type hoặc discount_value." }
+      const newCoupon = {
+        code: (code || "").toUpperCase(),
+        discountType: discount_type,
+        discountValue: sanitizeNumber(discount_value),
+        minOrder: sanitizeNumber(min_order || 0),
+        maxUses: max_uses ? Number(max_uses) : 100,
+        usedCount: 0,
+        active: true,
+        createdAt: new Date().toISOString()
+      };
+      await addDoc(collection(db, "coupons"), newCoupon);
+      return { success: true, message: "Da tao ma giam gia " + newCoupon.code + " (" + (discount_type === "percentage" ? discount_value + "%" : formatCurrency(discount_value)) + ")" };
+    }
+    return { error: "Action không hợp lệ. Dùng create hoặc deactivate." };
+  } catch (err) { return { error: "Lỗi quản lý coupon: " + err.message }; }
+}
+
+async function analyzeYouTubeLink({ youtube_url }) {
+  try {
+    if (!youtube_url || (!youtube_url.includes("youtube.com") && !youtube_url.includes("youtu.be"))) {
+      return { error: "Link không hợp lệ. Vui lòng gửi link YouTube." };
+    }
+    const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!geminiApiKey) return { error: "Chưa cấu hình GEMINI API Key." };
+    const prompt = "Phân tích video YouTube này và trả về thông tin sản phẩm dạng JSON thuần (không markdown):\n{\n  \"title\": \"Tên sản phẩm (tiếng Việt, ngắn gọn)\",\n  \"category\": \"Danh mục phù hợp nhất\",\n  \"description\": \"Mô tả HTML sản phẩm chuẩn SEO (200-300 từ, dùng thẻ h3, p, ul, li, strong)\",\n  \"specs\": \"Thông số kỹ thuật chính\",\n  \"price_estimate\": \"Giá ước tính nếu có\"\n}\nLink: " + youtube_url;
+    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
+      method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + geminiApiKey },
+      body: JSON.stringify({ model: "gemini-2.5-flash", messages: [{ role: "user", content: prompt }], temperature: 0.3 })
+    });
+    if (!res.ok) return { error: "Lỗi gọi AI phân tích YouTube." };
+    const data = await res.json();
+    const text = data.choices[0]?.message?.content || "";
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        success: true,
+        ...parsed,
+        videoUrl: youtube_url,
+        hint: "Dung thong tin tren de goi create_product. Nho dung videoUrl=" + youtube_url + " de gan video cho san pham."
+      };
+    }
+    return { success: true, raw: text, videoUrl: youtube_url, hint: "Dung thong tin tren de tao san pham voi create_product." };
+  } catch (err) { return { error: "Lỗi phân tích YouTube: " + err.message }; }
+}
+
 // ============ FUNCTION EXECUTOR ============
 
 export async function executeFunction(name, args) {
@@ -790,6 +1117,13 @@ export async function executeFunction(name, args) {
     case 'get_draft_products': return await getDraftProducts(parsedArgs);
     case 'update_product_details': return await updateProductDetails(parsedArgs);
     case 'update_product_stock': return await updateProductStock(parsedArgs);
+        case "update_product_price": return await updateProductPrice(parsedArgs);
+    case "update_product_status": return await updateProductStatus(parsedArgs);
+    case "delete_product": return await deleteProduct(parsedArgs);
+    case "update_order_status": return await updateOrderStatus(parsedArgs);
+    case "get_customer_info": return await getCustomerInfo(parsedArgs);
+    case "manage_coupon": return await manageCoupon(parsedArgs);
+    case "analyze_youtube_link": return await analyzeYouTubeLink(parsedArgs);
     default: return { error: `Function "${name}" không tồn tại` };
   }
 }

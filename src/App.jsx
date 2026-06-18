@@ -30,6 +30,7 @@ const Login = lazy(() => import('./components/Login'));
 const SignUp = lazy(() => import('./components/SignUp'));
 const OrderConfirmation = lazy(() => import('./components/OrderConfirmation'));
 const AIAdvisor = lazy(() => import('./components/AIAdvisor'));
+const ProductCompare = lazy(() => import('./components/ProductCompare'));
 
 const AdminProductList = lazy(() => import('./components/AdminProductList'));
 const AdminAddProduct = lazy(() => import('./components/AdminAddProduct'));
@@ -153,9 +154,34 @@ function App() {
     } catch { return []; }
   });
 
+  const [compareCount, setCompareCount] = useState(() => {
+    try {
+      const saved = localStorage.getItem('compareList');
+      return saved ? JSON.parse(saved).length : 0;
+    } catch { return 0; }
+  });
+
   useEffect(() => {
     localStorage.setItem('zbuild_cart', JSON.stringify(cartItems));
   }, [cartItems]);
+
+  // Sync compareCount from localStorage (listen for custom events from components)
+  useEffect(() => {
+    const handleCompareUpdate = () => {
+      try {
+        const saved = localStorage.getItem('compareList');
+        setCompareCount(saved ? JSON.parse(saved).length : 0);
+      } catch { setCompareCount(0); }
+    };
+    window.addEventListener('compareListUpdated', handleCompareUpdate);
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'compareList') handleCompareUpdate();
+    });
+    return () => {
+      window.removeEventListener('compareListUpdated', handleCompareUpdate);
+      window.removeEventListener('storage', handleCompareUpdate);
+    };
+  }, []);
 
   // Set up Firebase Cloud Messaging for Push Notifications
   useEffect(() => {
@@ -172,7 +198,7 @@ function App() {
         // Request permission
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-          const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+          const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
           const isPlaceholder = !vapidKey || vapidKey.includes('REPLACE') || vapidKey.includes('YOUR_VAPID_KEY');
           
           if (isPlaceholder) {
@@ -333,7 +359,7 @@ function App() {
     if (path === '/orders') return 'order-history';
     if (path.startsWith('/order/')) return 'order-detail';
     if (path === '/profile') return 'profile';
-    if (path === '/wishlist') return 'wishlist';
+    if (path === '/compare') return 'compare';
     if (path === '/order-confirmation') return 'order-confirmation';
     // Removed ai-advisor
     if (path.startsWith('/admin')) return `admin-${path.split('/admin/')[1] || 'dashboard'}`;
@@ -356,6 +382,7 @@ function App() {
       'order-confirmation': '/order-confirmation',
       'profile': '/profile',
       'wishlist': '/wishlist',
+      'compare': '/compare',
       'ai-advisor': '/advisor',
       'admin-dashboard': '/admin/dashboard',
       'admin-products': '/admin/products',
@@ -378,8 +405,10 @@ function App() {
           view={view} 
           cartCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
           wishlistCount={wishlistCount}
+          compareCount={compareCount}
           onCartClick={() => navigate('/cart')}
           onWishlistClick={() => navigate('/wishlist')}
+          onCompareClick={() => navigate('/compare')}
           onProfileClick={() => user ? navigate('/profile') : handleLoginRequired('/profile')}
           onLogout={handleLogout}
         />
@@ -440,6 +469,7 @@ function App() {
               }
             }} />
           } />
+          <Route path="/compare" element={<ProductCompare />} />
           
           {/* === AUTH ROUTES === */}
           <Route path="/login" element={
