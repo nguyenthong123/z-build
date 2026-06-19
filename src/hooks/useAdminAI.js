@@ -173,7 +173,7 @@ export const useAdminAI = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
-  const callAI = useCallback(async (msgText, systemPrompt, imageUrl = null, allowedTools = ADMIN_AI_FUNCTIONS) => {
+  const callAI = useCallback(async (msgText, systemPrompt, imageUrls = [], allowedTools = ADMIN_AI_FUNCTIONS) => {
     const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     
     if (!geminiApiKey) {
@@ -191,12 +191,16 @@ export const useAdminAI = () => {
       return { role: m.isBot ? "assistant" : "user", content };
     });
     
+    const urls = Array.isArray(imageUrls) ? imageUrls : (imageUrls ? [imageUrls] : []);
     let currentUserContent = msgText;
-    if (imageUrl) {
-      currentUserContent = [
-        { type: "text", text: msgText || "Tôi gửi bạn một hình ảnh." },
-        { type: "image_url", image_url: { url: imageUrl } }
+    if (urls.length > 0) {
+      const parts = [
+        { type: "text", text: msgText || "Toi gui ban " + urls.length + " hinh anh." }
       ];
+      urls.forEach(url => {
+        parts.push({ type: "image_url", image_url: { url: url } });
+      });
+      currentUserContent = parts;
     }
     const apiMessages = [{ role: "system", content: systemPrompt }, ...history, { role: "user", content: currentUserContent }];
 
@@ -240,46 +244,53 @@ export const useAdminAI = () => {
     }
   }, [messages]);
 
-  const handleSend = useCallback(async (msgText, imageFile = null) => {
-    if (!msgText?.trim() && !imageFile) return;
+  const handleSend = useCallback(async (msgText, imageFiles = []) => {
+    if (!msgText?.trim() && (!imageFiles || imageFiles.length === 0)) return;
     
     setInput("");
     setIsTyping(true);
 
-    const localPreviewUrl = imageFile ? URL.createObjectURL(imageFile) : null;
+    const files = Array.isArray(imageFiles) ? imageFiles : (imageFiles ? [imageFiles] : []);
+    const hasImages = files.length > 0;
+    
+    const localPreviews = hasImages ? files.map(f => URL.createObjectURL(f)) : [];
     const tempId = Date.now();
     const userMsg = { 
       role: 'user', 
-      text: msgText || "Đã gửi hình ảnh", 
-      image: localPreviewUrl,
+      text: msgText || (hasImages ? 'Da gui ' + files.length + ' hinh anh' : ""), 
+      images: localPreviews.length > 0 ? localPreviews : undefined,
       id: tempId, 
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
     };
     
     setMessages(prev => [...prev, userMsg]);
 
-    let imageUrl = null;
-    if (imageFile) {
+    let imageUrls = [];
+    if (hasImages) {
       try {
         const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dtdgrcznj';
         const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'zbuild';
-        const formData = new FormData();
-        formData.append('file', imageFile);
-        formData.append('upload_preset', uploadPreset);
         
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-          method: 'POST',
-          body: formData,
+        const uploadPromises = files.map(async (file) => {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('upload_preset', uploadPreset);
+          const res = await fetch('https://api.cloudinary.com/v1_1/' + cloudName + '/image/upload', {
+            method: 'POST',
+            body: formData,
+          });
+          const data = await res.json();
+          return data.secure_url || null;
         });
-        const data = await res.json();
-        if (data.secure_url) {
-          imageUrl = data.secure_url;
-          setMessages(prev => prev.map(m => m.id === tempId ? { ...m, image: imageUrl } : m));
-        } else {
-          console.error("Cloudinary error:", data);
-        }
+        imageUrls = (await Promise.all(uploadPromises)).filter(Boolean);
+        
+        setMessages(prev => prev.map(m => m.id === tempId ? { 
+          ...m, 
+          images: imageUrls,
+          image: imageUrls[0] || undefined
+        } : m));
       } catch (err) {
-        console.error("Upload image failed:", err);
+        console.error("Upload images failed:", err);
       }
     }
 
@@ -320,7 +331,7 @@ Phản hồi ngắn gọn, tiếng Việt, chuyên nghiệp.`;
       // Try Gemini API
       const allowedTools = ADMIN_AI_FUNCTIONS;
 
-      const botResult = await callAI(msgText, systemPrompt, imageUrl, allowedTools);
+      const botResult = await callAI(msgText, systemPrompt, imageUrls, allowedTools);
       
       let cleanResponse = botResult;
       let boardData = null;
