@@ -1,11 +1,7 @@
 {
-  "framework": null,
-  "buildCommand": "npx next build",
+  "buildCommand": "npx next build && cp out/index.html out/404.html",
   "outputDirectory": "out",
   "installCommand": "npm install",
-  "rewrites": [
-    { "source": "/((?!_next|favicon\\.ico|manifest\\.json|robots\\.txt).*)", "destination": "/index.html" }
-  ],
   "cleanUrls": true,
   "trailingSlash": false
 }
