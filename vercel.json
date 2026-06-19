@@ -1,10 +1,12 @@
 {
-  "buildCommand": "npx next build && ls -la out/",
+  "framework": null,
+  "buildCommand": "npx next build",
   "outputDirectory": "out",
   "installCommand": "npm install",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ],
-  "cleanUrls": true,
+  "cleanUrls": false,
   "trailingSlash": false
 }
