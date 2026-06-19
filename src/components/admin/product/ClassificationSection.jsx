@@ -8,10 +8,10 @@ const ClassificationSection = ({ status, category, onChange, existingCategories 
   return (
     <section className="form-section card">
       <div className="section-header">
-        <h3>PHÂN LOẠI</h3>
+        <h3>📂 PHÂN LOẠI <span style={{color:'#f59e0b',fontSize:'11px',fontWeight:400}}>← AI: category + status</span></h3>
       </div>
       <div className="form-group">
-        <label>Trạng thái</label>
+        <label>Trạng thái <span style={{color:'#f59e0b',fontSize:'11px'}}>← AI: status (Draft/Active)</span></label>
         <select name="status" value={status} onChange={onChange}>
           <option value="Active">Hoạt động</option>
           <option value="Phân phối">Phân phối</option>
@@ -23,7 +23,7 @@ const ClassificationSection = ({ status, category, onChange, existingCategories 
         </select>
       </div>
       <div className="form-group">
-        <label>Danh mục</label>
+        <label>Danh mục <span style={{color:'#f59e0b',fontSize:'11px'}}>← AI: category</span></label>
         <input 
           type="text" 
           name="category" 

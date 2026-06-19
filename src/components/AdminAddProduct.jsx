@@ -71,6 +71,7 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
               <BasicInfoForm 
                 title={product.title}
                 slug={product.slug}
+                shortDescription={product.shortDescription}
                 description={product.description}
                 onChange={handleChange}
                 onDescriptionChange={handleDescriptionChange}

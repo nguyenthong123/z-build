@@ -14,19 +14,19 @@ const InventorySection = ({
   return (
     <section className="form-section card">
       <div className="section-header">
-        <h3>THÔNG SỐ & KHO</h3>
+        <h3>📦 TỒN KHO & ĐÓNG GÓI</h3>
       </div>
       <div className="form-group">
-        <label>Số lượng tồn kho (Stock)</label>
+        <label>Tồn kho <span style={{color:'#f59e0b',fontSize:'11px'}}>← AI: stock (mặc định 100)</span></label>
         <input type="number" name="stock" placeholder="VD: 100" value={stock || ''} onChange={onChange} />
       </div>
       <div className="form-group">
-        <label>Trọng lượng riêng (kg)</label>
+        <label>Trọng lượng (kg) <span style={{color:'#f59e0b',fontSize:'11px'}}>← AI: weight</span></label>
         <input type="text" name="weight" placeholder="VD: 5.4" value={weight || ''} onChange={onChange} />
       </div>
       <div className="form-group">
-        <label>Quy cách đóng gói</label>
-        <input type="text" name="packaging" placeholder="VD: 50 tấm/kiện" value={packaging || ''} onChange={onChange} />
+        <label>Đóng gói <span style={{color:'#f59e0b',fontSize:'11px'}}>← AI: packaging</span></label>
+        <input type="text" name="packaging" placeholder="VD: Thùng 10 tấm, Bao 25kg..." value={packaging || ''} onChange={onChange} />
       </div>
       <div className="toggle-group">
         <div className="toggle-info">

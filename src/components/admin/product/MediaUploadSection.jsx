@@ -19,12 +19,12 @@ const MediaUploadSection = ({
         <div className="section-icon media">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
         </div>
-        <h3>Hình ảnh sản phẩm</h3>
+        <h3>🖼️ Hình ảnh & Video <span style={{color:'#f59e0b',fontSize:'11px',fontWeight:400}}>← AI: imageUrl + videoUrl</span></h3>
       </div>
       
       {/* Main Image */}
       <div className="form-group">
-        <label>Hình ảnh chính (Đại diện)</label>
+        <label>Ảnh đại diện <span style={{color:'#f59e0b',fontSize:'11px'}}>← AI: imageUrl</span></label>
         <div className="upload-area" onClick={() => document.getElementById('productImage').click()}>
           <input type="file" id="productImage" style={{ display: 'none' }} accept="image/*" onChange={onImageChange} />
           {imagePreview ? (

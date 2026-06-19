@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 
-const BasicInfoForm = ({ title, slug, description, onChange, onDescriptionChange }) => {
+const BasicInfoForm = ({ title, slug, shortDescription, description, onChange, onDescriptionChange }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showAiInput, setShowAiInput] = useState(false);
   const [aiContext, setAiContext] = useState("");
@@ -72,14 +72,27 @@ Yêu cầu:
         <h3>Thông tin cơ bản</h3>
       </div>
       <div className="form-group">
-        <label>Tên sản phẩm</label>
+        <label>Tên sản phẩm <span style={{color:'#f59e0b',fontSize:'11px'}}>← AI: title</span></label>
         <input 
           type="text" 
           name="title"
-          placeholder="Ví dụ: Tai nghe không dây cao cấp" 
+          placeholder="Ví dụ: Sơn Dulux màu trắng, Đèn LED Panel 60x60..." 
           value={title}
           onChange={onChange}
         />
+      </div>
+      <div className="form-group">
+        <label>Mô tả ngắn <span style={{color:'#f59e0b',fontSize:'11px'}}>← AI: shortDesc</span></label>
+        <input 
+          type="text" 
+          name="shortDescription"
+          placeholder="VD: Sơn nội thất cao cấp, không mùi, độ phủ cao..." 
+          value={shortDescription || ''}
+          onChange={onChange}
+        />
+        <small style={{ color: '#666', fontSize: '11px', marginTop: '2px', display: 'block' }}>
+          * Hiển thị dưới tên sản phẩm trong danh sách và kết quả tìm kiếm
+        </small>
       </div>
       <div className="form-group">
         <label>Slug (URL thân thiện)</label>

@@ -10,6 +10,7 @@ export const useProductForm = (editData, onSave) => {
   const [product, setProduct] = useState({
     title: '',
     slug: '',
+    shortDescription: '',
     description: '',
     status: 'Active',
     category: 'Electronics',
@@ -47,6 +48,7 @@ export const useProductForm = (editData, onSave) => {
     if (editData && !isInitialized) {
       setProduct({
         ...editData,
+        shortDescription: editData.shortDescription || '',
         basePrice: editData.basePrice || '',
         discountPrice: editData.discountPrice || '',
         stock: editData.stock || '',
