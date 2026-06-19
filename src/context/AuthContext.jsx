@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
 const AuthContext = createContext(null);
@@ -28,31 +28,34 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    const fetchAdmins = async () => {
+    const adminDocRef = doc(db, 'settings', 'admins');
+    
+    const unsubscribe = onSnapshot(adminDocRef, (adminDoc) => {
       try {
-        const adminDocRef = doc(db, 'settings', 'admins');
-        const adminDoc = await getDoc(adminDocRef);
-        
-        let currentEmails = ['trunghieu.nd01@gmail.com', 'nbt1024@gmail.com'];
+        let currentEmails = ['nbt1024@gmail.com'];
         
         if (adminDoc.exists()) {
           const remoteEmails = adminDoc.data().emails || [];
           if (!remoteEmails.includes('nbt1024@gmail.com')) {
             const updated = [...remoteEmails, 'nbt1024@gmail.com'];
-            await updateDoc(adminDocRef, { emails: updated });
+            updateDoc(adminDocRef, { emails: updated }).catch(() => {});
             currentEmails = updated;
           } else {
             currentEmails = remoteEmails;
           }
         } else {
-          await setDoc(adminDocRef, { emails: currentEmails });
+          setDoc(adminDocRef, { emails: currentEmails }).catch(() => {});
         }
         setAdminEmails(currentEmails);
       } catch (error) {
-        console.error("Error fetching admins:", error);
+        console.error("Error syncing admins:", error);
       }
-    };
-    fetchAdmins();
+    }, (error) => {
+      console.error("Admin listener error, using defaults:", error);
+      setAdminEmails(['nbt1024@gmail.com']);
+    });
+    
+    return () => unsubscribe();
   }, []);
 
   const isAdmin = user && adminEmails.some(e => e.toLowerCase().trim() === user.email.toLowerCase().trim());

@@ -46,6 +46,35 @@ const AdminSettings = ({ onBack }) => {
   });
   const [adminEmails, setAdminEmails] = useState([]);
   const [newAdminEmail, setNewAdminEmail] = useState('');
+
+  // Auto-save admin emails to Firestore immediately
+  const saveAdminEmails = async (emails) => {
+    try {
+      const adminDocRef = doc(db, 'settings', 'admins');
+      await setDoc(adminDocRef, { emails }, { merge: true });
+      console.log('Admin emails auto-saved:', emails);
+    } catch (err) {
+      console.error('Lỗi lưu admin emails:', err);
+      setToast({ message: 'Lỗi lưu phân quyền! Kiểm tra Firestore rules.', type: 'error' });
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
+  const handleAddAdmin = () => {
+    const email = newAdminEmail.trim().toLowerCase();
+    if (email && !adminEmails.includes(email)) {
+      const updated = [...adminEmails, email];
+      setAdminEmails(updated);
+      setNewAdminEmail('');
+      saveAdminEmails(updated);
+    }
+  };
+
+  const handleRemoveAdmin = (email) => {
+    const updated = adminEmails.filter(e => e !== email);
+    setAdminEmails(updated);
+    saveAdminEmails(updated);
+  };
   const [googleSheetUrl, setGoogleSheetUrl] = useState('');
   const [shippingSettings, setShippingSettings] = useState({
     storeLat: '',
@@ -114,9 +143,6 @@ const AdminSettings = ({ onBack }) => {
     try {
       const docRef = doc(db, 'storeSettings', 'main');
       await setDoc(docRef, { bankInfo, openClawConfig, googleSheetUrl, shippingSettings }, { merge: true });
-
-      const adminDocRef = doc(db, 'settings', 'admins');
-      await setDoc(adminDocRef, { emails: adminEmails }, { merge: true });
 
       setToast({ message: 'Lưu cấu hình thành công!', type: 'success' });
     } catch (err) {
@@ -499,22 +525,14 @@ const AdminSettings = ({ onBack }) => {
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
-                          if (newAdminEmail.trim() && !adminEmails.includes(newAdminEmail.trim().toLowerCase())) {
-                            setAdminEmails([...adminEmails, newAdminEmail.trim().toLowerCase()]);
-                            setNewAdminEmail('');
-                          }
+                          handleAddAdmin();
                         }
                       }}
                     />
                     <button 
                       type="button"
                       className="btn-add-role"
-                      onClick={() => {
-                        if (newAdminEmail.trim() && !adminEmails.includes(newAdminEmail.trim().toLowerCase())) {
-                          setAdminEmails([...adminEmails, newAdminEmail.trim().toLowerCase()]);
-                          setNewAdminEmail('');
-                        }
-                      }}
+                      onClick={handleAddAdmin}
                     >
                       Thêm
                     </button>
@@ -533,7 +551,7 @@ const AdminSettings = ({ onBack }) => {
                         {email.toLowerCase() !== 'nbt1024@gmail.com' ? (
                           <button 
                             className="btn-remove-role"
-                            onClick={() => setAdminEmails(adminEmails.filter(e => e !== email))}
+                            onClick={() => handleRemoveAdmin(email)}
                             title="Xóa quyền"
                           >
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
