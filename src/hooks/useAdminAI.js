@@ -175,6 +175,7 @@ export const useAdminAI = () => {
 
   const callAI = useCallback(async (msgText, systemPrompt, imageUrls = [], allowedTools = ADMIN_AI_FUNCTIONS) => {
     const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    console.log('[AdminAI] API Key exists:', !!geminiApiKey, 'length:', geminiApiKey?.length || 0);
     
     if (!geminiApiKey) {
       return "⚠️ Hệ thống AI đang bảo trì: Chưa cấu hình NEXT_PUBLIC_GEMINI_API_KEY trên Vercel. Vào Settings > Environment Variables để thêm.";
