@@ -3,10 +3,9 @@
   "buildCommand": "npx next build",
   "outputDirectory": "out",
   "installCommand": "npm install",
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/((?!_next|favicon\\.ico|manifest\\.json|robots\\.txt).*)", "destination": "/index.html" }
   ],
-  "cleanUrls": false,
+  "cleanUrls": true,
   "trailingSlash": false
 }
