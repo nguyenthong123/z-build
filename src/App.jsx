@@ -391,6 +391,7 @@ function App() {
       'admin-order-detail': '/admin/order-detail',
       'admin-affiliates': '/admin/affiliates',
       'admin-ai-knowledge': '/admin/ai-knowledge',
+      'admin-ai-assistant': '/admin/ai-assistant',
       'admin-coupons': '/admin/coupons',
       'admin-settings': '/admin/settings',
     };
@@ -563,7 +564,7 @@ function App() {
                 }}
               />
             } />
-            <Route path="ai-assistant" element={<div />} />
+            <Route path="ai-assistant" element={<AdminAIAssistant />} />
             <Route path="affiliates" element={isAdmin ? <AdminAffiliateManagement onBack={() => navigate('/admin/dashboard')} /> : <Navigate to="/" />} />
             <Route path="customers" element={
               <AdminCustomerManagement onBack={() => navigate('/')} />
@@ -634,6 +635,7 @@ function App() {
               view === 'admin-products' ? 'products' : 
               view === 'admin-ai-knowledge' ? 'ai_knowledge' : 
               view === 'admin-add-product' ? 'add_product' : 
+              view === 'admin-ai-assistant' ? 'ai-assistant' :
               view === 'admin-affiliates' ? 'affiliates' :
               view === 'admin-orders' ? 'orders' : 'dashboard'
             ) : view
