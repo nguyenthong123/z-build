@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './AIReviewSummary.css';
 
-const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+const AI_API_KEY = process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY;
+const AI_ENDPOINT = 'https://api.deepseek.com/v1/chat/completions';
 
 const AIReviewSummary = ({ reviews, loading: reviewsLoading }) => {
   const [summary, setSummary] = useState(null);
@@ -21,7 +21,7 @@ const AIReviewSummary = ({ reviews, loading: reviewsLoading }) => {
     let cancelled = false;
 
     const fetchSummary = async () => {
-      if (!GEMINI_API_KEY) {
+      if (!AI_API_KEY) {
         if (!cancelled) setError('API AI chưa được cấu hình.');
         return;
       }
@@ -34,14 +34,14 @@ const AIReviewSummary = ({ reviews, loading: reviewsLoading }) => {
 
         const prompt = `Tổng hợp các đánh giá sau thành 2-3 câu ngắn gọn bằng tiếng Việt, nêu bật ý kiến chung của khách hàng:\n\n${reviewTexts}`;
 
-        const res = await fetch(GEMINI_ENDPOINT, {
+        const res = await fetch(AI_ENDPOINT, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${GEMINI_API_KEY}`
+            'Authorization': `Bearer ${AI_API_KEY}`
           },
           body: JSON.stringify({
-            model: 'gemini-2.5-flash',
+            model: 'deepseek-chat',
             messages: [
               { role: 'system', content: 'Bạn là trợ lý tổng hợp đánh giá sản phẩm. Trả lời ngắn gọn, súc tích bằng tiếng Việt. Không thêm lời dẫn, chỉ đưa ra phần tổng hợp.' },
               { role: 'user', content: prompt }

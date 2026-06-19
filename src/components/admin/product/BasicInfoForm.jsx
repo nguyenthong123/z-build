@@ -15,9 +15,9 @@ const BasicInfoForm = ({ title, slug, shortDescription, description, onChange, o
     
     setIsGenerating(true);
     try {
-      const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-      if (!geminiApiKey) {
-        alert("Vui lòng cấu hình NEXT_PUBLIC_GEMINI_API_KEY trong Vercel Environment Variables!");
+      const aiApiKey = process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY;
+      if (!aiApiKey) {
+        alert("Vui lòng cấu hình NEXT_PUBLIC_DEEPSEEK_API_KEY trong Vercel Environment Variables!");
         setIsGenerating(false);
         return;
       }
@@ -30,14 +30,14 @@ Yêu cầu:
 - Dùng định dạng HTML cơ bản (các thẻ h3, p, ul, li, strong).
 - Chỉ trả về đoạn mã HTML thuần, KHÔNG BỌC TRONG markdown block \`\`\`html.`;
 
-      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
+      const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${geminiApiKey}`
+          "Authorization": `Bearer ${aiApiKey}`
         },
         body: JSON.stringify({
-          model: "gemini-2.5-flash",
+          model: "deepseek-chat",
           messages: [{ role: "user", content: prompt }],
           temperature: 0.7
         })

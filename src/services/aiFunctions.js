@@ -860,8 +860,8 @@ export async function createProduct(args) {
 
     // Tự động sinh nội dung chi tiết bài viết sản phẩm bằng AI
     let description = "";
-    const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (geminiApiKey) {
+    const aiApiKey = process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY;
+    if (aiApiKey) {
       try {
         const prompt = `Viết một bài mô tả sản phẩm chuyên nghiệp, hấp dẫn, chuẩn SEO cho sản phẩm có tên là "${title}".
 Thông tin bổ sung: ${shortDesc ? `Mô tả ngắn: ${shortDesc}` : ''} | Quy cách: ${specs} | Đóng gói: ${packaging}.
@@ -873,10 +873,10 @@ Yêu cầu:
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
+        const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${geminiApiKey}` },
-          body: JSON.stringify({ model: "gemini-2.5-flash", messages: [{ role: "user", content: prompt }], temperature: 0.7 }),
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${aiApiKey}` },
+          body: JSON.stringify({ model: "deepseek-chat", messages: [{ role: "user", content: prompt }], temperature: 0.7 }),
           signal: controller.signal
         });
         clearTimeout(timeoutId);
@@ -1104,12 +1104,12 @@ async function analyzeYouTubeLink({ youtube_url }) {
     if (!youtube_url || (!youtube_url.includes("youtube.com") && !youtube_url.includes("youtu.be"))) {
       return { error: "Link không hợp lệ. Vui lòng gửi link YouTube." };
     }
-    const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (!geminiApiKey) return { error: "Chưa cấu hình GEMINI API Key." };
+    const aiApiKey = process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY;
+    if (!aiApiKey) return { error: "Chưa cấu hình DEEPSEEK API Key." };
     const prompt = "Phân tích video YouTube này và trả về thông tin sản phẩm dạng JSON thuần (không markdown):\n{\n  \"title\": \"Tên sản phẩm (tiếng Việt, ngắn gọn)\",\n  \"category\": \"Danh mục phù hợp nhất\",\n  \"description\": \"Mô tả HTML sản phẩm chuẩn SEO (200-300 từ, dùng thẻ h3, p, ul, li, strong)\",\n  \"specs\": \"Thông số kỹ thuật chính\",\n  \"price_estimate\": \"Giá ước tính nếu có\"\n}\nLink: " + youtube_url;
-    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
-      method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + geminiApiKey },
-      body: JSON.stringify({ model: "gemini-2.5-flash", messages: [{ role: "user", content: prompt }], temperature: 0.3 })
+    const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
+      method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + aiApiKey },
+      body: JSON.stringify({ model: "deepseek-chat", messages: [{ role: "user", content: prompt }], temperature: 0.3 })
     });
     if (!res.ok) return { error: "Lỗi gọi AI phân tích YouTube." };
     const data = await res.json();

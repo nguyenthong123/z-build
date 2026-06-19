@@ -173,41 +173,40 @@ export const useStorefrontAI = (productContext) => {
   }, [messages]);
 
   const callAI = useCallback(async (msgText, systemPrompt, imageUrl = null, allowedTools = STOREFRONT_AI_FUNCTIONS) => {
-    const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    const aiApiKey = process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY;
     
-    if (!geminiApiKey) {
-      return "⚠️ Hệ thống AI đang bảo trì: Chưa cấu hình NEXT_PUBLIC_GEMINI_API_KEY trên Vercel.";
+    if (!aiApiKey) {
+      return "⚠️ Hệ thống AI đang bảo trì: Chưa cấu hình NEXT_PUBLIC_DEEPSEEK_API_KEY trên Vercel.";
     }
 
+    // DeepSeek không hỗ trợ ảnh → chỉ giữ text
     const history = messages.map(m => {
       let content = m.text;
       if (!m.isBot && m.image && !m.image.startsWith('blob:')) {
-        content = [
-          { type: "text", text: m.text || "Phân tích hình ảnh này" },
-          { type: "image_url", image_url: { url: m.image } }
-        ];
+        content = m.text
+          ? `[Người dùng gửi ảnh] ${m.text}`
+          : "[Người dùng gửi 1 ảnh — hãy hỏi lại nếu cần mô tả]";
       }
       return { role: m.isBot ? "assistant" : "user", content };
     });
     
     let currentUserContent = msgText;
     if (imageUrl) {
-      currentUserContent = [
-        { type: "text", text: msgText || "Tôi gửi bạn một hình ảnh." },
-        { type: "image_url", image_url: { url: imageUrl } }
-      ];
+      currentUserContent = msgText
+        ? `[Người dùng gửi ảnh] ${msgText}`
+        : "[Người dùng gửi 1 ảnh — hãy hỏi lại nếu cần mô tả chi tiết]";
     }
     const apiMessages = [{ role: "system", content: systemPrompt }, ...history, { role: "user", content: currentUserContent }];
 
     // Gemini with Function Calling
     try {
-      let res = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
-        method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${geminiApiKey}` },
-        body: JSON.stringify({ model: "gemini-2.5-flash", messages: apiMessages, tools: allowedTools, tool_choice: "auto", temperature: 0.3 })
+      let res = await fetch("https://api.deepseek.com/v1/chat/completions", {
+        method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${aiApiKey}` },
+        body: JSON.stringify({ model: "deepseek-chat", messages: apiMessages, tools: allowedTools, tool_choice: "auto", temperature: 0.3 })
       });
       if (res.ok) {
         let d = await res.json();
-        setActiveModel('Gemini-2.5-Flash');
+        setActiveModel('DeepSeek-V3');
         let responseMsg = d.choices[0]?.message;
         
         let rounds = 0;
@@ -219,9 +218,9 @@ export const useStorefrontAI = (productContext) => {
             return { role: "tool", tool_call_id: tc.id, name: tc.function.name, content: JSON.stringify(result) };
           }));
           apiMessages.push(...toolResults);
-          const followUp = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
-            method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${geminiApiKey}` },
-            body: JSON.stringify({ model: "gemini-2.5-flash", messages: apiMessages, tools: allowedTools, tool_choice: "auto", temperature: 0.3 })
+          const followUp = await fetch("https://api.deepseek.com/v1/chat/completions", {
+            method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${aiApiKey}` },
+            body: JSON.stringify({ model: "deepseek-chat", messages: apiMessages, tools: allowedTools, tool_choice: "auto", temperature: 0.3 })
           });
           if (!followUp.ok) break;
           d = await followUp.json();
