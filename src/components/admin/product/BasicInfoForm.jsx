@@ -17,7 +17,7 @@ const BasicInfoForm = ({ title, slug, shortDescription, description, onChange, o
     try {
       const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
       if (!geminiApiKey) {
-        alert("Vui lòng cấu hình VITE_GEMINI_API_KEY trong file .env.local!");
+        alert("Vui lòng cấu hình NEXT_PUBLIC_GEMINI_API_KEY trong Vercel Environment Variables!");
         setIsGenerating(false);
         return;
       }

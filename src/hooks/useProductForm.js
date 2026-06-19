@@ -125,7 +125,7 @@ export const useProductForm = (editData, onSave) => {
 
   // Helper for Cloudinary environment variables
   const getEnv = (key, fallback) => {
-    const value = import.meta.env[key];
+    const value = process.env[key];
     return (value && value !== 'REPLACE_ME') ? value : fallback;
   };
 
@@ -139,8 +139,8 @@ export const useProductForm = (editData, onSave) => {
     let imageUrl = product.image || '';
 
     try {
-      const cloudName = getEnv('VITE_CLOUDINARY_CLOUD_NAME', 'dtdgrcznj');
-      const uploadPreset = getEnv('VITE_CLOUDINARY_UPLOAD_PRESET', 'zbuild');
+      const cloudName = getEnv('NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME', 'dtdgrcznj');
+      const uploadPreset = getEnv('NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET', 'zbuild');
       
       // Upload main image
       if (imageFile) {

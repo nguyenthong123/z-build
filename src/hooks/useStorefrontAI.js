@@ -176,7 +176,7 @@ export const useStorefrontAI = (productContext) => {
     const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     
     if (!geminiApiKey) {
-      return "⚠️ Hệ thống AI đang bảo trì: Chưa cấu hình VITE_GEMINI_API_KEY trên môi trường chạy.";
+      return "⚠️ Hệ thống AI đang bảo trì: Chưa cấu hình NEXT_PUBLIC_GEMINI_API_KEY trên Vercel.";
     }
 
     const history = messages.map(m => {
