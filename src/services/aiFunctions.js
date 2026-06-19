@@ -898,6 +898,7 @@ Yêu cầu:
       title,
       slug: slugify(title),
       category,
+      shortDescription: shortDesc || "",
       basePrice: priceNum,
       discountPrice: discountNum,
       price: discountNum, // Giá bán hiện tại sẽ là giá khuyến mãi (nếu có)
