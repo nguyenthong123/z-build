@@ -14,6 +14,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
   // Batch delete states
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [allCategories, setAllCategories] = useState(new Set(['All', 'Chưa phân loại']));
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -234,16 +235,21 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   
-  const ITEMS_PER_PAGE = 20;
+  const ITEMS_PER_PAGE = 1000;
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [selectedCategory]);
 
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const q = query(collection(db, "products"), orderBy("createdAt", "desc"), limit(ITEMS_PER_PAGE));
+      let q;
+      if (selectedCategory === 'All') {
+        q = query(collection(db, "products"), orderBy("createdAt", "desc"), limit(ITEMS_PER_PAGE));
+      } else {
+        q = query(collection(db, "products"), where("category", "==", selectedCategory), limit(ITEMS_PER_PAGE));
+      }
       const querySnapshot = await getDocs(q);
       
       const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
@@ -259,6 +265,17 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
         name: doc.data().title,
         sku: doc.data().sku || doc.id.substring(0, 8).toUpperCase()
       }));
+
+      if (selectedCategory !== 'All') {
+        productData.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      }
+
+      setAllCategories(prev => {
+        const newSet = new Set(prev);
+        productData.forEach(p => newSet.add(p.category || 'Chưa phân loại'));
+        return newSet;
+      });
+
       setProducts(productData);
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -271,12 +288,22 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
     if (!lastVisible || !hasMore || loadingMore) return;
     setLoadingMore(true);
     try {
-      const q = query(
-        collection(db, "products"), 
-        orderBy("createdAt", "desc"), 
-        startAfter(lastVisible),
-        limit(ITEMS_PER_PAGE)
-      );
+      let q;
+      if (selectedCategory === 'All') {
+        q = query(
+          collection(db, "products"), 
+          orderBy("createdAt", "desc"), 
+          startAfter(lastVisible),
+          limit(ITEMS_PER_PAGE)
+        );
+      } else {
+        q = query(
+          collection(db, "products"), 
+          where("category", "==", selectedCategory), 
+          startAfter(lastVisible),
+          limit(ITEMS_PER_PAGE)
+        );
+      }
       const querySnapshot = await getDocs(q);
       
       const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
@@ -292,6 +319,17 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
         name: doc.data().title,
         sku: doc.data().sku || doc.id.substring(0, 8).toUpperCase()
       }));
+
+      if (selectedCategory !== 'All') {
+        productData.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      }
+
+      setAllCategories(prev => {
+        const newSet = new Set(prev);
+        productData.forEach(p => newSet.add(p.category || 'Chưa phân loại'));
+        return newSet;
+      });
+
       setProducts(prev => [...prev, ...productData]);
     } catch (error) {
       console.error("Error loading more products:", error);
@@ -356,7 +394,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
-  const uniqueCategories = ['All', ...new Set(products.map(p => p.category || 'Chưa phân loại'))];
+  // allCategories is managed in state
 
   const filteredProducts = products.filter(p => {
     const matchesTab = activeTab === 'All' || p.status === activeTab;
@@ -415,7 +453,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                   onChange={(e) => setSelectedCategory(e.target.value)}
                   style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', padding: '8px', cursor: 'pointer', color: 'var(--text-main)' }}
                 >
-                  {uniqueCategories.map(cat => (
+                  {Array.from(allCategories).map(cat => (
                     <option key={cat} value={cat}>{cat === 'All' ? 'Tất cả danh mục' : cat}</option>
                   ))}
                 </select>

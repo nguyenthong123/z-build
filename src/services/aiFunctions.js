@@ -28,6 +28,30 @@ export const ADMIN_AI_FUNCTIONS = [
   {
     type: "function",
     function: {
+      name: "update_product",
+      description: "Cập nhật thông tin của một hoặc nhiều sản phẩm (tên, mô tả, giá, danh mục, quy cách, đóng gói, trọng lượng, số lượng tồn kho, trạng thái, hình ảnh) dựa theo tên hiện tại.",
+      parameters: {
+        type: "object",
+        properties: {
+          product_name: { type: "string", description: "Tên hoặc từ khóa sản phẩm CẦN TÌM ĐỂ SỬA (bắt buộc, ví dụ: 'Tấm DURAflex')" },
+          new_title: { type: "string", description: "Đổi tên sản phẩm thành tên mới này (tùy chọn)" },
+          category: { type: "string", description: "Tên danh mục mới (tùy chọn)" },
+          price: { type: "number", description: "Giá bán mới bằng số (tùy chọn)" },
+          stock: { type: "number", description: "Số lượng tồn kho mới bằng số (tùy chọn)" },
+          status: { type: "string", description: "Trạng thái mới: Draft, Active, Inactive (tùy chọn)" },
+          description: { type: "string", description: "Nội dung mô tả HTML mới chuẩn SEO (tùy chọn)" },
+          specs: { type: "string", description: "Thông số kỹ thuật/quy cách mới (tùy chọn)" },
+          packaging: { type: "string", description: "Quy cách đóng gói mới (tùy chọn)" },
+          weight: { type: "string", description: "Trọng lượng mới (tùy chọn)" },
+          imageUrl: { type: "string", description: "URL ảnh mới (nếu admin gửi ảnh)" }
+        },
+        required: ["product_name"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
       name: "create_product",
       description: "Tạo sản phẩm mới. Hỗ trợ: ảnh (imageUrl từ upload), video YouTube (videoUrl), trạng thái (status: Draft/Active). Nếu người dùng gửi ảnh hoặc link YouTube, hãy dùng analyze_youtube_link trước rồi gọi create_product với đầy đủ thông tin.",
       parameters: {
@@ -176,6 +200,24 @@ export const ADMIN_AI_FUNCTIONS = [
 // STOREFRONT AI FUNCTIONS — Tư vấn khách hàng, báo giá, đơn hàng
 // ============================================================
 export const STOREFRONT_AI_FUNCTIONS = [
+  {
+    type: "function",
+    function: {
+      name: "update_product",
+      description: "Cập nhật thông tin của một hoặc nhiều sản phẩm (giá, danh mục, số lượng tồn kho, trạng thái) dựa theo tên hoặc từ khóa tên sản phẩm.",
+      parameters: {
+        type: "object",
+        properties: {
+          product_name: { type: "string", description: "Tên hoặc từ khóa sản phẩm cần cập nhật (ví dụ: 'Tấm DURAflex 8.0mm' hoặc 'Tấm DURAflex')" },
+          category: { type: "string", description: "Tên danh mục mới (tùy chọn)" },
+          price: { type: "number", description: "Giá bán mới bằng số (tùy chọn)" },
+          stock: { type: "number", description: "Số lượng tồn kho mới bằng số (tùy chọn)" },
+          status: { type: "string", description: "Trạng thái mới: Draft, Active, Inactive (tùy chọn)" }
+        },
+        required: ["product_name"]
+      }
+    }
+  },
   {
     type: "function",
     function: {
@@ -1284,12 +1326,66 @@ async function syncPricesFromSheet({ sheet_url, match_field = "id" }) {
   } catch (err) { return { error: "Lỗi đồng bộ giá từ sheet: " + err.message }; }
 }
 
+async function updateProduct({ product_name, new_title, category, price, stock, status, description, specs, packaging, weight, imageUrl }) {
+  try {
+    const snap = await getDocs(collection(db, "products"));
+    const allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    
+    const kw = (product_name || '').toLowerCase().trim();
+    const matched = allProducts.filter(p => (p.title || '').toLowerCase().includes(kw));
+    
+    if (matched.length === 0) {
+      return { success: false, error: `Không tìm thấy sản phẩm nào khớp với tên "${product_name}".` };
+    }
+    
+    const updateData = { updatedAt: new Date().toISOString() };
+    if (new_title !== undefined) {
+      updateData.title = new_title;
+      updateData.slug = slugify(new_title);
+    }
+    if (category !== undefined) updateData.category = category;
+    if (price !== undefined) {
+      const pNum = sanitizeNumber(price);
+      updateData.price = pNum;
+      updateData.basePrice = pNum;
+      updateData.discountPrice = pNum;
+    }
+    if (stock !== undefined) {
+      updateData.stock = Number(stock);
+      updateData.trackInventory = true;
+    }
+    if (status !== undefined) {
+      const validStatuses = ["Draft", "Active", "Inactive"];
+      updateData.status = validStatuses.find(s => s.toLowerCase() === status.toLowerCase()) || status;
+    }
+    if (description !== undefined) updateData.description = description;
+    if (specs !== undefined) updateData.specs = specs;
+    if (packaging !== undefined) updateData.packaging = packaging;
+    if (weight !== undefined) updateData.weight = weight;
+    if (imageUrl !== undefined && imageUrl !== "") {
+      updateData.image = imageUrl;
+      updateData.extraImages = [imageUrl];
+    }
+    
+    await Promise.all(matched.map(p => updateDoc(doc(db, "products", p.id), updateData)));
+    
+    return {
+      success: true,
+      message: `Đã cập nhật thông tin cho ${matched.length} sản phẩm thành công!`,
+      updated_products: matched.map(p => p.title)
+    };
+  } catch (err) {
+    return { error: 'Lỗi cập nhật sản phẩm: ' + err.message };
+  }
+}
+
 // ============ FUNCTION EXECUTOR ============
 
 export async function executeFunction(name, args) {
   const parsedArgs = typeof args === 'string' ? JSON.parse(args) : args;
 
   switch (name) {
+    case 'update_product': return await updateProduct(parsedArgs);
     case 'search_products': return await searchProducts(parsedArgs);
     case 'get_product_detail': return await getProductDetail(parsedArgs);
     case 'count_products': return await countProducts(parsedArgs);

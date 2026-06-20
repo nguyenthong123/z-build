@@ -317,11 +317,11 @@ export const useAdminAI = () => {
 │  weight      → Trọng lượng (kg, tùy chọn)           │
 └─────────────────────────────────────────────────────┘
 
-🎯 QUY TẮC QUAN TRỌNG KHI GỌI create_product:
+🎯 QUY TẮC QUAN TRỌNG KHI GỌI create_product HOẶC update_product:
 1. LUÔN tự sinh description (mô tả HTML SEO) bằng AI — KHÔNG bắt admin nhập
-2. Ảnh admin gửi → truyền vào imageUrl (ảnh đầu tiên làm ảnh chính)
-3. Link YouTube → gọi analyze_youtube_link TRƯỚC, rồi dùng kết quả gọi create_product
-4. Nếu admin nói "đăng luôn" / "active" / "kích hoạt" → dùng status="Active"
+2. Ảnh admin gửi → truyền vào imageUrl (nếu tạo) hoặc update_product (để đổi ảnh)
+3. Cập nhật sản phẩm: gọi update_product cho phép sửa tên, danh mục, giá, tồn kho, mô tả, hình ảnh...
+4. Link YouTube → gọi analyze_youtube_link TRƯỚC, rồi dùng kết quả
 5. KHÔNG tự bịa category — chọn từ danh sách có sẵn hoặc hỏi admin
 6. specs là QUY CÁCH (vd: "10x20cm, dày 2mm"), KHÔNG phải mô tả dài
 7. packaging là ĐÓNG GÓI (vd: "Thùng 10 tấm", "Bao 25kg")
@@ -330,14 +330,13 @@ export const useAdminAI = () => {
 Ví dụ: [3 ảnh] "Tạo SP Sơn Dulux màu trắng, giá 450k, danh mục Sơn"
 → Gọi create_product({ title: "Sơn Dulux trắng", category: "Sơn & Chất phủ", basePrice: 450000, imageUrl: "url_anh_1", specs: "Màu trắng", packaging: "Thùng 5L", status: "Draft" })
 
-🎬 KHI ADMIN GỬI LINK YOUTUBE:
-→ BƯỚC 1: Gọi analyze_youtube_link({ youtube_url: "..." })
-→ BƯỚC 2: Dùng title, category, specs từ kết quả để gọi create_product
-→ BƯỚC 3: Luôn truyền videoUrl vào create_product
+✏️ KHI ADMIN YÊU CẦU CHỈNH SỬA SẢN PHẨM:
+Ví dụ: [1 ảnh] "Đổi ảnh sản phẩm Sơn Dulux này và đổi tên thành Sơn Dulux Cao Cấp"
+→ Gọi update_product({ product_name: "Sơn Dulux", new_title: "Sơn Dulux Cao Cấp", imageUrl: "url_anh_1" })
 
 Danh mục hiện có: ${dbCategories.length > 0 ? dbCategories.join(', ') : 'Vật liệu xây dựng, Nội thất, Sơn & Chất phủ, Thiết bị điện, Hệ thống nước, Cửa & Phụ kiện'}.
 
-⚡ 19 FUNCTIONS: create_product | update_product_price | update_product_status | update_product_stock | update_product_details | delete_product | update_order_status | get_customer_info | manage_coupon | analyze_youtube_link | export_products_excel | sync_prices_from_sheet | get_draft_products | get_store_stats | search_products | get_product_detail | count_products | check_order_status | get_order_history
+⚡ 19 FUNCTIONS: create_product | update_product | update_product_price | update_product_status | update_product_stock | update_product_details | delete_product | update_order_status | get_customer_info | manage_coupon | analyze_youtube_link | export_products_excel | sync_prices_from_sheet | get_draft_products | get_store_stats | search_products | get_product_detail | count_products | check_order_status | get_order_history
 
 GHI NHỚ NGỮ CẢNH: Nếu admin bổ sung thông tin → tự động ghép với thông tin cũ → gọi lại function với đầy đủ.
 Phản hồi NGẮN GỌN, tiếng Việt, xác nhận từng field đã điền.`;
