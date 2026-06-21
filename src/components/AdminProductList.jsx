@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc, startAfter, limit, addDoc, getDoc, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import { useRouter } from 'next/navigation';
+
 import './AdminProductList.css';
 
 const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => {
-  const router = useRouter();
+
   const [activeTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState([]);
