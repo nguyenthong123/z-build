@@ -15,7 +15,7 @@ export default function CheckoutPage() {
     <Checkout 
       cartItems={cartItems} 
       onBack={() => router.push('/cart')} 
-      onComplete={handleOrderComplete} 
+      onOrderComplete={handleOrderComplete} 
       user={user}
       intendedDestination={intendedDestination}
     />
