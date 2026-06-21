@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc, startAfter, limit, addDoc, getDoc, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useRouter } from 'next/navigation';
 import './AdminProductList.css';
 
 const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => {
+  const router = useRouter();
   const [activeTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState([]);
@@ -464,7 +466,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                   prompt = `Tôi sắp cần bạn viết nội dung cho các sản phẩm đang đánh dấu sau đây. Sau đó tôi sẽ gửi cho bạn nội dung tham khảo, bạn hãy dựa vào đó để viết ra chi tiết sản phẩm thật đầy đủ, dài và hấp dẫn cho từng sản phẩm trong danh sách này.\\n\\nDanh sách sản phẩm được đánh dấu:\\n${selectedNames}`;
                 }
                 sessionStorage.setItem('ai-prompt', prompt);
-                window.dispatchEvent(new CustomEvent('admin-nav', { detail: 'ai-assistant' }));
+                router.push('/admin/ai-assistant');
               }} style={{ padding: '0 16px', borderRadius: '8px', backgroundColor: '#eab308', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
                 Viết nội dung (AI)
