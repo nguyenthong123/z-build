@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { usePathname } from 'next/navigation';
 
 // Sub-components
 import AdvisorSidebar from './advisor/AdvisorSidebar';
@@ -72,8 +71,6 @@ const AIAdvisor = ({ onNavigate, advisorState }) => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  const pathname = usePathname();
-
   // Handle comparePrompt from ProductCompare navigation
   useEffect(() => {
     const prompt = sessionStorage.getItem('comparePrompt');
@@ -83,6 +80,7 @@ const AIAdvisor = ({ onNavigate, advisorState }) => {
       setInput('');
       setTimeout(() => handleSend(prompt), 600);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const isMobile = windowWidth < 768;

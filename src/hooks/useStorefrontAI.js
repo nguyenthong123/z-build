@@ -314,6 +314,7 @@ export const useStorefrontAI = (productContext) => {
     } finally {
       setIsTyping(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userName, getKnowledgeContext, callAI, dbCategories]);
 
   // Handle Product Context

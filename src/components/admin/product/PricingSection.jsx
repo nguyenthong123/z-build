@@ -2,8 +2,7 @@ import React from 'react';
 
 const PricingSection = ({ 
   basePrice, 
-  discountPrice, 
-  status, 
+  discountPrice,
   category, 
   pricingType, 
   monthlyPrice, 

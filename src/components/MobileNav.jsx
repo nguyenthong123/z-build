@@ -1,7 +1,7 @@
 import React from 'react';
 import './MobileNav.css';
 
-const MobileNav = ({ mode, activePage, onNavigate, user, isAdminUser, handleLoginRequired, setView, onToggleChatBot, detailProduct, onAddToCart }) => {
+const MobileNav = ({ mode, activePage, onNavigate, user, isAdminUser, handleLoginRequired, setView, onToggleChatBot, detailProduct }) => {
   const isAdmin = mode === 'admin';
 
   const userTabs = [

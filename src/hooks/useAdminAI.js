@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { db, auth } from '../firebase';
 import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, limit } from 'firebase/firestore';
 import Fuse from 'fuse.js';
@@ -368,6 +368,7 @@ Phản hồi NGẮN GỌN, tiếng Việt, xác nhận từng field đã điền
     } finally {
       setIsTyping(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userName, getKnowledgeContext, callAI, dbCategories]);
 
   return {

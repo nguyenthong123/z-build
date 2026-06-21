@@ -261,9 +261,9 @@ const ProductCompare = () => {
     }
     // Parse description for bullet points
     if (!features.length && product.description) {
-      const bullets = product.description.match(/[•\-\*]\s*.+/g);
+      const bullets = product.description.match(/[•\-*]\s*.+/g);
       if (bullets) {
-        features.push(...bullets.map(b => b.replace(/[•\-\*]\s*/, '').replace(/<[^>]+>/g, '')).slice(0, 4));
+        features.push(...bullets.map(b => b.replace(/[•\-*]\s*/, '').replace(/<[^>]+>/g, '')).slice(0, 4));
       }
     }
     return features;
@@ -370,7 +370,6 @@ const ProductCompare = () => {
   }
 
   // --- Compute table column count ---
-  const columnCount = Math.max(compareIds.length, 1);
 
   return (
     <div className="product-compare-page animate-fade-in">

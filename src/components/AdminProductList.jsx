@@ -241,6 +241,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
 
   useEffect(() => {
     fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory]);
 
   const fetchProducts = async () => {
@@ -348,22 +349,6 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
         fetchProducts();
       } catch (error) {
         alert("Lỗi khi xóa: " + error.message);
-      }
-    }
-  };
-
-  const handleBatchDelete = async () => {
-    if (selectedProducts.length === 0) return;
-    if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedProducts.length} sản phẩm đã chọn không? Hành động này không thể hoàn tác!`)) {
-      try {
-        setLoading(true);
-        // Delete all selected products in parallel
-        await Promise.all(selectedProducts.map(id => deleteDoc(doc(db, "products", id))));
-        setSelectedProducts([]);
-        fetchProducts();
-      } catch (error) {
-        alert("Lỗi khi xóa hàng loạt: " + error.message);
-        setLoading(false);
       }
     }
   };

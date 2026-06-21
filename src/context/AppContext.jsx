@@ -1,7 +1,8 @@
+/* eslint-disable react-refresh/only-export-components */
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
 import { useStorefrontAI } from '../hooks/useStorefrontAI';
@@ -10,8 +11,7 @@ const AppContext = createContext(null);
 
 export const AppProvider = ({ children }) => {
   const router = useRouter();
-  const pathname = usePathname();
-  const { user, setUser, isAdmin } = useAuth();
+  const { user } = useAuth();
   const { addToast } = useToast();
   
   const storefrontAdvisorState = useStorefrontAI(user);

@@ -537,7 +537,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
                       window.dispatchEvent(new Event('compareListUpdated'));
                     }
                     router.push('/compare');
-                  } catch {}
+                  } catch (e) { console.error('Error adding to compare', e); }
                 }}
                 style={{
                   flex: '1',

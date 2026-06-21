@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { collection, getDocs, doc, query, where, serverTimestamp, getDoc, runTransaction, setDoc, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, doc, query, where, serverTimestamp, getDoc, runTransaction, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import './Checkout.css';
 
@@ -25,7 +25,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
     cardCvv: ''
   });
 
-  const [paymentStep, setPaymentStep] = useState(1); // 1: Form, 2: QR Code
+  const [paymentStep] = useState(1); // 1: Form, 2: QR Code
   const [generatedOrder, setGeneratedOrder] = useState(null);
   const [orderNumber] = useState(() => 'ZB' + Date.now().toString(36).toUpperCase() + Math.floor(Math.random() * 1000));
 
@@ -74,12 +74,13 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
     const intervalId = setInterval(checkPayment, 10000);
 
     return () => clearInterval(intervalId);
-  }, [formData.paymentMethod, orderNumber, autoCheckoutTriggered]);
+  }, [formData.paymentMethod, orderNumber, autoCheckoutTriggered, pollingTimeout]);
 
   useEffect(() => {
     if (autoCheckoutTriggered && !isSubmitting && paymentStep === 1) {
       handlePlaceOrder();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoCheckoutTriggered]);
 
   // Shop's Bank Info (Configurable)
@@ -92,7 +93,6 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
 
   // Dynamic Shipping Settings
   const [shippingSettings, setShippingSettings] = useState(null);
-  const [userLocation, setUserLocation] = useState(null);
   const [distanceKm, setDistanceKm] = useState(null);
   const [isLocating, setIsLocating] = useState(false);
 
@@ -217,7 +217,6 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
           if (shippingSettings?.storeLat && shippingSettings?.storeLng) {
             const d = getDistanceFromLatLonInKm(
               parseFloat(shippingSettings.storeLat),
@@ -229,7 +228,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
           }
           setIsLocating(false);
         },
-        (error) => {
+        () => {
           alert('Không thể lấy vị trí. V vui lòng cho phép trình duyệt truy cập định vị.');
           setIsLocating(false);
         }

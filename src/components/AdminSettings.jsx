@@ -166,7 +166,7 @@ const AdminSettings = ({ onBack }) => {
           setToast({ message: 'Lấy vị trí thành công!', type: 'success' });
           setTimeout(() => setToast(null), 3000);
         },
-        (error) => {
+        () => {
           setToast({ message: 'Không thể lấy vị trí. Vui lòng cho phép quyền truy cập vị trí.', type: 'error' });
           setTimeout(() => setToast(null), 3000);
         }

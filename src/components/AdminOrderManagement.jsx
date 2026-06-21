@@ -21,8 +21,9 @@ const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
   const [lastVisible, setLastVisible] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  const fetchOrders = async (reset = false) => {
+  const fetchOrders = async () => {
     setLoading(true);
     try {
       const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(ITEMS_PER_PAGE));
@@ -227,12 +228,6 @@ const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
     }
     setIsSyncing(false);
   };
-
-  const currentMonthOrders = orders.filter(o => {
-    const orderDate = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
-    const now = new Date();
-    return orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
-  });
 
   const filteredOrders = orders.filter(o => {
     const matchTab = activeTab === 'all' || o.status === activeTab;

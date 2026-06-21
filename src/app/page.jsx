@@ -5,11 +5,9 @@ import { useRouter } from 'next/navigation';
 import Hero from '../components/Hero';
 import ProductGrid from '../components/ProductGrid';
 import SEOHead from '../components/SEOHead';
-import { useStore } from '../context/StoreContext';
 
 export default function HomePage() {
   const router = useRouter();
-  const { handleCategorySelect } = useStore();
 
   return (
     <>

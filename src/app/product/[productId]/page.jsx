@@ -1,12 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import ProductDetail from '../../../components/ProductDetail';
 import { useAppContext } from '../../../context/AppContext';
 import { useAuth } from '../../../context/AuthContext';
-import { db } from '../../../firebase';
-import { doc, getDoc } from 'firebase/firestore';
 
 export default function ProductPage({ params }) {
   const router = useRouter();

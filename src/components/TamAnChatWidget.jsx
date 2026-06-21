@@ -10,9 +10,9 @@ const TamAnChatWidget = ({ onMaximize, advisorState }) => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
-  const displayMessages = messages.length === 0 ? [
+  const displayMessages = React.useMemo(() => messages.length === 0 ? [
     { id: 1, text: "Chào bạn! Tôi là trợ lý AI tại **Cơ sở thạch cao Tâm An**. Tôi có thể giúp bạn báo giá, tính toán vật tư, lên đơn tự động hoặc hướng dẫn kỹ thuật thi công. Bạn cần hỗ trợ gì ạ?", isBot: true, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
-  ] : messages;
+  ] : messages, [messages]);
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -20,7 +20,7 @@ const TamAnChatWidget = ({ onMaximize, advisorState }) => {
 
   useEffect(() => {
     scrollToBottom();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [displayMessages, isTyping]);
 
   const textareaRef = useRef(null);
