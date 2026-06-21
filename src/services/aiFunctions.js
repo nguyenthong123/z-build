@@ -13,7 +13,7 @@
  */
 
 import { db } from '../firebase';
-import { collection, getDocs, query, orderBy, where, doc, getDoc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, where, doc, getDoc, addDoc, updateDoc, deleteDoc, limit, serverTimestamp } from 'firebase/firestore';
 import { calculateConstructionMaterials } from './MaterialService';
 
 // ============ FUNCTION DEFINITIONS (cho DeepSeek/OpenAI tools format) ============

@@ -100,7 +100,7 @@ export const useAdminAI = () => {
   const [productSuggestions, setProductSuggestions] = useState([]);
   const [knowledgeBase, setKnowledgeBase] = useState({ all_units: [], raw_docs: [], performance: [] });
   const [userName, setUserName] = useState("Thong Nguyen");
-  const lastProcessedProductIdRef = useRef(null);
+
 
   // Load Knowledge Base & Products
   useEffect(() => {

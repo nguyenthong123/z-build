@@ -458,7 +458,12 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                 Lấy SP mới
               </button>
               <button className="ai-btn" onClick={() => {
-                sessionStorage.setItem('ai-prompt', 'Hãy quét danh sách sản phẩm và tự động viết mô tả chi tiết, phân loại danh mục, thông số cho tất cả các sản phẩm đang ở trạng thái Draft');
+                let prompt = 'Hãy quét danh sách sản phẩm và tự động viết mô tả chi tiết, phân loại danh mục, thông số cho tất cả các sản phẩm đang ở trạng thái Draft';
+                if (selectedProducts.length > 0) {
+                  const selectedNames = products.filter(p => selectedProducts.includes(p.id)).map(p => `- ${p.name || p.id}`).join('\\n');
+                  prompt = `Tôi sắp cần bạn viết nội dung cho các sản phẩm đang đánh dấu sau đây. Sau đó tôi sẽ gửi cho bạn nội dung tham khảo, bạn hãy dựa vào đó để viết ra chi tiết sản phẩm thật đầy đủ, dài và hấp dẫn cho từng sản phẩm trong danh sách này.\\n\\nDanh sách sản phẩm được đánh dấu:\\n${selectedNames}`;
+                }
+                sessionStorage.setItem('ai-prompt', prompt);
                 window.dispatchEvent(new CustomEvent('admin-nav', { detail: 'ai-assistant' }));
               }} style={{ padding: '0 16px', borderRadius: '8px', backgroundColor: '#eab308', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>

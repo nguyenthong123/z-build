@@ -94,8 +94,8 @@ export const useStorefrontAI = (productContext) => {
         console.error("Error fetching categories:", error);
       }
     };
+    fetchCats();
   }, []);
-
   const [productSuggestions, setProductSuggestions] = useState([]);
   const [knowledgeBase, setKnowledgeBase] = useState({ all_units: [], raw_docs: [], performance: [] });
   const [userName, setUserName] = useState("Thong Nguyen");
