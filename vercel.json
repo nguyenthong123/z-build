@@ -1,7 +1,4 @@
 {
-  "buildCommand": "npx next build && cp out/index.html out/404.html",
-  "outputDirectory": "out",
-  "installCommand": "npm install",
-  "cleanUrls": true,
-  "trailingSlash": false
+  "buildCommand": "next build",
+  "outputDirectory": ".next"
 }
