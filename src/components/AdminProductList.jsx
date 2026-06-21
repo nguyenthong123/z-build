@@ -448,7 +448,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                 let prompt = 'Hãy quét danh sách sản phẩm và tự động viết mô tả chi tiết, phân loại danh mục, thông số cho tất cả các sản phẩm đang ở trạng thái Draft';
                 if (selectedProducts.length > 0) {
                   const selectedNames = products.filter(p => selectedProducts.includes(p.id)).map(p => `- ${p.name || p.id}`).join('\\n');
-                  prompt = `Tôi sắp cần bạn viết nội dung cho các sản phẩm đang đánh dấu sau đây. Sau đó tôi sẽ gửi cho bạn nội dung tham khảo, bạn hãy dựa vào đó để viết ra chi tiết sản phẩm thật đầy đủ, dài và hấp dẫn cho từng sản phẩm trong danh sách này.\\n\\nDanh sách sản phẩm được đánh dấu:\\n${selectedNames}`;
+                  prompt = `Tôi có danh sách các sản phẩm sau cần viết hoặc cập nhật nội dung chi tiết:\\n${selectedNames}\\n\\nHãy hỏi tôi xem tôi muốn bạn TỰ ĐỘNG VIẾT LUÔN cho các sản phẩm này, hay tôi muốn CUNG CẤP THÊM THÔNG TIN (như tính năng, thành phần, ưu điểm...) để bạn dựa vào đó viết cho chính xác hơn.\\n\\nLưu ý:\\n- Đừng viết nội dung sản phẩm vội, hãy chờ quyết định của tôi.\\n- Khi tôi yêu cầu viết (có hoặc không có thông tin thêm), hãy cập nhật TỪNG SẢN PHẨM MỘT bằng công cụ update_product. Hãy viết bài mô tả (description) thật DÀI, CHĂM CHÚT, HẤP DẪN bằng mã HTML. Hãy khéo léo chèn tên của từng sản phẩm vào nội dung mô tả nhiều lần để bài viết trông tự nhiên và giống như được viết riêng cho sản phẩm đó.`;
                 }
                 sessionStorage.setItem('ai-prompt', prompt);
                 router.push('/admin/ai-assistant');
