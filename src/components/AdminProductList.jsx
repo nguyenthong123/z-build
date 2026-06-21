@@ -353,6 +353,21 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
     }
   };
 
+  const handleBatchDelete = async () => {
+    if (selectedProducts.length === 0) return;
+    if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedProducts.length} sản phẩm đã chọn không? Hành động này không thể hoàn tác!`)) {
+      try {
+        setLoading(true);
+        await Promise.all(selectedProducts.map(id => deleteDoc(doc(db, "products", id))));
+        setSelectedProducts([]);
+        fetchProducts();
+      } catch (error) {
+        alert("Lỗi khi xóa hàng loạt: " + error.message);
+        setLoading(false);
+      }
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'Active':
@@ -444,6 +459,12 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Lấy SP mới
               </button>
+              {selectedProducts.length > 0 && (
+                <button className="ai-btn" onClick={handleBatchDelete} style={{ padding: '0 16px', borderRadius: '8px', backgroundColor: '#ef4444', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                  Xoá ({selectedProducts.length})
+                </button>
+              )}
               <button className="ai-btn" onClick={() => {
                 let prompt = 'Hãy quét danh sách sản phẩm và tự động viết mô tả chi tiết, phân loại danh mục, thông số cho tất cả các sản phẩm đang ở trạng thái Draft';
                 if (selectedProducts.length > 0) {
