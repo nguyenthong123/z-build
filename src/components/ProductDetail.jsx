@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 import './ProductDetail.css';
@@ -8,7 +9,7 @@ import SEOHead from './SEOHead';
 
 const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, onLoginRequired, setGlobalProduct }) => {
   const { productId } = useParams();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [fetchedProduct, setFetchedProduct] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeMedia, setActiveMedia] = useState({ type: 'image', index: 0 });
@@ -164,11 +165,11 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
   };
 
   // Handle back navigation
-  const handleBack = onBack || (() => navigate(-1));
+  const handleBack = onBack || (() => router.back());
 
   const handleRelatedClick = (p) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    navigate(`/product/${p.slug || p.id}`);
+    router.push(`/product/${p.slug || p.id}`);
   };
 
   // === EARLY RETURNS (must be after ALL hooks) ===
@@ -288,7 +289,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
       <div className="container">
         {/* Breadcrumbs - Hidden on Mobile */}
         <nav className="breadcrumbs desktop-only">
-          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/'); }}>Trang chủ</a> / <a href="#">{product.category || 'Danh mục'}</a> / <span className="current">{product.title}</span>
+          <a href="#" onClick={(e) => { e.preventDefault(); router.push('/'); }}>Trang chủ</a> / <a href="#">{product.category || 'Danh mục'}</a> / <span className="current">{product.title}</span>
         </nav>
 
         <div className="product-main">
@@ -472,8 +473,8 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
               ))}
             </div>
 
-            {/* CTA Section - Desktop */}
-            <div className="cta-section desktop-only">
+            {/* CTA Section */}
+            <div className="cta-section">
               {(product.quoteUrl || product.pdfUrl) && (
                 <button 
                   onClick={() => isLoggedIn ? handleExternalClick(product.pdfUrl || product.quoteUrl) : onLoginRequired()}
@@ -535,7 +536,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
                       localStorage.setItem('compareList', JSON.stringify(updated));
                       window.dispatchEvent(new Event('compareListUpdated'));
                     }
-                    navigate('/compare');
+                    router.push('/compare');
                   } catch {}
                 }}
                 style={{

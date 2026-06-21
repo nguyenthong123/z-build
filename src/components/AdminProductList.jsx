@@ -430,78 +430,71 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
         <header className={`admin-content-header ${!isHeaderVisible ? 'header-hidden' : ''}`}>
           <nav className="breadcrumb desktop-only">Quản trị / <span className="active">Sản phẩm</span></nav>
           
-          <div className="header-main-row">
-            <div className="title-group">
-              <h1>Quản lý sản phẩm</h1>
-              <p className="description">Theo dõi và cập nhật tất cả sản phẩm của bạn.</p>
+          <div className="header-main-row" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="title-group" style={{ flex: 1, minWidth: '250px' }}>
+              <h1 style={{ textAlign: 'left' }}>Quản lý sản phẩm</h1>
+              <p className="description" style={{ textAlign: 'left' }}>Theo dõi và cập nhật tất cả sản phẩm của bạn.</p>
             </div>
             
-            <div className="header-actions-group">
-              <div className="search-box">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <div className="header-actions-group" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end', width: 'auto' }}>
+              <input 
+                type="text" 
+                className="desktop-only"
+                placeholder="Dán link Google Sheet..." 
+                value={googleSheetUrl}
+                onChange={(e) => setGoogleSheetUrl(e.target.value)}
+                style={{ width: '200px', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e0e0e0', fontSize: '14px' }}
+              />
+              <button className="sync-btn desktop-only" onClick={handleUpdatePrices} disabled={isSyncing} style={{ padding: '0 16px', borderRadius: '8px', border: '1px solid #e0e0e0', backgroundColor: '#fff', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500, color: '#333' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21v-5h5"/></svg>
+                Giá
+              </button>
+              <button className="sync-btn desktop-only" onClick={handleSyncInfo} disabled={isSyncing} style={{ padding: '0 16px', borderRadius: '8px', border: '1px solid #e0e0e0', backgroundColor: '#e8f0fe', color: '#1a73e8', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                Thông tin
+              </button>
+              <button className="sync-btn desktop-only" onClick={handleImportProducts} disabled={isSyncing} style={{ padding: '0 16px', borderRadius: '8px', border: '1px solid #212B36', backgroundColor: '#212B36', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Lấy SP mới
+              </button>
+              <button className="ai-btn" onClick={() => {
+                sessionStorage.setItem('ai-prompt', 'Hãy quét danh sách sản phẩm và tự động viết mô tả chi tiết, phân loại danh mục, thông số cho tất cả các sản phẩm đang ở trạng thái Draft');
+                window.dispatchEvent(new CustomEvent('admin-nav', { detail: 'ai-assistant' }));
+              }} style={{ padding: '0 16px', borderRadius: '8px', backgroundColor: '#eab308', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                Viết nội dung (AI)
+              </button>
+              <button className="primary-add-btn" onClick={onAddProduct} style={{ backgroundColor: '#212B36', borderRadius: '8px', padding: '0 16px', height: 'auto', minHeight: '36px' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 5v14M5 12h14"/></svg>
+                Thêm SP
+              </button>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '16px', marginTop: '20px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', gap: '12px', flex: 1, minWidth: '300px' }}>
+              <div className="search-box" style={{ flex: 1, maxWidth: '400px', backgroundColor: '#fff', border: '1px solid #edf2f7', margin: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 <input 
                   type="text" 
-                  placeholder="Tìm kiếm nhanh..." 
+                  placeholder="Tìm kiếm sản phẩm..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
 
-              <div className="search-box category-filter" style={{ minWidth: '150px' }}>
+              <div className="category-filter" style={{ minWidth: '200px', backgroundColor: '#fff', border: '1px solid #edf2f7', borderRadius: '14px', padding: '0 8px' }}>
                 <select 
                   value={selectedCategory} 
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', padding: '8px', cursor: 'pointer', color: 'var(--text-main)' }}
+                  style={{ width: '100%', height: '100%', minHeight: '44px', border: 'none', background: 'transparent', outline: 'none', cursor: 'pointer', color: '#1a1a2e', fontWeight: 500 }}
                 >
                   {Array.from(allCategories).map(cat => (
                     <option key={cat} value={cat}>{cat === 'All' ? 'Tất cả danh mục' : cat}</option>
                   ))}
                 </select>
-              </div>
-
-              <div className="btn-group" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                {selectedProducts.length > 0 && (
-                  <button className="primary-add-btn" onClick={handleBatchDelete} style={{ backgroundColor: '#F44336', color: '#fff' }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-                    <span className="desktop-only">Xóa ({selectedProducts.length})</span>
-                  </button>
-                )}
-                <input 
-                  type="text" 
-                  className="desktop-only"
-                  placeholder="Dán link Google Sheet vào đây..." 
-                  value={googleSheetUrl}
-                  onChange={(e) => setGoogleSheetUrl(e.target.value)}
-                  style={{ width: '220px', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e0e0e0', fontSize: '14px' }}
-                />
-                <button className="sync-btn desktop-only" onClick={handleUpdatePrices} disabled={isSyncing} style={{ padding: '0 16px', borderRadius: '8px', border: '1px solid #e0e0e0', backgroundColor: '#fff', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500, color: '#333' }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21v-5h5"/></svg>
-                  {isSyncing ? 'Đang tải...' : 'Cập nhật giá'}
-                </button>
-                <button className="sync-btn desktop-only" onClick={handleSyncInfo} disabled={isSyncing} style={{ padding: '0 16px', borderRadius: '8px', border: '1px solid #e0e0e0', backgroundColor: '#e8f0fe', color: '#1a73e8', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500 }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                  {isSyncing ? 'Đang tải...' : 'Đồng bộ Thông tin'}
-                </button>
-                <button className="sync-btn desktop-only" onClick={handleImportProducts} disabled={isSyncing} style={{ padding: '0 16px', borderRadius: '8px', border: '1px solid #212B36', backgroundColor: '#212B36', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500 }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  {isSyncing ? 'Đang tải...' : 'Lấy SP mới'}
-                </button>
-                <button className="primary-add-btn" onClick={onAddProduct} style={{ backgroundColor: '#212B36' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 5v14M5 12h14"/></svg>
-                  <span className="desktop-only">Thêm</span>
-                </button>
-                <button 
-                  className="primary-add-btn" 
-                  onClick={() => {
-                    sessionStorage.setItem('ai-prompt', 'Hãy quét danh sách sản phẩm và tự động viết mô tả chi tiết, phân loại danh mục, thông số cho tất cả các sản phẩm đang ở trạng thái Draft');
-                    window.dispatchEvent(new CustomEvent('admin-nav', { detail: 'ai-assistant' }));
-                  }}
-                  style={{ backgroundColor: '#D4AF37', color: '#1a1a1a' }}
-                >
-                  🪄 <span className="desktop-only">Viết nội dung (AI)</span>
-                </button>
-              </div>
             </div>
+          </div>
           </div>
         </header>
 

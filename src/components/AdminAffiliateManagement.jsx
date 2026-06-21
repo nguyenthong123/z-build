@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { db } from '../firebase';
 import { 
   collection, 
@@ -196,7 +196,7 @@ const AdminAffiliateManagement = () => {
       <div className="admin-main-content">
         <header className={`admin-content-header ${!isHeaderVisible ? 'header-hidden' : ''}`}>
           <div className="header-nav">
-            <Link to="/admin/dashboard" className="back-link">
+            <Link href="/admin/dashboard" className="back-link">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
               Quay lại Admin
             </Link>

@@ -29,7 +29,7 @@
 /* KPI Cards Row */
 .dash-kpis {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
   padding: 0 28px;
   margin-bottom: 20px;
@@ -358,7 +358,7 @@
 
 .dash-quick-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 14px;
 }
 
@@ -414,36 +414,68 @@
 
 @media (max-width: 768px) {
   .admin-content-header {
-    padding: 1.5rem;
+    padding: 1.5rem 1rem;
+  }
+
+  .header-main-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
 
   .dash-kpis {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr; /* Stack into 1 column to avoid horizontal squishing */
     padding: 0 12px;
-    gap: 10px;
+    gap: 12px;
   }
 
   .dash-kpi-card {
     padding: 16px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .dash-kpi-icon {
-    width: 42px;
-    height: 42px;
+    width: 48px;
+    height: 48px;
     font-size: 24px;
   }
 
   .dash-kpi-value {
-    font-size: 1.15rem;
+    font-size: 1.3rem;
   }
 
   .dash-grid {
     grid-template-columns: 1fr;
     gap: 14px;
+    padding-left: 12px;
+    padding-right: 12px;
   }
 
   .dash-card {
     padding: 16px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  .dash-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .dash-chart-controls {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .dash-period-btn {
+    flex: 1;
+    text-align: center;
+    padding: 6px 8px;
+    font-size: 0.75rem;
   }
 
   .dash-quick-grid {
@@ -452,6 +484,7 @@
 
   .dash-chart-wrap {
     height: 180px;
+    width: 100%;
   }
 
   .dash-status-label {
@@ -460,6 +493,10 @@
   }
 
   .admin-content-body {
-    padding: 1rem 12px 120px;
+    padding-bottom: 120px;
+    overflow-x: hidden;
+    width: 100%;
+    box-sizing: border-box;
   }
 }
+

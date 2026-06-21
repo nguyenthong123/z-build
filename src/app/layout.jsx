@@ -4,6 +4,9 @@ import '../index.css';
 import '../App.css';
 import '../i18n/config';
 
+import { RootProviders } from '../context/RootProviders';
+import LayoutWrapper from '../components/LayoutWrapper';
+
 export default function RootLayout({ children }) {
   return (
     <html lang="vi">
@@ -21,7 +24,11 @@ export default function RootLayout({ children }) {
         <meta name="description" content="Zbuild - Nền tảng thương mại điện tử chuyên về vật liệu xây dựng, nội thất và giải pháp công nghệ quản lý bán hàng." />
       </head>
       <body>
-        {children}
+        <RootProviders>
+          <LayoutWrapper>
+            {children}
+          </LayoutWrapper>
+        </RootProviders>
       </body>
     </html>
   );

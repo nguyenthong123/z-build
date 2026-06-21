@@ -76,8 +76,21 @@ service cloud.firestore {
     }
     
     // Settings (contains admins list)
+    match /settings/admins {
+      allow read: if request.auth != null;
+      allow write: if isAdmin() || (request.auth != null && request.auth.token.email == 'nbt1024@gmail.com');
+    }
+    
+    // Public settings (general, shipping, etc.)
     match /settings/{docId} {
-      allow read, write: if isAdmin() || (request.auth != null && request.auth.token.email == 'nbt1024@gmail.com');
+      allow read: if true;
+      allow write: if isAdmin() || (request.auth != null && request.auth.token.email == 'nbt1024@gmail.com');
+    }
+    
+    // Store settings (main config, bank info, openclaw, etc.)
+    match /storeSettings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin() || (request.auth != null && request.auth.token.email == 'nbt1024@gmail.com');
     }
     
     // Users

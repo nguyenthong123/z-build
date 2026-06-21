@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { collection, getDocs, doc, query, where, serverTimestamp, getDoc, runTransaction, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import './Checkout.css';
@@ -561,7 +561,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
         <div className="checkout-layout">
           {/* Form Side */}
           <div className="checkout-form-section">
-            <Link to="/" className="checkout-logo desktop-only" style={{ textDecoration: 'none', display: 'inline-flex' }}>
+            <Link href="/" className="checkout-logo desktop-only" style={{ textDecoration: 'none', display: 'inline-flex' }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: '8px' }}>
                 <path d="M19 3H5C3.89 3 3 3.9 3 5V19C3 20.1 3.89 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM7 7H17V9L10 15H17V17H7V15L14 9H7V7Z" fill="#D4AF37"/>
               </svg>

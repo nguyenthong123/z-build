@@ -25,8 +25,11 @@
 
 @media (max-width: 768px) {
   .admin-main {
-    padding: 16px;
+    padding: 12px 0; /* reduce padding so full width available */
     padding-bottom: 80px; /* Mobile nav space */
+    width: 100vw;
+    overflow-x: hidden;
+    box-sizing: border-box;
   }
 }
 

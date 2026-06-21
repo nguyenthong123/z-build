@@ -28,6 +28,11 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    if (!user) {
+      setAdminEmails(['nbt1024@gmail.com']);
+      return;
+    }
+
     const adminDocRef = doc(db, 'settings', 'admins');
     
     const unsubscribe = onSnapshot(adminDocRef, (adminDoc) => {
@@ -56,7 +61,7 @@ export const AuthProvider = ({ children }) => {
     });
     
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   const isAdmin = user && adminEmails.some(e => e.toLowerCase().trim() === user.email.toLowerCase().trim());
 

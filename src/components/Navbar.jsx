@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -14,7 +14,7 @@ const Navbar = ({ onCartClick, onWishlistClick, onProfileClick, onLogout, view, 
   const { handleSearch, setSelectedCategory, setSearchQuery } = useStore();
   const [isNavVisible, setIsNavVisible] = React.useState(true);
   const [lastScrollY, setLastScrollY] = React.useState(0);
-  const navigate = useNavigate();
+  const router = useRouter();
   const { t, i18n } = useTranslation();
 
   const toggleLanguage = () => {
@@ -24,7 +24,7 @@ const Navbar = ({ onCartClick, onWishlistClick, onProfileClick, onLogout, view, 
 
   const handleLogoClick = (e) => {
     e.preventDefault();
-    navigate('/');
+    router.push('/');
     setSelectedCategory(null);
     setSearchQuery('');
   };
@@ -113,7 +113,7 @@ const Navbar = ({ onCartClick, onWishlistClick, onProfileClick, onLogout, view, 
           </button>
           <button 
             className={`icon-btn badge-btn ${view === 'compare' ? 'active' : ''}`} 
-            onClick={onCompareClick || (() => navigate('/compare'))} 
+            onClick={onCompareClick || (() => router.push('/compare'))} 
             title="So sánh"
             aria-label={`So sánh sản phẩm (${compareCount})`}
           >

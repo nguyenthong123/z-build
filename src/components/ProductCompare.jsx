@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { db } from '../firebase';
 import { collection, getDocs, query, where, orderBy, limit, doc, getDoc } from 'firebase/firestore';
 import './ProductCompare.css';
@@ -11,8 +11,7 @@ const STORAGE_KEY = 'compareList';
 // ProductCompare — Compare up to 3 products side by side
 // ============================================================
 const ProductCompare = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
 
   // --- State ---
   const [compareIds, setCompareIds] = useState(() => {
@@ -197,7 +196,8 @@ const ProductCompare = () => {
 
     const prompt = `📊 So sánh chi tiết các sản phẩm sau:\n\n${productLines}\n\nHãy giúp tôi phân tích ưu/nhược điểm của từng sản phẩm, so sánh về giá, chất lượng, tính năng và đưa ra đề xuất nên chọn sản phẩm nào dựa trên nhu cầu sử dụng.`;
 
-    navigate('/advisor', { state: { comparePrompt: prompt } });
+    sessionStorage.setItem('comparePrompt', prompt);
+    router.push('/advisor');
   };
 
   // --- Helpers ---
@@ -275,7 +275,7 @@ const ProductCompare = () => {
       <div className="product-compare-page animate-fade-in">
         <div className="container">
           <div className="compare-header">
-            <button className="back-btn" onClick={() => navigate('/')}>
+            <button className="back-btn" onClick={() => router.push('/')}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M19 12H5M12 19l-7-7 7-7"/>
               </svg>
@@ -289,7 +289,7 @@ const ProductCompare = () => {
             <div className="compare-empty-icon">⚖️</div>
             <h2>Chưa có sản phẩm nào để so sánh</h2>
             <p>Thêm sản phẩm từ trang chi tiết hoặc tìm kiếm bên dưới để bắt đầu so sánh.</p>
-            <button className="browse-btn" onClick={() => navigate('/')}>
+            <button className="browse-btn" onClick={() => router.push('/')}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                 <polyline points="9 22 9 12 15 12 15 22"/>

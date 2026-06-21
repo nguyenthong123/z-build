@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useRouter, usePathname } from 'next/navigation';
 
 const StoreContext = createContext(null);
 
@@ -7,14 +7,14 @@ export const StoreProvider = ({ children }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
   
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
     setSearchQuery('');
-    if (location.pathname !== '/') {
-      navigate('/');
+    if (pathname !== '/') {
+      router.push('/');
     }
     const productGrid = document.querySelector('.product-section');
     if (productGrid) {
@@ -25,8 +25,8 @@ export const StoreProvider = ({ children }) => {
   const handleSearch = (query) => {
     setSearchQuery(query);
     setSelectedCategory(null);
-    if (location.pathname !== '/') {
-      navigate('/');
+    if (pathname !== '/') {
+      router.push('/');
     }
     const productGrid = document.querySelector('.product-section');
     if (productGrid) {

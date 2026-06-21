@@ -1,30 +1,43 @@
-import React from 'react';
-import { Outlet, Navigate, useLocation } from 'react-router-dom';
+'use client';
+
+import React, { useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import AdminSidebar from './AdminSidebar';
 import AdminAIAssistant from './AdminAIAssistant';
 import { useAuth } from '../context/AuthContext';
 import './AdminLayout.css';
 
-const AdminLayout = () => {
+import { AdminAIProvider } from '../context/AdminAIContext';
+
+export default function AdminLayout({ children }) {
   const { isAdmin, loading } = useAuth();
-  const location = useLocation();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !isAdmin) {
+      router.replace('/login');
+    }
+  }, [loading, isAdmin, router]);
 
   if (loading) return <div className="admin-loading">Đang tải cấu hình quản trị...</div>;
-  if (!isAdmin) return <Navigate to="/login" replace />;
+  if (!isAdmin) return null;
 
-  const isAIPage = location.pathname === '/admin/ai-assistant';
+  const isAIPage = pathname === '/admin/ai-assistant';
 
   return (
-    <div className="admin-container">
-      <AdminSidebar />
-      <main className="admin-main" style={{ display: isAIPage ? 'none' : 'block' }}>
-        <Outlet />
-      </main>
-      <div style={{ display: isAIPage ? 'block' : 'none' }} className="admin-ai-persistent-wrapper">
-        <AdminAIAssistant />
+    <AdminAIProvider>
+      <div className="admin-container">
+        <AdminSidebar />
+        <main className="admin-main" style={{ display: isAIPage ? 'none' : 'block' }}>
+          {children}
+        </main>
+        <div style={{ display: isAIPage ? 'block' : 'none' }} className="admin-ai-persistent-wrapper">
+          <AdminAIAssistant />
+        </div>
       </div>
-    </div>
+    </AdminAIProvider>
   );
 };
 
-export default AdminLayout;
+

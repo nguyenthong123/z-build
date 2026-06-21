@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { usePathname } from 'next/navigation';
 
 // Sub-components
 import AdvisorSidebar from './advisor/AdvisorSidebar';
@@ -9,7 +9,7 @@ import ChatHistory from './advisor/ChatHistory';
 import './AIAdvisor.css';
 
 const AIAdvisor = ({ onNavigate, advisorState }) => {
-  const location = useLocation();
+
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [isSidebarHidden, setIsSidebarHidden] = useState(false);
   const [activeTab, setActiveTab] = useState('analytics');
@@ -72,17 +72,18 @@ const AIAdvisor = ({ onNavigate, advisorState }) => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
+  const pathname = usePathname();
+
   // Handle comparePrompt from ProductCompare navigation
   useEffect(() => {
-    const prompt = location.state?.comparePrompt;
+    const prompt = sessionStorage.getItem('comparePrompt');
     if (prompt && !messages?.length) {
-      // Clear the state so it doesn't re-trigger on re-renders
-      window.history.replaceState({}, document.title);
+      sessionStorage.removeItem('comparePrompt');
       // Pre-fill input and auto-send
       setInput('');
       setTimeout(() => handleSend(prompt), 600);
     }
-  }, [location.state?.comparePrompt]);
+  }, []);
 
   const isMobile = windowWidth < 768;
 
