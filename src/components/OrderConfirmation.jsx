@@ -2,7 +2,25 @@ import React from 'react';
 import './OrderConfirmation.css';
 
 const OrderConfirmation = ({ onContinueShopping, orderDetails }) => {
-  const { orderNumber, cartItems, total, shippingAddress } = orderDetails;
+  if (!orderDetails) {
+    return (
+      <div className="confirmation-page animate-fade-in">
+        <div className="container" style={{ textAlign: 'center', padding: '50px 20px' }}>
+          <div className="confirmation-content">
+            <h2 style={{ marginBottom: '15px', color: '#1A2130' }}>Không tìm thấy thông tin đơn hàng</h2>
+            <p style={{ color: '#64748B', marginBottom: '25px' }}>
+              Có vẻ như bạn đã làm mới trang hoặc phiên làm việc đã hết hạn.
+            </p>
+            <button className="btn-continue-shopping" onClick={onContinueShopping}>
+              Quay lại trang chủ
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const { orderNumber, cartItems = [], total, shippingAddress = {} } = orderDetails;
   
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 

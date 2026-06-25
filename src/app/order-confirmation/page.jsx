@@ -11,8 +11,8 @@ export default function OrderConfirmationPage() {
 
   return (
     <OrderConfirmation 
-      orderData={orderData} 
-      onNavigate={(path) => router.push(path)} 
+      orderDetails={orderData} 
+      onContinueShopping={() => router.push('/')} 
     />
   );
 }
