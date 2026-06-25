@@ -386,6 +386,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
             price: realPrice,
             quantity: buyQty,
             image: cartItems[i].image || '',
+            weight: Number(pData.weight) || 0,
             variant: cartItems[i].variant || 'Default'
           });
         }
@@ -433,8 +434,8 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
           userId: user?.uid || 'guest',
           userEmail: user?.email || formData.email,
           userName: user?.name || `${formData.firstName} ${formData.lastName}`,
-          items: itemsToBuy.map(({ id, name, price, quantity, image, variant }) => ({
-            id, name, price, quantity, image, variant
+          items: itemsToBuy.map(({ id, name, price, quantity, image, variant, weight }) => ({
+            id, name, price, quantity, image, variant, weight: weight || 0
           })),
           shippingAddress,
           bankTransaction: bankTransactionInfo || null,

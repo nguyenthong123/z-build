@@ -83,6 +83,7 @@ export const AppProvider = ({ children }) => {
                 price: product.discountPrice || product.basePrice || product.price,
                 quantity: quantity,
                 image: product.image || product.img,
+                weight: product.weight || 0,
                 variant: 'Default'
               });
             }
@@ -124,6 +125,7 @@ export const AppProvider = ({ children }) => {
         price: product.discountPrice || product.basePrice || product.price,
         quantity: quantity,
         image: product.image || product.img,
+        weight: product.weight || 0,
         variant: 'Default'
       }];
     });
