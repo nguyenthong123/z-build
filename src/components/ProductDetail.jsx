@@ -444,11 +444,37 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
             <p className="shipping-info">Miễn phí vận chuyển cho đơn hàng từ 500.000₫</p>
 
             {/* Specs Section */}
-            {product.specs && (
-              <div className="specs-detail-group">
-                <label>QUY CÁCH / KÍCH THƯỚC</label>
-                <div className="specs-badges">
-                  <span className="specs-badge">{product.specs}</span>
+            {(product.specs || product.weight || product.packaging) && (
+              <div className="specs-detail-group" style={{ marginBottom: '25px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  {product.specs && (
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>QUY CÁCH / KÍCH THƯỚC</label>
+                      <div className="specs-badges">
+                        <span className="specs-badge">{product.specs}</span>
+                      </div>
+                    </div>
+                  )}
+                  {(product.weight || product.packaging) && (
+                    <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                      {product.weight && (
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>TRỌNG LƯỢNG</label>
+                          <div className="specs-badges">
+                            <span className="specs-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>⚖️ {product.weight} kg / tấm</span>
+                          </div>
+                        </div>
+                      )}
+                      {product.packaging && (
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>ĐÓNG GÓI</label>
+                          <div className="specs-badges">
+                            <span className="specs-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>📦 {product.packaging}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
