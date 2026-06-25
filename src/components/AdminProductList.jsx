@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc, startAfter, limit, addDoc, getDoc, setDoc, where } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc, startAfter, limit, addDoc, getDoc, setDoc, where, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { slugify } from '../utils/slugify';
 
@@ -264,6 +264,114 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
     }
   };
 
+  const handleSyncFromDunvex = async () => {
+    setIsSyncing(true);
+    try {
+      const docRef = doc(db, 'storeSettings', 'main');
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists() || !docSnap.data().openClawConfig) {
+        alert("Chưa cấu hình API Endpoint và API Key của Dunvex trong Admin Settings!");
+        setIsSyncing(false);
+        return;
+      }
+      const config = docSnap.data().openClawConfig;
+      if (!config.apiUrl || !config.botApiKey || !config.ownerId) {
+        alert("Vui lòng cấu hình đầy đủ API Endpoint, API Key và Owner ID của Dunvex trong Admin Settings!");
+        setIsSyncing(false);
+        return;
+      }
+
+      // Resolve products url
+      let base = config.apiUrl.replace(/\/api\/products\/?$/, '');
+      base = base.replace(/\/+$/, '');
+      const productsUrl = `${base}/api/products`;
+
+      const response = await fetch(productsUrl, {
+        method: 'GET',
+        headers: {
+          'x-api-key': config.botApiKey,
+          'x-owner-id': config.ownerId
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server returned status ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.success && data.products) {
+        let updatedCount = 0;
+        let createdCount = 0;
+        let newlySyncedIds = [];
+        
+        for (const dunvexProd of data.products) {
+          if (!dunvexProd.name) continue;
+          
+          const slug = slugify(dunvexProd.name);
+          const q = query(collection(db, "products"), where("slug", "==", slug), limit(1));
+          const snap = await getDocs(q);
+          
+          const priceVal = Number(dunvexProd.priceSell) || 0;
+          const priceBuyVal = Number(dunvexProd.priceImport) || 0;
+          const stockVal = Number(dunvexProd.stock) || 0;
+
+          const productData = {
+            title: dunvexProd.name,
+            slug: slug,
+            category: dunvexProd.category || 'Chung',
+            basePrice: priceVal,
+            discountPrice: priceVal,
+            price: priceVal,
+            priceBuy: priceBuyVal,
+            unit: dunvexProd.unit || '',
+            weight: dunvexProd.weight || '',
+            specs: dunvexProd.specification || '',
+            stock: stockVal,
+            articleNo: dunvexProd.articleNo || '',
+            trackInventory: true,
+            updatedAt: serverTimestamp()
+          };
+
+          if (!snap.empty) {
+            // Update existing
+            const productId = snap.docs[0].id;
+            const productRef = doc(db, "products", productId);
+            await updateDoc(productRef, productData);
+            updatedCount++;
+            newlySyncedIds.push(productId);
+          } else {
+            // Create new
+            const productsRef = collection(db, "products");
+            const newDoc = await addDoc(productsRef, {
+              ...productData,
+              status: 'active',
+              image: '',
+              extraImages: [],
+              createdAt: serverTimestamp()
+            });
+            createdCount++;
+            newlySyncedIds.push(newDoc.id);
+          }
+        }
+        
+        setSyncedProductIds(newlySyncedIds);
+        setSyncSuccessMessage({
+          title: "Đồng bộ từ Dunvex App thành công!",
+          body: `Đã cập nhật ${updatedCount} sản phẩm, thêm mới ${createdCount} sản phẩm.`
+        });
+        setShowSyncSuccessModal(true);
+        fetchProducts(); // Reload products table
+      } else {
+        alert("Lỗi từ Dunvex App: " + (data.error || "Không xác định"));
+      }
+    } catch (error) {
+      console.error("Lỗi đồng bộ Dunvex:", error);
+      alert("Lỗi kết nối đến Dunvex App: " + error.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const [lastVisible, setLastVisible] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -491,6 +599,23 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
               <button className="primary-add-btn" onClick={onAddProduct} style={{ backgroundColor: '#1a1a2e', borderRadius: '10px', padding: '0 24px', height: '42px', display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(26,26,46,0.15)' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
                 Thêm SP
+              </button>
+            </div>
+          </div>
+
+          {/* Dunvex Sync Panel */}
+          <div className="dunvex-sync-panel" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', padding: '16px 20px', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#166534', fontWeight: 600, fontSize: '14px' }}>
+               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+               Đồng bộ tồn kho & giá từ Dunvex App
+            </div>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontSize: '13px', color: '#475569', flex: 1 }}>
+                Cập nhật trực tiếp toàn bộ danh sách sản phẩm, giá bán và số lượng tồn kho thực tế từ ứng dụng Dunvex.
+              </span>
+              <button onClick={handleSyncFromDunvex} disabled={isSyncing} style={{ padding: '0 16px', height: '40px', borderRadius: '8px', border: 'none', backgroundColor: '#10b981', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500, transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background='#059669'} onMouseOut={e => e.currentTarget.style.background='#10b981'}>
+                <svg className={isSyncing ? "spin-animation" : ""} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                {isSyncing ? "Đang đồng bộ..." : "Đồng bộ từ Dunvex"}
               </button>
             </div>
           </div>

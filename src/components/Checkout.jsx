@@ -93,6 +93,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
 
   // Dynamic Shipping Settings
   const [shippingSettings, setShippingSettings] = useState(null);
+  const [openClawConfig, setOpenClawConfig] = useState(null);
   const [distanceKm, setDistanceKm] = useState(null);
   const [isLocating, setIsLocating] = useState(false);
 
@@ -132,11 +133,17 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
       try {
         const docRef = doc(db, 'storeSettings', 'main');
         const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().bankInfo) {
-          setShopBankInfo(docSnap.data().bankInfo);
-        }
-        if (docSnap.exists() && docSnap.data().shippingSettings) {
-          setShippingSettings(docSnap.data().shippingSettings);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.bankInfo) {
+            setShopBankInfo(data.bankInfo);
+          }
+          if (data.shippingSettings) {
+            setShippingSettings(data.shippingSettings);
+          }
+          if (data.openClawConfig) {
+            setOpenClawConfig(data.openClawConfig);
+          }
         }
       } catch (error) {
         console.error('Error fetching bank info:', error);
@@ -462,6 +469,50 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
           shippingAddress
         };
       }); // End transaction
+
+      // Send webhook to Dunvex (non-blocking)
+      try {
+        if (openClawConfig && openClawConfig.apiUrl && openClawConfig.botApiKey && openClawConfig.ownerId) {
+          let base = openClawConfig.apiUrl.replace(/\/api\/products\/?$/, '');
+          base = base.replace(/\/+$/, '');
+          const webhookUrl = `${base}/api/order-webhook`;
+
+          const webhookItems = finalOrderData.cartItems.map(item => ({
+            productId: item.id,
+            productName: item.name,
+            qty: Number(item.quantity) || 1,
+            price: Number(item.price) || 0
+          }));
+
+          const webhookBody = {
+            ownerId: openClawConfig.ownerId,
+            customerName: `${formData.firstName} ${formData.lastName}`.trim(),
+            customerPhone: formData.phone || '',
+            customerEmail: formData.email || user?.email || '',
+            customerAddress: `${formData.address}, ${formData.city}`.trim(),
+            items: webhookItems,
+            note: `Đơn đặt từ web storefront, Mã đơn: ${orderNumber}`
+          };
+
+          fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': openClawConfig.botApiKey
+            },
+            body: JSON.stringify(webhookBody)
+          })
+          .then(res => res.json())
+          .then(data => {
+            console.log('Dunvex webhook response:', data);
+          })
+          .catch(err => {
+            console.error('Dunvex webhook error:', err);
+          });
+        }
+      } catch (webhookErr) {
+        console.error('Failed to trigger Dunvex webhook:', webhookErr);
+      }
 
       // Save profile data for future auto-fill if user is logged in
       if (user && user.uid) {

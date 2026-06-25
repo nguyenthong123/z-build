@@ -49,7 +49,8 @@ const AdminSettings = ({ onBack }) => {
   });
   const [openClawConfig, setOpenClawConfig] = useState({
     apiUrl: '',
-    botApiKey: ''
+    botApiKey: '',
+    ownerId: ''
   });
   const [adminEmails, setAdminEmails] = useState([]);
   const [newAdminEmail, setNewAdminEmail] = useState('');
@@ -337,6 +338,20 @@ const AdminSettings = ({ onBack }) => {
                   </div>
                   <p className="field-hint" style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
                     * Khóa này dùng để cấp quyền cho Bot kết nối vào API tạo sản phẩm. Bot cần gửi Header <code>x-api-key</code> trùng khớp với mã này.
+                  </p>
+                </div>
+
+                <div className="setting-field" style={{ maxWidth: '100%', marginTop: '15px' }}>
+                  <label>Mã cửa hàng (Owner ID)</label>
+                  <input 
+                    type="text" 
+                    value={openClawConfig.ownerId || ''} 
+                    onChange={(e) => setOpenClawConfig({ ...openClawConfig, ownerId: e.target.value })} 
+                    placeholder="Nhập mã Owner ID của cửa hàng trên Dunvex..."
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }}
+                  />
+                  <p className="field-hint" style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
+                    * Khóa này dùng để định danh cửa hàng khi gửi đơn qua Webhook tới Dunvex.
                   </p>
                 </div>
               </div>

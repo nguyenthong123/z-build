@@ -41,3 +41,4 @@ out/
 # npm cache issues
 .npm/
 .cache/
+.vercel

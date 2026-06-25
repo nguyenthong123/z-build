@@ -12,10 +12,31 @@ const ProductGrid = ({ onProductClick }) => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [lastVisible, setLastVisible] = useState(null);
   const [hasMore, setHasMore] = useState(true);
+  const [categoriesList, setCategoriesList] = useState([]);
   const { toggleWishlist, isInWishlist } = useWishlist();
-  const { searchQuery, selectedCategory: category } = useStore();
+  const { searchQuery, selectedCategory: category, handleCategorySelect } = useStore();
   
   const ITEMS_PER_PAGE = 12;
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const q = query(collection(db, "products"));
+        const snapshot = await getDocs(q);
+        const uniqueCats = new Set();
+        snapshot.docs.forEach(doc => {
+          const data = doc.data();
+          if (data.category && data.status === 'active') {
+            uniqueCats.add(data.category);
+          }
+        });
+        setCategoriesList(['Tất cả', ...Array.from(uniqueCats)]);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     fetchInitialProducts();
@@ -148,6 +169,21 @@ const ProductGrid = ({ onProductClick }) => {
         <h2>{category ? `${category}` : searchQuery ? (searchQuery === "trending" ? "Tất cả sản phẩm" : `Kết quả tìm kiếm cho "${searchQuery}"`) : "Tất cả sản phẩm"}</h2>
         <a href="#" className="view-all">Xem tất cả</a>
       </div>
+      
+      {categoriesList.length > 1 && (
+        <div className="category-tabs-container">
+          {categoriesList.map((catName) => (
+            <button
+              key={catName}
+              className={`category-tab-btn ${((catName === 'Tất cả' && !category) || category === catName) ? 'active' : ''}`}
+              onClick={() => handleCategorySelect(catName === 'Tất cả' ? null : catName)}
+            >
+              {catName}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="product-grid">
         {loading ? (
           <div style={{ padding: '40px', gridColumn: '1/-1', textAlign: 'center' }}>Đang tải sản phẩm...</div>
