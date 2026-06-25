@@ -97,10 +97,14 @@ export const AppProvider = ({ children }) => {
     return () => window.removeEventListener('AI_ADD_TO_CART_BATCH', handleAIBatchAdd);
   }, [addToast]);
 
-  const updateQuantity = (id, delta) => {
-    setCartItems(prev => prev.map(item => 
-      item.id === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item
-    ));
+  const updateQuantity = (id, delta, isAbsolute = false) => {
+    setCartItems(prev => prev.map(item => {
+      if (item.id === id) {
+        const newQty = isAbsolute ? delta : item.quantity + delta;
+        return { ...item, quantity: Math.max(isAbsolute ? 0 : 1, newQty) };
+      }
+      return item;
+    }));
   };
 
   const removeItem = (id) => {

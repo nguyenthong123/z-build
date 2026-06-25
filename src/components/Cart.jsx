@@ -91,7 +91,25 @@ const Cart = ({ onBack, onCheckout, cartItems, updateQuantity, removeItem, clear
                       <div className="item-qty-mobile">
                          <div className="qty-control">
                             <button onClick={() => updateQuantity(item.id, -1)}>-</button>
-                            <span>{item.quantity}</span>
+                            <input 
+                              type="number" 
+                              value={item.quantity || ''} 
+                              min="1"
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value);
+                                if (e.target.value === '') {
+                                  updateQuantity(item.id, 0, true);
+                                } else if (!isNaN(val)) {
+                                  updateQuantity(item.id, val, true);
+                                }
+                              }}
+                              onBlur={(e) => {
+                                const val = parseInt(e.target.value);
+                                if (isNaN(val) || val < 1) {
+                                  updateQuantity(item.id, 1, true);
+                                }
+                              }}
+                            />
                             <button onClick={() => updateQuantity(item.id, 1)}>+</button>
                           </div>
                       </div>
@@ -103,7 +121,25 @@ const Cart = ({ onBack, onCheckout, cartItems, updateQuantity, removeItem, clear
                   <div className="desktop-only item-qty">
                     <div className="qty-control">
                       <button onClick={() => updateQuantity(item.id, -1)}>-</button>
-                      <span>{item.quantity}</span>
+                      <input 
+                        type="number" 
+                        value={item.quantity || ''} 
+                        min="1"
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          if (e.target.value === '') {
+                            updateQuantity(item.id, 0, true);
+                          } else if (!isNaN(val)) {
+                            updateQuantity(item.id, val, true);
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const val = parseInt(e.target.value);
+                          if (isNaN(val) || val < 1) {
+                            updateQuantity(item.id, 1, true);
+                          }
+                        }}
+                      />
                       <button onClick={() => updateQuantity(item.id, 1)}>+</button>
                     </div>
                   </div>
