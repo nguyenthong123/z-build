@@ -184,21 +184,7 @@ const ProductCompare = () => {
     window.dispatchEvent(new Event('compareListUpdated'));
   };
 
-  // --- "So sánh bằng AI" — navigate to AIAdvisor with pre-filled prompt ---
-  const handleAICompare = () => {
-    if (products.length < 2) return;
 
-    const productLines = products.map(p => {
-      const price = p.discountPrice || p.basePrice || 0;
-      const priceStr = price > 0 ? `${Number(price).toLocaleString('vi-VN')}₫` : 'Liên hệ';
-      return `- **${p.title}** (${p.category || 'Chung'}): ${priceStr} — ${(p.specs || p.description || '').replace(/<[^>]+>/g, '').substring(0, 120)}`;
-    }).join('\n');
-
-    const prompt = `📊 So sánh chi tiết các sản phẩm sau:\n\n${productLines}\n\nHãy giúp tôi phân tích ưu/nhược điểm của từng sản phẩm, so sánh về giá, chất lượng, tính năng và đưa ra đề xuất nên chọn sản phẩm nào dựa trên nhu cầu sử dụng.`;
-
-    sessionStorage.setItem('comparePrompt', prompt);
-    router.push('/advisor');
-  };
 
   // --- Helpers ---
   const getFormattedPrice = (product) => {
@@ -383,17 +369,6 @@ const ProductCompare = () => {
             Quay lại
           </button>
           <h1>So sánh sản phẩm ({products.length}/{MAX_COMPARE})</h1>
-          <div className="compare-header-actions">
-            {products.length >= 2 && (
-              <button className="btn-compare-ai" onClick={handleAICompare}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 2a4 4 0 0 1 4 4v1h3a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3h3V6a4 4 0 0 1 4-4z"/>
-                  <rect x="11" y="12" width="2" height="5" rx="1"/>
-                </svg>
-                So sánh bằng AI
-              </button>
-            )}
-          </div>
         </div>
 
         {/* Search / Add */}
@@ -605,15 +580,6 @@ const ProductCompare = () => {
 
         {/* Bottom Actions */}
         <div className="compare-bottom-actions">
-          {products.length >= 2 && (
-            <button className="btn-compare-ai" onClick={handleAICompare}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 2a4 4 0 0 1 4 4v1h3a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3h3V6a4 4 0 0 1 4-4z"/>
-                <rect x="11" y="12" width="2" height="5" rx="1"/>
-              </svg>
-              So sánh bằng AI
-            </button>
-          )}
           <button className="btn-compare-clear" onClick={clearAll}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="3 6 5 6 21 6"/>
