@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc, startAfter, limit, addDoc, getDoc, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
+import { slugify } from '../utils/slugify';
 
 import './AdminProductList.css';
 
@@ -12,6 +13,9 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [googleSheetUrl, setGoogleSheetUrl] = useState('');
+  const [syncedProductIds, setSyncedProductIds] = useState([]);
+  const [showSyncSuccessModal, setShowSyncSuccessModal] = useState(false);
+  const [syncSuccessMessage, setSyncSuccessMessage] = useState({ title: '', body: '' });
   
   // Batch delete states
   const [selectedProducts, setSelectedProducts] = useState([]);
@@ -60,32 +64,51 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
       
       if (data.success && data.products) {
         let updatedCount = 0;
+        let newlySyncedIds = [];
         
         for (const sheetProduct of data.products) {
           if (!sheetProduct.name) continue;
           
-          const slug = sheetProduct.name.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+          const slug = slugify(sheetProduct.name);
           const q = query(collection(db, "products"), where("slug", "==", slug), limit(1));
           const snap = await getDocs(q);
           
           if (!snap.empty) {
-            // Update price
             const productId = snap.docs[0].id;
-            const priceString = String(sheetProduct.price).replace(/[^\d]/g, '');
-            const newPrice = Number(priceString);
+            const productRef = doc(db, "products", productId);
             
-            if (!isNaN(newPrice) && newPrice > 0) {
-              const productRef = doc(db, "products", productId);
-              await updateDoc(productRef, {
-                discountPrice: newPrice,
-                basePrice: newPrice,
-                price: newPrice
-              });
+            let updateData = {};
+            
+            if (sheetProduct.price !== undefined) {
+              const priceString = String(sheetProduct.price).replace(/[^\d]/g, '');
+              const newPrice = Number(priceString);
+              if (!isNaN(newPrice) && newPrice > 0) {
+                updateData.discountPrice = newPrice;
+                updateData.basePrice = newPrice;
+                updateData.price = newPrice;
+              }
+            }
+            
+            if (sheetProduct.stock !== undefined && sheetProduct.stock !== '') {
+              const stockNum = Number(sheetProduct.stock);
+              if (!isNaN(stockNum)) {
+                updateData.stock = stockNum;
+              }
+            }
+            
+            if (Object.keys(updateData).length > 0) {
+              await updateDoc(productRef, updateData);
               updatedCount++;
+              newlySyncedIds.push(productId);
             }
           }
         }
-        alert(`Đồng bộ giá thành công!\n- Đã cập nhật giá cho ${updatedCount} sản phẩm.`);
+        setSyncedProductIds(newlySyncedIds);
+        setSyncSuccessMessage({
+          title: "Đồng bộ Giá và Tồn kho thành công!",
+          body: `Đã cập nhật cho ${updatedCount} sản phẩm.`
+        });
+        setShowSyncSuccessModal(true);
         fetchProducts(); // Reload table
       } else {
         alert("Lỗi từ Google Sheet: " + (data.error || "Không xác định"));
@@ -126,7 +149,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
         for (const sheetProduct of data.products) {
           if (!sheetProduct.name) continue;
           
-          const slug = sheetProduct.name.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+          const slug = slugify(sheetProduct.name);
           const q = query(collection(db, "products"), where("slug", "==", slug), limit(1));
           const snap = await getDocs(q);
           
@@ -146,7 +169,11 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
             }
           }
         }
-        alert(`Đồng bộ thông tin thành công!\n- Đã cập nhật Danh mục, Trọng lượng, Quy cách cho ${updatedCount} sản phẩm.`);
+        setSyncSuccessMessage({
+          title: "Đồng bộ Thông tin thành công!",
+          body: `Đã cập nhật Danh mục, Trọng lượng, Quy cách cho ${updatedCount} sản phẩm.`
+        });
+        setShowSyncSuccessModal(true);
         fetchProducts(); // Reload table
       } else {
         alert("Lỗi từ Google Sheet: " + (data.error || "Không xác định"));
@@ -187,7 +214,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
         for (const sheetProduct of data.products) {
           if (!sheetProduct.name) continue;
           
-          const slug = sheetProduct.name.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+          const slug = slugify(sheetProduct.name);
           const q = query(collection(db, "products"), where("slug", "==", slug), limit(1));
           const snap = await getDocs(q);
           
@@ -220,7 +247,11 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
             }
           }
         }
-        alert(`Tải sản phẩm mới thành công!\n- Đã thêm ${createdCount} sản phẩm mới (trạng thái Draft).`);
+        setSyncSuccessMessage({
+          title: "Tải sản phẩm mới thành công!",
+          body: `Đã thêm ${createdCount} sản phẩm mới (trạng thái Draft).`
+        });
+        setShowSyncSuccessModal(true);
         fetchProducts(); // Reload table
       } else {
         alert("Lỗi từ Google Sheet: " + (data.error || "Không xác định"));
@@ -407,6 +438,12 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
     const matchesSearch = removeAccents(p.name).includes(removeAccents(searchQuery)) || 
                           removeAccents(p.sku).includes(removeAccents(searchQuery));
     return matchesTab && matchesCategory && matchesSearch;
+  }).sort((a, b) => {
+    const aSynced = syncedProductIds.includes(a.id);
+    const bSynced = syncedProductIds.includes(b.id);
+    if (aSynced && !bSynced) return -1;
+    if (!aSynced && bSynced) return 1;
+    return 0;
   });
 
   const handleSelectAll = (e) => {
@@ -432,82 +469,94 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
         <header className={`admin-content-header ${!isHeaderVisible ? 'header-hidden' : ''}`}>
           <nav className="breadcrumb desktop-only">Quản trị / <span className="active">Sản phẩm</span></nav>
           
-          <div className="header-main-row" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="header-main-row" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', marginBottom: '20px' }}>
             <div className="title-group" style={{ flex: 1, minWidth: '250px' }}>
-              <h1 style={{ textAlign: 'left' }}>Quản lý sản phẩm</h1>
-              <p className="description" style={{ textAlign: 'left' }}>Theo dõi và cập nhật tất cả sản phẩm của bạn.</p>
+              <h1 style={{ textAlign: 'left', margin: 0 }}>Quản lý sản phẩm</h1>
+              <p className="description" style={{ textAlign: 'left', marginTop: '4px' }}>Theo dõi và cập nhật tất cả sản phẩm của bạn.</p>
             </div>
             
-            <div className="header-actions-group" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end', width: 'auto' }}>
-              <input 
-                type="text" 
-                className="desktop-only"
-                placeholder="Dán link Google Sheet..." 
-                value={googleSheetUrl}
-                onChange={(e) => setGoogleSheetUrl(e.target.value)}
-                style={{ width: '200px', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e0e0e0', fontSize: '14px' }}
-              />
-              <button className="sync-btn desktop-only" onClick={handleUpdatePrices} disabled={isSyncing} style={{ padding: '0 16px', borderRadius: '8px', border: '1px solid #e0e0e0', backgroundColor: '#fff', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500, color: '#333' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21v-5h5"/></svg>
-                Giá
-              </button>
-              <button className="sync-btn desktop-only" onClick={handleSyncInfo} disabled={isSyncing} style={{ padding: '0 16px', borderRadius: '8px', border: '1px solid #e0e0e0', backgroundColor: '#e8f0fe', color: '#1a73e8', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                Thông tin
-              </button>
-              <button className="sync-btn desktop-only" onClick={handleImportProducts} disabled={isSyncing} style={{ padding: '0 16px', borderRadius: '8px', border: '1px solid #212B36', backgroundColor: '#212B36', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Lấy SP mới
-              </button>
-              {selectedProducts.length > 0 && (
-                <button className="ai-btn" onClick={handleBatchDelete} style={{ padding: '0 16px', borderRadius: '8px', backgroundColor: '#ef4444', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-                  Xoá ({selectedProducts.length})
-                </button>
-              )}
+            <div className="header-actions-group" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-end', width: 'auto' }}>
               <button className="ai-btn" onClick={() => {
                 let prompt = 'Hãy quét danh sách sản phẩm và tự động viết mô tả chi tiết, phân loại danh mục, thông số cho tất cả các sản phẩm đang ở trạng thái Draft';
                 if (selectedProducts.length > 0) {
-                  const selectedNames = products.filter(p => selectedProducts.includes(p.id)).map(p => `- ${p.name || p.id}`).join('\n');
-                  prompt = `Tôi có danh sách các sản phẩm sau cần viết hoặc cập nhật nội dung chi tiết:\n${selectedNames}\n\nHãy hỏi tôi xem tôi muốn bạn TỰ ĐỘNG VIẾT LUÔN cho các sản phẩm này, hay tôi muốn CUNG CẤP THÊM THÔNG TIN (như tính năng, thành phần, ưu điểm...) để bạn dựa vào đó viết cho chính xác hơn.\n\nLưu ý:\n- Đừng viết nội dung sản phẩm vội, hãy chờ quyết định của tôi.\n- Khi tôi yêu cầu viết (có hoặc không có thông tin thêm), hãy cập nhật TỪNG SẢN PHẨM MỘT bằng công cụ update_product. Hãy viết bài mô tả (description) thật DÀI, CHĂM CHÚT, HẤP DẪN bằng mã HTML. Hãy khéo léo chèn tên của từng sản phẩm vào nội dung mô tả nhiều lần để bài viết trông tự nhiên và giống như được viết riêng cho sản phẩm đó.`;
+                  const selectedNames = products.filter(p => selectedProducts.includes(p.id)).map(p => `- ${p.name || p.id}`).join('\\n');
+                  prompt = `Tôi có danh sách các sản phẩm sau cần viết hoặc cập nhật nội dung chi tiết:\\n${selectedNames}\\n\\nHãy hỏi tôi xem tôi muốn bạn TỰ ĐỘNG VIẾT LUÔN cho các sản phẩm này, hay tôi muốn CUNG CẤP THÊM THÔNG TIN (như tính năng, thành phần, ưu điểm...) để bạn dựa vào đó viết cho chính xác hơn.\\n\\nLưu ý:\\n- Đừng viết nội dung sản phẩm vội, hãy chờ quyết định của tôi.\\n- Khi tôi yêu cầu viết (có hoặc không có thông tin thêm), hãy cập nhật TỪNG SẢN PHẨM MỘT bằng công cụ update_product. Hãy viết bài mô tả (description) thật DÀI, CHĂM CHÚT, HẤP DẪN bằng mã HTML. Hãy khéo léo chèn tên của từng sản phẩm vào nội dung mô tả nhiều lần để bài viết trông tự nhiên và giống như được viết riêng cho sản phẩm đó.`;
                 }
                 sessionStorage.setItem('ai-prompt', prompt);
-                window.location.href = '/admin/ai-assistant';
-              }} style={{ padding: '0 16px', borderRadius: '8px', backgroundColor: '#eab308', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                window.dispatchEvent(new Event('trigger-admin-ai-prompt'));
+              }} style={{ padding: '0 20px', borderRadius: '10px', backgroundColor: '#fff', color: '#1a1a2e', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600, boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#eab308" strokeWidth="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
                 Viết nội dung (AI)
               </button>
-              <button className="primary-add-btn" onClick={onAddProduct} style={{ backgroundColor: '#212B36', borderRadius: '8px', padding: '0 16px', height: 'auto', minHeight: '36px' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 5v14M5 12h14"/></svg>
+              <button className="primary-add-btn" onClick={onAddProduct} style={{ backgroundColor: '#1a1a2e', borderRadius: '10px', padding: '0 24px', height: '42px', display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(26,26,46,0.15)' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
                 Thêm SP
               </button>
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '16px', marginTop: '20px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+          {/* 2. MIDDLE ROW: Google Sheet Sync Panel */}
+          <div className="gsheet-sync-panel" style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px 20px', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#475569', fontWeight: 600, fontSize: '14px' }}>
+               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+               Đồng bộ Google Sheet
+            </div>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <input 
+                type="text" 
+                placeholder="Dán link Google Sheet..." 
+                value={googleSheetUrl}
+                onChange={(e) => setGoogleSheetUrl(e.target.value)}
+                style={{ flex: 1, minWidth: '250px', padding: '10px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }}
+              />
+              <button onClick={handleUpdatePrices} disabled={isSyncing} style={{ padding: '0 16px', height: '40px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#fff', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500, color: '#334155', transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background='#f1f5f9'} onMouseOut={e => e.currentTarget.style.background='#fff'}>
+                <svg className={isSyncing ? "spin-animation" : ""} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21v-5h5"/></svg>
+                {isSyncing ? "Đang đồng bộ..." : "Giá & Tồn kho"}
+              </button>
+              <button onClick={handleSyncInfo} disabled={isSyncing} style={{ padding: '0 16px', height: '40px', borderRadius: '8px', border: '1px solid #bfdbfe', backgroundColor: '#eff6ff', color: '#1d4ed8', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500, transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background='#dbeafe'} onMouseOut={e => e.currentTarget.style.background='#eff6ff'}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                Thông tin
+              </button>
+              <button onClick={handleImportProducts} disabled={isSyncing} style={{ padding: '0 16px', height: '40px', borderRadius: '8px', border: 'none', backgroundColor: '#334155', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500, transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background='#1e293b'} onMouseOut={e => e.currentTarget.style.background='#334155'}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Lấy SP mới
+              </button>
+            </div>
+          </div>
+
+          {/* 3. BOTTOM ROW: Toolbar */}
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '16px', borderBottom: '1px solid #f1f5f9' }}>
             <div style={{ display: 'flex', gap: '12px', flex: 1, minWidth: '300px' }}>
-              <div className="search-box" style={{ flex: 1, maxWidth: '400px', backgroundColor: '#fff', border: '1px solid #edf2f7', margin: 0 }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <div className="search-box" style={{ flex: 1, maxWidth: '400px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', margin: 0, padding: '10px 16px', borderRadius: '10px' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 <input 
                   type="text" 
                   placeholder="Tìm kiếm sản phẩm..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{ fontSize: '14px', background: 'transparent' }}
                 />
               </div>
 
-              <div className="category-filter" style={{ minWidth: '200px', backgroundColor: '#fff', border: '1px solid #edf2f7', borderRadius: '14px', padding: '0 8px' }}>
+              <div className="category-filter" style={{ minWidth: '200px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '0 12px' }}>
                 <select 
                   value={selectedCategory} 
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  style={{ width: '100%', height: '100%', minHeight: '44px', border: 'none', background: 'transparent', outline: 'none', cursor: 'pointer', color: '#1a1a2e', fontWeight: 500 }}
+                  style={{ width: '100%', height: '100%', minHeight: '42px', border: 'none', background: 'transparent', outline: 'none', cursor: 'pointer', color: '#334155', fontWeight: 500, fontSize: '14px' }}
                 >
                   {Array.from(allCategories).map(cat => (
                     <option key={cat} value={cat}>{cat === 'All' ? 'Tất cả danh mục' : cat}</option>
                   ))}
                 </select>
+              </div>
             </div>
-          </div>
+            
+            {selectedProducts.length > 0 && (
+              <button onClick={handleBatchDelete} style={{ padding: '0 16px', height: '42px', borderRadius: '10px', backgroundColor: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background='#fee2e2'} onMouseOut={e => e.currentTarget.style.background='#fef2f2'}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                Xoá ({selectedProducts.length})
+              </button>
+            )}
           </div>
         </header>
 
@@ -546,7 +595,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                       </tr>
                     ) : (
                       filteredProducts.map(product => (
-                        <tr key={product.id} onClick={() => onPreviewProduct(product)} style={{ cursor: 'pointer', backgroundColor: selectedProducts.includes(product.id) ? 'rgba(212, 175, 55, 0.05)' : 'transparent' }}>
+                        <tr key={product.id} onClick={() => onPreviewProduct(product)} className={syncedProductIds.includes(product.id) ? 'highlight-row' : ''} style={{ cursor: 'pointer', backgroundColor: selectedProducts.includes(product.id) ? 'rgba(212, 175, 55, 0.05)' : 'transparent' }}>
                           <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                             <input 
                               type="checkbox" 
@@ -638,6 +687,15 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
             </>
           )}
         </div>
+        {showSyncSuccessModal && (
+          <div className="custom-modal-overlay">
+            <div className="custom-modal-content">
+              <h3>{syncSuccessMessage.title}</h3>
+              <p>{syncSuccessMessage.body}</p>
+              <button className="custom-modal-btn" onClick={() => setShowSyncSuccessModal(false)}>Đóng</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

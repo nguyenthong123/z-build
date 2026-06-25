@@ -10,11 +10,12 @@ const AdminAIAssistant = () => {
   const fileInputRef = useRef(null);
 
   const [selectedImages, setSelectedImages] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
 
   const displayMessages = React.useMemo(() => messages.length === 0 ? [
     { 
       id: 1, 
-      text: "Xin chào sếp! Tôi là trợ lý AI quản trị toàn diện. Tôi có thể:\n\n📸 **Tạo sản phẩm nhanh** — gửi ảnh + mô tả, tôi tự động tạo SP hoàn chỉnh\n🎬 **Tạo SP từ YouTube** — gửi link, tôi phân tích và tạo sản phẩm luôn\n💰 **Quản lý giá & tồn kho** — sửa giá, cập nhật stock\n📦 **Xử lý đơn hàng** — xác nhận, huỷ, đổi trạng thái\n🎫 **Quản lý mã giảm giá** — tạo mới, vô hiệu hoá\n👤 **Tra cứu khách hàng** — lịch sử mua, tổng chi tiêu\n📥 **Xuất Excel** — tải toàn bộ sản phẩm ra file .xlsx\n🔄 **Đồng bộ giá từ Sheet** — gửi link Google Sheet, tự động cập nhật giá\n🗑️ **Xoá sản phẩm** — dọn dẹp catalogue\n📊 **Thống kê & báo cáo** — doanh thu, đơn hàng, tồn kho\n\nSếp cần em làm gì ạ?", 
+      text: "Xin chào sếp! Tôi là trợ lý AI quản trị toàn diện. Tôi có thể:\n\n📸 **Tạo sản phẩm nhanh** — gửi ảnh + mô tả, tôi tự động tạo SP hoàn chỉnh\n🎬 **Tạo SP từ YouTube** — gửi link, tôi phân tích và tạo sản phẩm luôn\n💰 **Quản lý giá & tồn kho** — sửa giá, cập nhật stock\n📦 **Xử lý đơn hàng** — xác nhận, huỷ, đổi trạng thái\n👤 **Tra cứu khách hàng** — lịch sử mua, tổng chi tiêu\n📥 **Xuất Excel** — tải toàn bộ sản phẩm ra file .xlsx\n🔄 **Đồng bộ giá từ Sheet** — gửi link Google Sheet, tự động cập nhật giá\n🗑️ **Xoá sản phẩm** — dọn dẹp catalogue\n📊 **Thống kê & báo cáo** — doanh thu, đơn hàng, tồn kho\n\nSếp cần em làm gì ạ?", 
       isBot: true, 
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
     }
@@ -29,15 +30,33 @@ const AdminAIAssistant = () => {
   }, [displayMessages, isTyping]);
 
   useEffect(() => {
-    const savedPrompt = sessionStorage.getItem('ai-prompt');
-    if (savedPrompt) {
-      sessionStorage.removeItem('ai-prompt');
-      setTimeout(() => {
-        handleSend(savedPrompt);
-      }, 500);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const handleCheckPrompt = () => {
+      const savedPrompt = sessionStorage.getItem('ai-prompt');
+      if (savedPrompt) {
+        sessionStorage.removeItem('ai-prompt');
+        setIsOpen(true);
+        setTimeout(() => {
+          handleSend(savedPrompt);
+        }, 300);
+      }
+    };
+
+    const handleToggleChat = () => {
+      setIsOpen(prev => !prev);
+    };
+
+    // Check on mount
+    handleCheckPrompt();
+
+    // Listen to custom events
+    window.addEventListener('trigger-admin-ai-prompt', handleCheckPrompt);
+    window.addEventListener('toggle-admin-ai-chat', handleToggleChat);
+    
+    return () => {
+      window.removeEventListener('trigger-admin-ai-prompt', handleCheckPrompt);
+      window.removeEventListener('toggle-admin-ai-chat', handleToggleChat);
+    };
+  }, [handleSend]);
 
   const textareaRef = useRef(null);
 
@@ -78,12 +97,35 @@ const AdminAIAssistant = () => {
   };
 
   return (
-    <div className="admin-ai-assistant-page">
-      
-      <div className="admin-ai-content">
+    <>
+      {/* Floating Toggle Button */}
+      <button 
+        className={`admin-ai-toggle-btn ${isOpen ? 'open' : ''}`} 
+        onClick={() => setIsOpen(!isOpen)}
+        title={isOpen ? "Đóng Trợ lý AI" : "Mở Trợ lý AI Quản Trị"}
+      >
+        {isOpen ? (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        ) : (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#eab308" strokeWidth="2.5"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+        )}
+      </button>
+
+      {/* Floating Chat Panel */}
+      <div 
+        className="admin-ai-floating-panel"
+        style={{
+          display: isOpen ? 'flex' : 'none'
+        }}
+      >
         <header className="admin-ai-header">
-          <h1>Trợ lý AI Quản Trị</h1>
-          <p>Trò chuyện với AI để thực hiện nhanh các tác vụ quản trị, đặc biệt là tạo hàng loạt sản phẩm.</p>
+          <h3>
+            <span style={{ color: '#eab308', display: 'flex', alignItems: 'center' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+            </span>
+            Trợ lý AI Quản Trị
+          </h3>
+          <p>Hỗ trợ tạo sản phẩm, viết bài mô tả SEO nhanh.</p>
         </header>
 
         <div className="admin-ai-chat-container">
@@ -190,7 +232,7 @@ const AdminAIAssistant = () => {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

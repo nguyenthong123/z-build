@@ -124,7 +124,6 @@ export default function LayoutWrapper({ children }) {
           user={user}
           onLoginRequired={() => handleLoginRequired(pathname)}
           onAddToCart={handleAddToCart} 
-          onMaximize={() => { setIsChatBotOpen(false); router.push('/advisor'); }}
           advisorState={storefrontAdvisorState}
         />
       )}

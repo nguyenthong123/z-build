@@ -1,7 +1,35 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import './Footer.css';
 
 const Footer = () => {
+  const [footerInfo, setFooterInfo] = useState({
+    tagline: 'Giải pháp vật liệu xây dựng & công nghệ quản lý bán hàng dành cho nhà thầu, đại lý chuyên nghiệp.',
+    copyright: '2026 ZBUILD Store. Bảo lưu mọi quyền.',
+    phone: '',
+    email: '',
+    address: ''
+  });
+
+  useEffect(() => {
+    const fetchFooter = async () => {
+      try {
+        const docRef = doc(db, 'storeSettings', 'main');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && docSnap.data().footerInfo) {
+          setFooterInfo(prev => ({
+            ...prev,
+            ...docSnap.data().footerInfo
+          }));
+        }
+      } catch (err) {
+        console.error("Lỗi tải cấu hình chân trang:", err);
+      }
+    };
+    fetchFooter();
+  }, []);
+
   return (
     <footer className="footer">
       <div className="container footer-content">
@@ -14,7 +42,14 @@ const Footer = () => {
             </div>
             <span className="logo-text">ZBUILD</span>
           </div>
-          <p>Giải pháp vật liệu xây dựng & công nghệ quản lý bán hàng dành cho nhà thầu, đại lý chuyên nghiệp.</p>
+          <p>{footerInfo.tagline}</p>
+          {(footerInfo.phone || footerInfo.email || footerInfo.address) && (
+            <div className="footer-contact-info" style={{ marginTop: '15px', fontSize: '14px', color: '#a0aec0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {footerInfo.phone && <div>📞 Hotline: {footerInfo.phone}</div>}
+              {footerInfo.email && <div>✉️ Email: {footerInfo.email}</div>}
+              {footerInfo.address && <div>📍 Địa chỉ: {footerInfo.address}</div>}
+            </div>
+          )}
           <div className="social-links">
             {/* Social icons */}
           </div>
@@ -50,7 +85,7 @@ const Footer = () => {
         </div>
       </div>
       <div className="footer-bottom container">
-        <p>&copy; 2026 ZBUILD Store. Bảo lưu mọi quyền.</p>
+        <p>&copy; {footerInfo.copyright}</p>
         <div className="footer-policy">
           <a href="/chinh-sach-bao-mat">Chính sách bảo mật</a>
           <a href="/dieu-khoan-su-dung">Điều khoản sử dụng</a>

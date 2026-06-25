@@ -40,6 +40,13 @@ const AdminSettings = ({ onBack }) => {
     accountNumber: '',
     accountName: ''
   });
+  const [footerInfo, setFooterInfo] = useState({
+    tagline: '',
+    phone: '',
+    email: '',
+    address: '',
+    copyright: ''
+  });
   const [openClawConfig, setOpenClawConfig] = useState({
     apiUrl: '',
     botApiKey: ''
@@ -117,6 +124,18 @@ const AdminSettings = ({ onBack }) => {
           setShippingSettings(docSnap.data().shippingSettings);
         }
 
+        if (docSnap.exists() && docSnap.data().footerInfo) {
+          setFooterInfo(docSnap.data().footerInfo);
+        } else {
+          setFooterInfo({
+            tagline: 'Giải pháp vật liệu xây dựng & công nghệ quản lý bán hàng dành cho nhà thầu, đại lý chuyên nghiệp.',
+            phone: '0905 123 456',
+            email: 'contact@zbuild.click',
+            address: '123 Đường ABC, Quận XYZ, TP. HCM',
+            copyright: '2026 ZBUILD Store. Bảo lưu mọi quyền.'
+          });
+        }
+
         const adminDocRef = doc(db, 'settings', 'admins');
         const adminSnap = await getDoc(adminDocRef);
         if (adminSnap.exists() && adminSnap.data().emails) {
@@ -142,7 +161,7 @@ const AdminSettings = ({ onBack }) => {
     setIsSaving(true);
     try {
       const docRef = doc(db, 'storeSettings', 'main');
-      await setDoc(docRef, { bankInfo, openClawConfig, googleSheetUrl, shippingSettings }, { merge: true });
+      await setDoc(docRef, { bankInfo, openClawConfig, googleSheetUrl, shippingSettings, footerInfo }, { merge: true });
 
       setToast({ message: 'Lưu cấu hình thành công!', type: 'success' });
     } catch (err) {
@@ -507,7 +526,63 @@ const AdminSettings = ({ onBack }) => {
                 </div>
               </div>
             </div>
-            
+            <div className="settings-panel" style={{ marginTop: '24px' }}>
+              <div className="settings-section">
+                <div className="settings-section-header">
+                  <h3>📝 Cấu hình Chân trang (Footer)</h3>
+                  <p>Thiết lập các thông tin liên hệ và bản quyền hiển thị dưới chân trang web.</p>
+                </div>
+                <div className="settings-form-grid">
+                  <div className="setting-field" style={{ gridColumn: '1 / -1' }}>
+                    <label>Tagline / Mô tả ngắn</label>
+                    <textarea 
+                      value={footerInfo.tagline} 
+                      onChange={(e) => setFooterInfo({ ...footerInfo, tagline: e.target.value })} 
+                      placeholder="Nhập mô tả ngắn dưới logo..."
+                      rows={2}
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e0e0e0', fontSize: '15px', outline: 'none', resize: 'vertical' }}
+                    />
+                  </div>
+                  <div className="setting-field">
+                    <label>Số điện thoại / Hotline</label>
+                    <input 
+                      type="text" 
+                      value={footerInfo.phone} 
+                      onChange={(e) => setFooterInfo({ ...footerInfo, phone: e.target.value })} 
+                      placeholder="Nhập hotline..."
+                    />
+                  </div>
+                  <div className="setting-field">
+                    <label>Email liên hệ</label>
+                    <input 
+                      type="email" 
+                      value={footerInfo.email} 
+                      onChange={(e) => setFooterInfo({ ...footerInfo, email: e.target.value })} 
+                      placeholder="Nhập email..."
+                    />
+                  </div>
+                  <div className="setting-field" style={{ gridColumn: '1 / -1' }}>
+                    <label>Địa chỉ</label>
+                    <input 
+                      type="text" 
+                      value={footerInfo.address} 
+                      onChange={(e) => setFooterInfo({ ...footerInfo, address: e.target.value })} 
+                      placeholder="Nhập địa chỉ văn phòng..."
+                    />
+                  </div>
+                  <div className="setting-field" style={{ gridColumn: '1 / -1' }}>
+                    <label>Thông tin bản quyền (Copyright)</label>
+                    <input 
+                      type="text" 
+                      value={footerInfo.copyright} 
+                      onChange={(e) => setFooterInfo({ ...footerInfo, copyright: e.target.value })} 
+                      placeholder="VD: 2026 ZBUILD Store. Bảo lưu mọi quyền."
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="settings-panel" style={{ marginTop: '24px' }}>
               <div className="settings-section">
                 <div className="settings-section-header">

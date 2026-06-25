@@ -1,5 +1,13 @@
 'use client';
-import AdminAIAssistant from '../../../components/AdminAIAssistant';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
 export default function Page() {
-  return <AdminAIAssistant />;
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace('/admin/products');
+  }, [router]);
+
+  return null;
 }

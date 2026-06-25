@@ -1,43 +1,87 @@
-.admin-ai-assistant-page {
+/* Floating Toggle Button */
+.admin-ai-toggle-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #1a1a2e;
+  border: 2px solid #eab308;
+  color: white;
   display: flex;
-  min-height: 100vh;
-  background-color: #f3f4f6;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.admin-ai-content {
-  flex: 1;
+.admin-ai-toggle-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 8px 24px rgba(234, 179, 8, 0.3);
+}
+
+.admin-ai-toggle-btn.open {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+/* Floating Chat Panel */
+.admin-ai-floating-panel {
+  position: fixed;
+  bottom: 96px;
+  right: 24px;
+  width: 400px;
+  height: 600px;
+  max-height: 80vh;
+  max-width: calc(100vw - 48px);
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  border: 1px solid #cbd5e1;
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  padding: 24px;
   overflow: hidden;
-  box-sizing: border-box;
+  z-index: 9998;
+  animation: admin-chat-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes admin-chat-pop {
+  0% { transform: scale(0.9) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
 }
 
 .admin-ai-header {
-  margin-bottom: 20px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  margin: 0;
+  background: #f8fafc;
 }
 
-.admin-ai-header h1 {
-  font-size: 24px;
-  color: #111827;
-  margin: 0 0 8px 0;
+.admin-ai-header h3 {
+  margin: 0;
+  font-size: 15px;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
 }
 
 .admin-ai-header p {
-  color: #6b7280;
-  margin: 0;
-  font-size: 15px;
+  margin: 4px 0 0 0;
+  font-size: 11px;
+  color: #64748b;
 }
 
 .admin-ai-chat-container {
   flex: 1;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: white;
 }
 
 .admin-ai-messages {
