@@ -165,7 +165,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
   };
 
   const totalWeight = cartItems.reduce((acc, item) => {
-    const itemWeight = parseFloat(item.weight) || 1;
+    const itemWeight = parseFloat(item.weight) || 0;
     return acc + (itemWeight * item.quantity);
   }, 0);
 

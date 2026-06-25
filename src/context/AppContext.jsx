@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
 import { useStorefrontAI } from '../hooks/useStorefrontAI';
+import { db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
+
 
 const AppContext = createContext(null);
 
@@ -75,7 +78,7 @@ export const AppProvider = ({ children }) => {
             const quantity = item.quantity;
             const existingItem = next.find(i => i.id === product.id);
             if (existingItem) {
-              next = next.map(i => i.id === product.id ? { ...i, quantity: i.quantity + quantity } : i);
+              next = next.map(i => i.id === product.id ? { ...i, quantity: i.quantity + quantity, weight: i.weight || parseFloat(product.weight) || 0 } : i);
             } else {
               next.push({
                 id: product.id,
@@ -83,7 +86,7 @@ export const AppProvider = ({ children }) => {
                 price: product.discountPrice || product.basePrice || product.price,
                 quantity: quantity,
                 image: product.image || product.img,
-                weight: product.weight || 0,
+                weight: parseFloat(product.weight) || 0,
                 variant: 'Default'
               });
             }
@@ -96,6 +99,41 @@ export const AppProvider = ({ children }) => {
     window.addEventListener('AI_ADD_TO_CART_BATCH', handleAIBatchAdd);
     return () => window.removeEventListener('AI_ADD_TO_CART_BATCH', handleAIBatchAdd);
   }, [addToast]);
+
+  useEffect(() => {
+    const healCartItems = async () => {
+      let needsHeal = false;
+      const healedItems = await Promise.all(cartItems.map(async (item) => {
+        if (item.weight === undefined || item.weight === null) {
+          try {
+            const docRef = doc(db, 'products', item.id);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              const weightVal = parseFloat(data.weight) || 0;
+              needsHeal = true;
+              return { ...item, weight: weightVal };
+            }
+          } catch (err) {
+            console.error("Error healing cart item weight:", err);
+          }
+        }
+        return item;
+      }));
+      
+      if (needsHeal) {
+        setCartItems(healedItems);
+      }
+    };
+
+    if (cartItems.length > 0) {
+      const hasMissingWeight = cartItems.some(item => item.weight === undefined || item.weight === null);
+      if (hasMissingWeight) {
+        healCartItems();
+      }
+    }
+  }, [cartItems]);
+
 
   const updateQuantity = (id, delta, isAbsolute = false) => {
     setCartItems(prev => prev.map(item => {
@@ -120,7 +158,7 @@ export const AppProvider = ({ children }) => {
       const existingItem = prev.find(item => item.id === product.id);
       if (existingItem) {
         return prev.map(item => 
-          item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
+          item.id === product.id ? { ...item, quantity: item.quantity + quantity, weight: item.weight || parseFloat(product.weight) || 0 } : item
         );
       }
       return [...prev, {
@@ -129,12 +167,13 @@ export const AppProvider = ({ children }) => {
         price: product.discountPrice || product.basePrice || product.price,
         quantity: quantity,
         image: product.image || product.img,
-        weight: product.weight || 0,
+        weight: parseFloat(product.weight) || 0,
         variant: 'Default'
       }];
     });
     addToast(`Đã thêm ${product.title || product.name} vào giỏ hàng`, 'success');
   };
+
 
   const handleOrderComplete = (data) => {
     setOrderData(data);
