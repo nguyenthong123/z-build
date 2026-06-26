@@ -18,6 +18,7 @@ export const AppProvider = ({ children }) => {
   const { addToast } = useToast();
   const userId = user?.uid || 'guest';
   const cartKey = `zbuild_cart_${userId}`;
+  const compareKey = `zbuild_compare_${userId}`;
   
   const storefrontAdvisorState = useStorefrontAI(user);
 
@@ -39,7 +40,7 @@ export const AppProvider = ({ children }) => {
   const [compareCount, setCompareCount] = useState(() => {
     if (typeof window === 'undefined') return 0;
     try {
-      const saved = localStorage.getItem('compareList');
+      const saved = localStorage.getItem(compareKey);
       return saved ? JSON.parse(saved).length : 0;
     } catch { return 0; }
   });
@@ -60,23 +61,27 @@ export const AppProvider = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cartItems, cartKey]);
 
+  // Sync compare count, reload on user change
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const handleCompareUpdate = () => {
+    const loadCompare = () => {
       try {
-        const saved = localStorage.getItem('compareList');
+        const saved = localStorage.getItem(compareKey);
         setCompareCount(saved ? JSON.parse(saved).length : 0);
       } catch { setCompareCount(0); }
     };
-    window.addEventListener('compareListUpdated', handleCompareUpdate);
+    loadCompare();
+    const handle = () => loadCompare();
+    window.addEventListener('compareListUpdated', handle);
     window.addEventListener('storage', (e) => {
-      if (e.key === 'compareList') handleCompareUpdate();
+      if (e.key === compareKey) handle();
     });
     return () => {
-      window.removeEventListener('compareListUpdated', handleCompareUpdate);
-      window.removeEventListener('storage', handleCompareUpdate);
+      window.removeEventListener('compareListUpdated', handle);
+      window.removeEventListener('storage', handle);
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [compareKey]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

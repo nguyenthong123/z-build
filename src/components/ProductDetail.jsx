@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import './ProductDetail.css';
 import ProductReview from './ProductReview';
 import SEOHead from './SEOHead';
@@ -594,10 +594,12 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
                 onClick={() => {
                   if (!product?.id) return;
                   try {
-                    const current = JSON.parse(localStorage.getItem('compareList') || '[]');
+                    const userId = auth?.currentUser?.uid || 'guest';
+                    const compareKey = `zbuild_compare_${userId}`;
+                    const current = JSON.parse(localStorage.getItem(compareKey) || '[]');
                     if (!current.includes(product.id)) {
                       const updated = [...current, product.id].slice(0, 3);
-                      localStorage.setItem('compareList', JSON.stringify(updated));
+                      localStorage.setItem(compareKey, JSON.stringify(updated));
                       window.dispatchEvent(new Event('compareListUpdated'));
                     }
                     navigate('/compare');

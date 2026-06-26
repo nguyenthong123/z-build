@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import { collection, getDocs, query, where, orderBy, limit, doc, getDoc } from 'firebase/firestore';
 import './ProductCompare.css';
 
 const MAX_COMPARE = 3;
-const STORAGE_KEY = 'compareList';
+const getCompareKey = () => {
+  const uid = auth?.currentUser?.uid || 'guest';
+  return `zbuild_compare_${uid}`;
+};
 
 // ============================================================
 // ProductCompare — Compare up to 3 products side by side
@@ -21,7 +24,7 @@ const ProductCompare = () => {
     }
     // Priority 2: load from localStorage
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(getCompareKey());
       return saved ? JSON.parse(saved).slice(0, MAX_COMPARE) : [];
     } catch {
       return [];
@@ -41,7 +44,7 @@ const ProductCompare = () => {
 
   // --- Persist compare list to localStorage ---
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(compareIds));
+    localStorage.setItem(getCompareKey(), JSON.stringify(compareIds));
   }, [compareIds]);
 
   // --- Load full product data whenever compareIds change ---
@@ -157,7 +160,7 @@ const ProductCompare = () => {
     if (compareIds.includes(product.id)) return;
     setCompareIds(prev => {
       const updated = [...prev, product.id];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      localStorage.setItem(getCompareKey(), JSON.stringify(updated));
       window.dispatchEvent(new Event('compareListUpdated'));
       return updated;
     });
@@ -170,7 +173,7 @@ const ProductCompare = () => {
   const removeProduct = (productId) => {
     setCompareIds(prev => {
       const updated = prev.filter(id => id !== productId);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      localStorage.setItem(getCompareKey(), JSON.stringify(updated));
       window.dispatchEvent(new Event('compareListUpdated'));
       return updated;
     });
@@ -180,7 +183,7 @@ const ProductCompare = () => {
   const clearAll = () => {
     setCompareIds([]);
     setProducts([]);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+    localStorage.setItem(getCompareKey(), JSON.stringify([]));
     window.dispatchEvent(new Event('compareListUpdated'));
   };
 

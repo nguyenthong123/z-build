@@ -150,7 +150,7 @@ function App() {
 
   const [compareCount, setCompareCount] = useState(() => {
     try {
-      const saved = localStorage.getItem('compareList');
+      const saved = localStorage.getItem(compareKey);
       return saved ? JSON.parse(saved).length : 0;
     } catch { return 0; }
   });
@@ -163,13 +163,13 @@ function App() {
   useEffect(() => {
     const handleCompareUpdate = () => {
       try {
-        const saved = localStorage.getItem('compareList');
+        const saved = localStorage.getItem(compareKey);
         setCompareCount(saved ? JSON.parse(saved).length : 0);
       } catch { setCompareCount(0); }
     };
     window.addEventListener('compareListUpdated', handleCompareUpdate);
     window.addEventListener('storage', (e) => {
-      if (e.key === 'compareList') handleCompareUpdate();
+      if (e.key === compareKey) handleCompareUpdate();
     });
     return () => {
       window.removeEventListener('compareListUpdated', handleCompareUpdate);
