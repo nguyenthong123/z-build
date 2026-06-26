@@ -1,43 +1,43 @@
 import React from 'react';
 
 /**
- * AdminHeader — unified sticky header for all admin pages.
+ * AdminHeader — unified card header for all admin pages.
+ * Renders as a white card header that connects seamlessly to content below.
  * Props:
  *   title       - page title (string)
  *   actions     - right-side buttons (ReactNode)
  *   extra       - optional collapsible panel below title row (ReactNode)
  *   toolbar     - optional bottom toolbar (search, filter, etc.)
- *   sticky      - whether to stick on scroll (default true)
  */
-export default function AdminHeader({ title, actions, extra, toolbar, sticky = true }) {
+export default function AdminHeader({ title, actions, extra, toolbar }) {
   return (
     <header 
       style={{ 
-        position: sticky ? 'sticky' : 'relative', 
-        top: 0, 
-        zIndex: 40, 
-        background: '#f1f5f9', 
-        paddingTop: '16px', 
-        paddingBottom: '12px', 
-        marginBottom: 0,
-        minHeight: extra ? 'auto' : '56px'
+        position: 'sticky',
+        top: '32px',
+        zIndex: 40,
+        background: '#fff',
+        borderRadius: '14px 14px 0 0',
+        padding: '24px 28px 20px 28px',
+        borderBottom: '1px solid #e2e8f0'
       }}
     >
-      {/* Row 1: Title + Actions — fixed height, no-wrap */}
+      {/* Row 1: Title + Actions */}
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
-        gap: '12px', 
-        marginBottom: extra || toolbar ? '10px' : '0',
-        minHeight: '36px'
+        gap: '16px', 
+        marginBottom: extra || toolbar ? '14px' : '0',
+        minHeight: '40px'
       }}>
         <div style={{ flex: '0 0 auto' }}>
           <h1 style={{ 
             margin: 0, 
-            fontSize: '1.25rem', 
+            fontSize: '1.35rem', 
             fontWeight: 700, 
             color: '#0F172A', 
-            whiteSpace: 'nowrap' 
+            whiteSpace: 'nowrap',
+            letterSpacing: '-0.01em'
           }}>
             {title}
           </h1>
@@ -56,16 +56,16 @@ export default function AdminHeader({ title, actions, extra, toolbar, sticky = t
         )}
       </div>
 
-      {/* Row 1b: Extra panel (e.g. sync panel) — collapsible */}
+      {/* Row 1b: Extra panel (sync) */}
       {extra}
 
-      {/* Row 2: Toolbar — fixed height */}
+      {/* Row 2: Toolbar */}
       {toolbar && (
         <div style={{ 
           display: 'flex', 
           gap: '8px', 
           alignItems: 'center', 
-          minHeight: '38px' 
+          minHeight: '40px' 
         }}>
           {toolbar}
         </div>

@@ -31,7 +31,9 @@ export default function AdminLayout() {
       <div className="admin-container">
         <AdminSidebar />
         <main className="admin-main">
-          <Outlet />
+          <div className="admin-page-card">
+            <Outlet />
+          </div>
         </main>
         <AdminAIAssistant />
       </div>
