@@ -53,7 +53,7 @@ const OrderConfirmation = ({ onContinueShopping, orderDetails }) => {
                 {cartItems.map(item => (
                   <div key={item.id} className="confirm-item">
                     <div className="item-img">
-                      <img src={item.image} alt={item.name} />
+                      <img src={item.image || 'https://placehold.co/80'} alt={item.name} />
                       <span className="qty-badge">{item.quantity}</span>
                     </div>
                     <div className="item-info">
