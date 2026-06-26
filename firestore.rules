@@ -98,16 +98,14 @@ service cloud.firestore {
       allow read, write: if (request.auth != null && request.auth.uid == userId) || isAdmin();
     }
 
-    // Wishlists: Authenticated users can CRUD their own
+    // Wishlists: Authenticated users can CRUD their own (doc ID = user UID)
     match /wishlists/{docId} {
-      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null;
+      allow read, write, create: if request.auth != null && request.auth.uid == docId;
     }
     
-    // Cart items: Authenticated users can CRUD their own
+    // Cart items: Authenticated users can CRUD their own (doc ID = user UID)
     match /cart_items/{docId} {
-      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null;
+      allow read, write, create: if request.auth != null && request.auth.uid == docId;
     }
     
     // Default rule: block everything else
