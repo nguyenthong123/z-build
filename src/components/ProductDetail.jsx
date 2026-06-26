@@ -691,6 +691,21 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
         </div>
       </div>
 
+      {/* Mobile Sticky CTA Bar */}
+      <div className="mobile-cta-sticky">
+        <div className="sticky-cta-row">
+          <div className="sticky-qty">
+            <button onClick={() => quantity > 1 && setQuantity(quantity - 1)} disabled={quantity <= 1}>−</button>
+            <span>{quantity}</span>
+            <button onClick={() => setQuantity(quantity + 1)}>+</button>
+          </div>
+          <button className="sticky-add-cart" onClick={() => onAddToCart(product, quantity)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            Thêm giỏ ({displayPrice.toLocaleString('vi-VN')}₫)
+          </button>
+        </div>
+      </div>
+
     </div>
   );
 };
