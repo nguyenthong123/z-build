@@ -16,6 +16,8 @@ export const AppProvider = ({ children }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { addToast } = useToast();
+  const userId = user?.uid || 'guest';
+  const cartKey = `zbuild_cart_${userId}`;
   
   const storefrontAdvisorState = useStorefrontAI(user);
 
@@ -29,7 +31,7 @@ export const AppProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState(() => {
     if (typeof window === 'undefined') return [];
     try {
-      const saved = localStorage.getItem('zbuild_cart');
+      const saved = localStorage.getItem(cartKey);
       return saved ? JSON.parse(saved) : [];
     } catch { return []; }
   });
@@ -42,11 +44,21 @@ export const AppProvider = ({ children }) => {
     } catch { return 0; }
   });
 
+  // Reload cart when user changes (login/logout/switch account)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = localStorage.getItem(cartKey);
+    setCartItems(saved ? JSON.parse(saved) : []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  // Save cart to localStorage (scoped to current user)
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('zbuild_cart', JSON.stringify(cartItems));
+      localStorage.setItem(cartKey, JSON.stringify(cartItems));
     }
-  }, [cartItems]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartItems, cartKey]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
