@@ -12,7 +12,7 @@ const ClassificationSection = ({ status, category, onChange, existingCategories 
       </div>
       <div className="form-group">
         <label>Trạng thái <span style={{color:'#f59e0b',fontSize:'11px'}}>← AI: status (Draft/Active)</span></label>
-        <select name="status" value={status} onChange={onChange}>
+        <select name="status" value={status || 'Active'} onChange={onChange}>
           <option value="Active">Hoạt động</option>
           <option value="Phân phối">Phân phối</option>
           <option value="Draft">Bản nháp</option>
@@ -27,7 +27,7 @@ const ClassificationSection = ({ status, category, onChange, existingCategories 
         <input 
           type="text" 
           name="category" 
-          value={category} 
+          value={category || ''} 
           onChange={onChange} 
           list="category-list"
           placeholder="Chọn hoặc nhập danh mục mới..."

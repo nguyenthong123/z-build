@@ -87,11 +87,11 @@ const MediaUploadSection = ({
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
           <div className="form-group">
             <label>Link Video YouTube 1</label>
-            <input type="text" name="videoUrl" value={videoUrl} onChange={onChange} placeholder="https://youtube.com/watch?v=..." />
+            <input type="text" name="videoUrl" value={videoUrl || ''} onChange={onChange} placeholder="https://youtube.com/watch?v=..." />
           </div>
           <div className="form-group">
             <label>Link Video YouTube 2</label>
-            <input type="text" name="extraVideoUrl" value={extraVideoUrl} onChange={onChange} placeholder="https://youtube.com/watch?v=..." />
+            <input type="text" name="extraVideoUrl" value={extraVideoUrl || ''} onChange={onChange} placeholder="https://youtube.com/watch?v=..." />
           </div>
         </div>
       </div>

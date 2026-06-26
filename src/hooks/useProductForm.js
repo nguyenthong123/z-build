@@ -47,21 +47,30 @@ export const useProductForm = (editData, onSave) => {
   useEffect(() => {
     if (editData && !isInitialized) {
       setProduct({
-        ...editData,
+        title: editData.title || '',
+        slug: editData.slug || '',
         shortDescription: editData.shortDescription || '',
+        description: editData.description || '',
+        status: editData.status || 'Active',
+        category: editData.category || '',
         basePrice: editData.basePrice || '',
         discountPrice: editData.discountPrice || '',
         stock: editData.stock || '',
+        trackInventory: editData.trackInventory !== undefined ? editData.trackInventory : true,
+        isTrending: editData.isTrending || false,
+        weight: editData.weight || '',
+        packaging: editData.packaging || '',
+        variants: editData.variants || [],
+        extraImages: editData.extraImages || [],
+        videoUrl: editData.videoUrl || '',
+        extraVideoUrl: editData.extraVideoUrl || '',
+        demoUrl: editData.demoUrl || '',
+        quoteUrl: editData.quoteUrl || '',
+        pdfUrl: editData.pdfUrl || '',
         pricingType: editData.pricingType || 'one-time',
         monthlyPrice: editData.monthlyPrice || '',
         yearlyPrice: editData.yearlyPrice || '',
-        pdfUrl: editData.pdfUrl || '',
-        isTrending: editData.isTrending || false,
-        extraImages: editData.extraImages || [],
-        variants: editData.variants || [],
         specs: editData.specs || '',
-        weight: editData.weight || '',
-        packaging: editData.packaging || '',
       });
       if (editData.image) setImagePreview(editData.image);
       if (editData.extraImages) {

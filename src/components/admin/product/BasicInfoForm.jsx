@@ -77,7 +77,7 @@ Yêu cầu:
           type="text" 
           name="title"
           placeholder="Ví dụ: Sơn Dulux màu trắng, Đèn LED Panel 60x60..." 
-          value={title}
+          value={title || ''}
           onChange={onChange}
         />
       </div>
@@ -100,7 +100,7 @@ Yêu cầu:
           <input 
             type="text" 
             name="slug"
-            value={slug}
+            value={slug || ''}
             onChange={onChange}
             style={{ background: '#f5f5f5', color: '#666' }}
           />
