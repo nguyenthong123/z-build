@@ -1,12 +1,12 @@
 .admin-container {
   display: flex;
   min-height: 100vh;
-  background-color: var(--bg-color, #f4f6f8);
+  background-color: #F1F5F9;
 }
 
 .admin-main {
   flex: 1;
-  padding: 24px;
+  padding: 32px;
   min-height: 100vh;
 }
 

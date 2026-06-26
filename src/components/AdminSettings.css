@@ -398,3 +398,33 @@
     padding: 12px;
   }
 }
+
+/* Modern settings polish */
+.settings-section {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.settings-section-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0F172A;
+  margin-bottom: 4px;
+}
+
+.settings-section-header p {
+  font-size: 0.8rem;
+  color: #64748B;
+  margin-bottom: 16px;
+}
+
+.setting-field input:focus,
+.setting-field select:focus,
+.setting-field textarea:focus {
+  border-color: #F5C400 !important;
+  box-shadow: 0 0 0 3px rgba(245, 196, 0, 0.1) !important;
+  outline: none;
+}

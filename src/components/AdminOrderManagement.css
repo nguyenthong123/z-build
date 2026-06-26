@@ -534,3 +534,119 @@
   font-variant-numeric: tabular-nums;
   color: #1E293B;
 }
+
+/* Modern order management */
+.aom-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.aom-stat-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 18px 20px;
+  transition: all 0.15s;
+}
+
+.aom-stat-card:hover {
+  border-color: #CBD5E1;
+}
+
+.aom-stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.aom-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.aom-stat-label {
+  font-size: 0.78rem;
+  color: #64748B;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+/* Status pills — modern background fill style */
+.aom-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: none !important;
+}
+
+/* Tab bar polish */
+.aom-tabs {
+  display: flex;
+  gap: 4px;
+  background: #F1F5F9;
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 20px;
+  width: fit-content;
+}
+
+.aom-tab {
+  padding: 8px 18px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.aom-tab.active {
+  background: #FFFFFF;
+  color: #0F172A;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+/* Table */
+.aom-table {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.aom-table th {
+  background: #F8FAFC;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: #64748B;
+  padding: 12px 16px;
+  border-bottom: 2px solid #E2E8F0;
+}
+
+.aom-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #F1F5F9;
+  font-size: 0.875rem;
+  color: #334155;
+}
+
+.aom-table tbody tr:hover {
+  background: #F8FAFC;
+}
+
+@media (max-width: 768px) {
+  .aom-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
