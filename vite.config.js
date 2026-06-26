@@ -17,6 +17,10 @@ export default defineConfig({
     'process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID': JSON.stringify(process.env.VITE_FIREBASE_MEASUREMENT_ID || ''),
     'process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY': JSON.stringify(process.env.VITE_FIREBASE_VAPID_KEY || 'REPLACE_ME'),
     'process.env.NEXT_PUBLIC_ADMIN_EMAILS': JSON.stringify(process.env.VITE_ADMIN_EMAILS || 'nbt1024@gmail.com,jarvis-test@z-build.com'),
+    'process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY': JSON.stringify(process.env.VITE_DEEPSEEK_API_KEY || ''),
+    'process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME': JSON.stringify(process.env.VITE_CLOUDINARY_CLOUD_NAME || ''),
+    'process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY': JSON.stringify(process.env.VITE_CLOUDINARY_API_KEY || ''),
+    'process.env.NEXT_PUBLIC_CLOUDINARY_API_SECRET': JSON.stringify(process.env.VITE_CLOUDINARY_API_SECRET || ''),
   },
   build: {
     rollupOptions: {
