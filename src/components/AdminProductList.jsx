@@ -399,48 +399,55 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
           const priceVal = Number(dunvexProd.priceSell) || 0;
           const priceBuyVal = Number(dunvexProd.priceImport) || 0;
           const stockVal = Number(dunvexProd.stock) || 0;
-          const category = normalizeCategory(dunvexProd.category);
-
-          const productData = {
-            dunvexId: dunvexId,
-            title: dunvexProd.name,
-            slug: slug,
-            category: category,
-            basePrice: priceVal,
-            discountPrice: priceVal,
-            price: priceVal,
-            priceBuy: priceBuyVal,
-            unit: dunvexProd.unit || '',
-            weight: dunvexProd.weight || '',
-            specs: dunvexProd.specification || '',
-            packaging: dunvexProd.packaging || '',
-            stock: stockVal,
-            articleNo: dunvexProd.articleNo || '',
-            trackInventory: true,
-            updatedAt: serverTimestamp()
-          };
 
           if (productRef) {
-            // Update existing
-            await updateDoc(productRef, productData);
+            // Update existing: CHỈ cập nhật giá và tồn kho, giữ nguyên nội dung đã chỉnh sửa
+            const updateData = {
+              dunvexId: dunvexId,
+              basePrice: priceVal,
+              discountPrice: priceVal,
+              price: priceVal,
+              priceBuy: priceBuyVal,
+              stock: stockVal,
+              trackInventory: true,
+              updatedAt: serverTimestamp()
+            };
+            await updateDoc(productRef, updateData);
             updatedCount++;
             newlySyncedIds.push(productRef.id);
           } else {
-            // Create new
-            const productsRef = collection(db, "products");
-            const newDoc = await addDoc(productsRef, {
-              ...productData,
+            // Create new: tạo mới với đầy đủ thông tin
+            const category = normalizeCategory(dunvexProd.category);
+            const newProductData = {
+              dunvexId: dunvexId,
+              title: dunvexProd.name,
+              slug: slug,
+              category: category,
+              basePrice: priceVal,
+              discountPrice: priceVal,
+              price: priceVal,
+              priceBuy: priceBuyVal,
+              unit: dunvexProd.unit || '',
+              weight: dunvexProd.weight || '',
+              specs: dunvexProd.specification || '',
+              packaging: dunvexProd.packaging || '',
+              stock: stockVal,
+              articleNo: dunvexProd.articleNo || '',
+              trackInventory: true,
               status: 'active',
               image: '',
               extraImages: [],
-              createdAt: serverTimestamp()
-            });
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
+            };
+            const productsRef = collection(db, "products");
+            const newDoc = await addDoc(productsRef, newProductData);
             createdCount++;
             newlySyncedIds.push(newDoc.id);
           }
         }
         
-        // 4. Clean up products that were deleted in Dunvex
+        // 4. Clean up: CHỈ xoá sản phẩm có dunvexId (từ Dunvex) mà đã bị xoá trên app
         const storefrontSnap = await getDocs(collection(db, "products"));
         const dunvexIdsInResponse = new Set(data.products.map(p => p.id));
         let deletedCount = 0;
@@ -449,15 +456,10 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
           const docId = docSnap.id;
           const docData = docSnap.data();
           
-          const isDunvexSourced = docData.dunvexId !== undefined || docData.createdBy === undefined;
-          
-          if (isDunvexSourced) {
-            const isStillActive = docData.dunvexId ? dunvexIdsInResponse.has(docData.dunvexId) : false;
-            
-            if (!isStillActive) {
-              await deleteDoc(doc(db, "products", docId));
-              deletedCount++;
-            }
+          // Chỉ xoá nếu sản phẩm CÓ dunvexId (xác nhận từ Dunvex) VÀ không còn trên app
+          if (docData.dunvexId && !dunvexIdsInResponse.has(docData.dunvexId)) {
+            await deleteDoc(doc(db, "products", docId));
+            deletedCount++;
           }
         }
         
