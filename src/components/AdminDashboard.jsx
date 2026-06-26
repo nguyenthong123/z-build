@@ -3,6 +3,8 @@ import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 import './AdminDashboard.css';
 
+import AdminHeader from './AdminHeader';
+
 const AdminDashboard = ({ onBack }) => {
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -238,22 +240,14 @@ const AdminDashboard = ({ onBack }) => {
   return (
     <div className="admin-product-page">
       <div className="admin-main-content">
-        <header className={`admin-content-header ${!isHeaderVisible ? 'header-hidden' : ''}`}>
-          <nav className="breadcrumb desktop-only">Quản trị / <span className="active">Dashboard</span></nav>
-          <div className="header-main-row">
-            <div className="title-group">
-              <h1>Bảng điều khiển</h1>
-              <p className="description">Tổng quan hoạt động kinh doanh của bạn.</p>
-            </div>
-            <div className="header-actions-group">
-              <div className="btn-group">
-                <button className="home-icon-btn desktop-only" onClick={onBack} title="Về trang chủ">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
+        <AdminHeader
+          title="Bảng điều khiển"
+          actions={
+            <button className="home-icon-btn desktop-only" onClick={onBack} title="Về trang chủ" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0 12px', height: '32px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </button>
+          }
+        />
 
         <div className="admin-content-body">
         {/* KPI Cards */}

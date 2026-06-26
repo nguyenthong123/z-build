@@ -3,6 +3,8 @@ import { collection, getDocs, getDoc, query, orderBy, doc, updateDoc, serverTime
 import { db } from '../firebase';
 import './AdminOrderManagement.css';
 
+import AdminHeader from './AdminHeader';
+
 const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -316,45 +318,38 @@ const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
     <div className="admin-product-page">
 
       <div className="admin-main-content">
-        <header className={`admin-content-header ${!isHeaderVisible ? 'header-hidden' : ''}`}>
-          <nav className="breadcrumb desktop-only">Quản trị / <span className="active">Đơn hàng</span></nav>
-
-          <div className="header-main-row">
-            <div className="title-group">
-              <h1>Quản lý đơn hàng</h1>
-              <p className="description">Theo dõi và xử lý tất cả đơn hàng của khách.</p>
-            </div>
-            <div className="header-actions-group">
-              <div className="search-box">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <AdminHeader
+          title="Quản lý đơn hàng"
+          actions={
+            <>
+              <div className="search-box" style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0 12px', height: '32px', display: 'flex', alignItems: 'center', gap: '8px', maxWidth: '220px' }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 <input
                   type="text"
-                  placeholder="Tìm mã đơn, khách hàng..."
+                  placeholder="Tìm đơn hàng..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
+                  style={{ fontSize: '12px', border: 'none', outline: 'none', background: 'transparent', flex: 1 }}
                 />
               </div>
-              <div className="btn-group">
-                <button className="home-icon-btn desktop-only" onClick={onBack} title="Về trang chủ">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                </button>
-                <button className="export-btn" onClick={exportToCSV}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                  <span className="desktop-only">Xuất CSV</span>
-                </button>
-                <button 
-                  className="btn-primary" 
-                  onClick={handleSyncBank}
-                  disabled={isSyncing}
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={isSyncing ? 'rotating' : ''}><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l-5.65 1.64"/></svg>
-                  {isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ Ngân hàng'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
+              <button className="home-icon-btn" onClick={onBack} title="Về trang chủ" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0 10px', height: '32px', display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '12px', whiteSpace: 'nowrap' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              </button>
+              <button className="export-btn" onClick={exportToCSV} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0 10px', height: '32px', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                Xuất CSV
+              </button>
+              <button 
+                onClick={handleSyncBank}
+                disabled={isSyncing}
+                style={{ background: '#1a1a2e', border: 'none', borderRadius: '8px', padding: '0 12px', height: '32px', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={isSyncing ? 'rotating' : ''}><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l-5.65 1.64"/></svg>
+                {isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ NH'}
+              </button>
+            </>
+          }
+        />
 
         {/* Stats Cards */}
         <div className="aom-stats">

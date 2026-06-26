@@ -1,3 +1,4 @@
+import AdminHeader from './AdminHeader';
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc, startAfter, limit, addDoc, getDoc, setDoc, where, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -564,16 +565,10 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
     <div className="admin-product-page">
       
       <div className="admin-main-content">
-                <header className={`admin-content-header ${!isHeaderVisible ? 'header-hidden' : ''}`} style={{ position: 'sticky', top: 0, zIndex: 40, background: '#f1f5f9', paddingTop: '16px', paddingBottom: '12px', marginBottom: 0 }}>
-          
-          {/* ROW 1: Title + Actions — fixed height, no-wrap */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px', height: '36px' }}>
-            <div style={{ flex: '0 0 auto' }}>
-              <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap' }}>Quản lý sản phẩm</h1>
-            </div>
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexShrink: 0 }}>
-              {/* Sync toggle — compact */}
+                <AdminHeader
+          title="Quản lý sản phẩm"
+          actions={
+            <>
               <button 
                 onClick={() => setShowSyncPanels(!showSyncPanels)}
                 title="Đồng bộ dữ liệu từ Dunvex"
@@ -591,7 +586,6 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                 </svg>
                 Đồng bộ
               </button>
-              
               <button className="ai-btn" onClick={() => {
                 let prompt = 'Hãy quét danh sách sản phẩm và tự động viết mô tả chi tiết, phân loại danh mục, thông số cho tất cả các sản phẩm đang ở trạng thái Draft';
                 if (selectedProducts.length > 0) {
@@ -604,74 +598,70 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#eab308" strokeWidth="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
                 Viết nội dung (AI)
               </button>
-              
               <button className="primary-add-btn" onClick={onAddProduct} style={{ backgroundColor: '#1a1a2e', borderRadius: '8px', padding: '0 14px', height: '32px', display: 'flex', alignItems: 'center', gap: '6px', color: '#fff', fontWeight: 600, border: 'none', cursor: 'pointer', fontSize: '12px', whiteSpace: 'nowrap' }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
                 Thêm SP
               </button>
-            </div>
-          </div>
-
-          {/* Dunvex Sync Panel — compact, collapsible via button above */}
-          {showSyncPanels && (
-          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '8px 14px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '12px', color: '#166534', fontWeight: 600, whiteSpace: 'nowrap', flex: 1 }}>
-              🔄 Đồng bộ tồn kho & giá từ Dunvex App
-            </span>
-            <button onClick={handleSyncFromDunvex} disabled={isSyncing} style={{ padding: '0 12px', height: '28px', borderRadius: '6px', border: 'none', backgroundColor: '#10b981', color: '#fff', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontWeight: 500, fontSize: '11px', whiteSpace: 'nowrap' }}>
-              <svg className={isSyncing ? "spin-animation" : ""} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-              {isSyncing ? "Đang đồng bộ..." : "Đồng bộ ngay"}
-            </button>
-          </div>
-          )}
-
-          {/* ROW 2: Toolbar — fixed height, delete always mounted */}
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', height: '38px' }}>
-            <div style={{ display: 'flex', gap: '8px', flex: 1, minWidth: 0 }}>
-              <div className="search-box" style={{ flex: 1, maxWidth: '340px', backgroundColor: '#fff', border: '1px solid #e2e8f0', margin: 0, padding: '0 12px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', height: '38px' }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                <input 
-                  type="text" 
-                  placeholder="Tìm kiếm sản phẩm..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{ fontSize: '13px', background: 'transparent', border: 'none', outline: 'none', flex: 1, minWidth: 0 }}
-                />
+            </>
+          }
+          extra={
+            showSyncPanels && (
+              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '8px 14px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '12px', color: '#166534', fontWeight: 600, whiteSpace: 'nowrap', flex: 1 }}>
+                  🔄 Đồng bộ tồn kho & giá từ Dunvex App
+                </span>
+                <button onClick={handleSyncFromDunvex} disabled={isSyncing} style={{ padding: '0 12px', height: '28px', borderRadius: '6px', border: 'none', backgroundColor: '#10b981', color: '#fff', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontWeight: 500, fontSize: '11px', whiteSpace: 'nowrap' }}>
+                  <svg className={isSyncing ? "spin-animation" : ""} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                  {isSyncing ? "Đang đồng bộ..." : "Đồng bộ ngay"}
+                </button>
               </div>
-
-              <div className="category-filter" style={{ width: '170px', flexShrink: 0, backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-                <select 
-                  value={selectedCategory} 
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  style={{ width: '100%', height: '38px', border: 'none', background: 'transparent', outline: 'none', cursor: 'pointer', color: '#334155', fontWeight: 500, fontSize: '13px', padding: '0 10px' }}
-                >
-                  {Array.from(allCategories).map(cat => (
-                    <option key={cat} value={cat}>{cat === 'All' ? 'Tất cả danh mục' : cat}</option>
-                  ))}
-                </select>
+            )
+          }
+          toolbar={
+            <>
+              <div style={{ display: 'flex', gap: '8px', flex: 1, minWidth: 0 }}>
+                <div className="search-box" style={{ flex: 1, maxWidth: '340px', backgroundColor: '#fff', border: '1px solid #e2e8f0', margin: 0, padding: '0 12px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', height: '38px' }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                  <input 
+                    type="text" 
+                    placeholder="Tìm kiếm sản phẩm..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{ fontSize: '13px', background: 'transparent', border: 'none', outline: 'none', flex: 1, minWidth: 0 }}
+                  />
+                </div>
+                <div className="category-filter" style={{ width: '170px', flexShrink: 0, backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                  <select 
+                    value={selectedCategory} 
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    style={{ width: '100%', height: '38px', border: 'none', background: 'transparent', outline: 'none', cursor: 'pointer', color: '#334155', fontWeight: 500, fontSize: '13px', padding: '0 10px' }}
+                  >
+                    {Array.from(allCategories).map(cat => (
+                      <option key={cat} value={cat}>{cat === 'All' ? 'Tất cả danh mục' : cat}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            </div>
-            
-            {/* Delete — always mounted, disabled when none selected */}
-            <button 
-              onClick={handleBatchDelete} 
-              disabled={selectedProducts.length === 0}
-              style={{ 
-                padding: '0 14px', height: '38px', borderRadius: '8px', 
-                backgroundColor: selectedProducts.length > 0 ? '#fef2f2' : '#f8fafc', 
-                color: selectedProducts.length > 0 ? '#ef4444' : '#cbd5e1', 
-                border: selectedProducts.length > 0 ? '1px solid #fecaca' : '1px solid #e2e8f0', 
-                display: 'flex', alignItems: 'center', gap: '5px', cursor: selectedProducts.length > 0 ? 'pointer' : 'not-allowed', 
-                fontWeight: 600, fontSize: '12px', whiteSpace: 'nowrap',
-                transition: 'all 0.2s',
-                flexShrink: 0
-              }}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-              Xoá{selectedProducts.length > 0 ? ` (${selectedProducts.length})` : ''}
-            </button>
-          </div>
-        </header>
+              <button 
+                onClick={handleBatchDelete} 
+                disabled={selectedProducts.length === 0}
+                style={{ 
+                  padding: '0 14px', height: '38px', borderRadius: '8px', 
+                  backgroundColor: selectedProducts.length > 0 ? '#fef2f2' : '#f8fafc', 
+                  color: selectedProducts.length > 0 ? '#ef4444' : '#cbd5e1', 
+                  border: selectedProducts.length > 0 ? '1px solid #fecaca' : '1px solid #e2e8f0', 
+                  display: 'flex', alignItems: 'center', gap: '5px', cursor: selectedProducts.length > 0 ? 'pointer' : 'not-allowed', 
+                  fontWeight: 600, fontSize: '12px', whiteSpace: 'nowrap',
+                  transition: 'all 0.2s',
+                  flexShrink: 0
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                Xoá{selectedProducts.length > 0 ? ` (${selectedProducts.length})` : ''}
+              </button>
+            </>
+          }
+        />
 
         <div className="admin-content-body">
           {loading ? (
