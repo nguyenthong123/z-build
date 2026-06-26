@@ -269,6 +269,12 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
     }));
   };
 
+  const rawDiscountPrice = Number(String(product.discountPrice || '').replace(/[^0-9.-]+/g,""));
+  const rawBasePrice = Number(String(product.basePrice || '').replace(/[^0-9.-]+/g,""));
+  const hasRealDiscount = product.discountPrice && rawDiscountPrice > 0 && rawDiscountPrice < rawBasePrice;
+  const displayPrice = hasRealDiscount ? rawDiscountPrice : rawBasePrice;
+  const discountPercent = hasRealDiscount ? Math.round((1 - rawDiscountPrice / rawBasePrice) * 100) : 0;
+
   const productSchema = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -451,25 +457,25 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
                 <div className="standard-pricing">
                   <div className="price-stack">
                     <span className="price-label">
-                      {product.status === 'Phân phối' ? 'Chính hãng:' : ''}
+                      {product.status === 'Phân phối' && !hasRealDiscount ? 'Chính hãng:' : ''}
                     </span>
                     <span className="current-price">
-                      {Number(String(product.discountPrice || product.basePrice).replace(/[^0-9.-]+/g,"")).toLocaleString('vi-VN')}₫
+                      {displayPrice.toLocaleString('vi-VN')}₫
                     </span>
                   </div>
-                  {product.discountPrice && (
+                  {hasRealDiscount && (
                     <div className="price-stack discounted">
                       <span className="price-label">
-                        {product.status === 'Phân phối' ? 'Giá tới nơi:' : ''}
+                        {product.status === 'Phân phối' ? 'Giá tới nơi:' : 'Giá gốc:'}
                       </span>
                       <span className="old-price">
-                        {Number(String(product.basePrice).replace(/[^0-9.-]+/g,"")).toLocaleString('vi-VN')}₫
+                        {rawBasePrice.toLocaleString('vi-VN')}₫
                       </span>
                     </div>
                   )}
-                  {product.discountPrice && !product.status?.includes('Phân phối') && (
+                  {hasRealDiscount && !product.status?.includes('Phân phối') && (
                     <span className="discount-badge">
-                      GIẢM {Math.round((1 - Number(String(product.discountPrice).replace(/[^0-9.-]+/g,"")) / Number(String(product.basePrice).replace(/[^0-9.-]+/g,""))) * 100)}%
+                      GIẢM {discountPercent}%
                     </span>
                   )}
                 </div>
