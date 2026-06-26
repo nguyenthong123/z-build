@@ -390,13 +390,34 @@
 
 .specs-badge {
   display: inline-block;
-  padding: 10px 20px;
-  background-color: var(--primary-yellow);
-  color: #000;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 1rem;
-  box-shadow: 0 4px 12px rgba(255, 184, 0, 0.2);
+  padding: 8px 16px;
+  background-color: var(--bg-white);
+  color: var(--text-main);
+  border: 1.5px solid var(--divider);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.specs-tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.specs-tag-item {
+  display: inline-block;
+  padding: 8px 14px;
+  background-color: var(--bg-white);
+  color: var(--text-main);
+  border: 1px solid var(--divider);
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  box-shadow: var(--shadow-sm);
 }
 
 /* Selector Styles */
