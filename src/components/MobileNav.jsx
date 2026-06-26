@@ -1,14 +1,12 @@
 import React from 'react';
 import './MobileNav.css';
 
-const MobileNav = ({ mode, activePage, onNavigate, user, isAdminUser, handleLoginRequired, setView, onToggleChatBot, detailProduct }) => {
+const MobileNav = ({ mode, activePage, onNavigate, user, isAdminUser, handleLoginRequired, setView, onToggleChatBot }) => {
   const isAdmin = mode === 'admin';
 
   const userTabs = [
     { id: 'home', label: 'Home', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>, action: () => setView('home') },
     { id: 'ai-advisor', label: 'Advisor', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21a9 9 0 1 0-9-9c0 1.48.35 2.89 1.01 4.1L3 21l4.9-1.01A8.96 8.96 0 0 0 12 21Z"/><circle cx="12" cy="12" r="3"/></svg>, action: () => onToggleChatBot() },
-    
-    // Always show same tabs for consistent navigation
     { id: 'cart', label: 'Cart', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>, action: () => setView('cart') },
     { id: 'wishlist', label: 'Wishlist', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>, action: () => setView('wishlist') },
 
