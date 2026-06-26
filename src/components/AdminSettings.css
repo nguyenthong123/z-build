@@ -182,6 +182,12 @@
   gap: 20px;
 }
 
+@media (min-width: 769px) {
+  .settings-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .setting-field {
   display: flex;
   flex-direction: column;
