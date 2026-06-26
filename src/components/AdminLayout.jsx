@@ -14,9 +14,13 @@ export default function AdminLayout() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && !isAdmin) {
-      navigate('/login', { replace: true });
-    }
+    // Short delay to allow Firestore adminEmails to sync
+    const timer = setTimeout(() => {
+      if (!loading && !isAdmin) {
+        navigate('/login', { replace: true });
+      }
+    }, 1500);
+    return () => clearTimeout(timer);
   }, [loading, isAdmin, navigate]);
 
   if (loading) return <div className="admin-loading">Đang tải cấu hình quản trị...</div>;

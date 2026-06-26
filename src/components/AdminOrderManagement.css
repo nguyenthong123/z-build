@@ -527,3 +527,10 @@
     padding: 0 12px;
   }
 }
+
+.aom-total-cell {
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: #1E293B;
+}
