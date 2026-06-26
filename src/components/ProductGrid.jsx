@@ -3,11 +3,13 @@ import { collection, getDocs, query, orderBy, where, limit, startAfter } from 'f
 import { db } from '../firebase';
 import { useWishlist } from '../context/WishlistContext';
 import { useStore } from '../context/StoreContext';
+import { useAppContext } from '../context/AppContext';
 import Fuse from 'fuse.js';
 import './ProductGrid.css';
 
 const ProductGrid = ({ onProductClick }) => {
   const [products, setProducts] = useState([]);
+  const { handleAddToCart } = useAppContext();
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [lastVisible, setLastVisible] = useState(null);
@@ -220,6 +222,15 @@ const ProductGrid = ({ onProductClick }) => {
                     <span className="current-price contact-price">Liên hệ báo giá</span>
                   )}
                 </div>
+                <button 
+                  className="add-to-cart-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAddToCart(product, 1);
+                  }}
+                >
+                  Thêm vào giỏ hàng
+                </button>
               </div>
             </div>
           ))
