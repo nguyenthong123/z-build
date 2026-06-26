@@ -564,16 +564,34 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
     <div className="admin-product-page">
       
       <div className="admin-main-content">
-        <header className={`admin-content-header ${!isHeaderVisible ? 'header-hidden' : ''}`}>
-          <nav className="breadcrumb desktop-only">Quản trị / <span className="active">Sản phẩm</span></nav>
+                <header className={`admin-content-header ${!isHeaderVisible ? 'header-hidden' : ''}`} style={{ position: 'sticky', top: 0, zIndex: 40, background: '#f1f5f9', paddingTop: '16px', paddingBottom: '12px', marginBottom: 0 }}>
           
-          <div className="header-main-row" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', marginBottom: '20px' }}>
-            <div className="title-group" style={{ flex: 1, minWidth: '250px' }}>
-              <h1 style={{ textAlign: 'left', margin: 0 }}>Quản lý sản phẩm</h1>
-              <p className="description" style={{ textAlign: 'left', marginTop: '4px' }}>Theo dõi và cập nhật tất cả sản phẩm của bạn.</p>
+          {/* ROW 1: Title + Actions — fixed height, no-wrap */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px', height: '36px' }}>
+            <div style={{ flex: '0 0 auto' }}>
+              <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap' }}>Quản lý sản phẩm</h1>
             </div>
             
-            <div className="header-actions-group" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-end', width: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexShrink: 0 }}>
+              {/* Sync toggle — compact */}
+              <button 
+                onClick={() => setShowSyncPanels(!showSyncPanels)}
+                title="Đồng bộ dữ liệu từ Dunvex"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '5px',
+                  padding: '0 12px', height: '32px', borderRadius: '8px',
+                  border: '1px solid #e2e8f0', background: '#fff',
+                  cursor: 'pointer', fontSize: '12px', fontWeight: 600,
+                  color: '#475569', whiteSpace: 'nowrap'
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2"
+                  style={{ transform: showSyncPanels ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+                Đồng bộ
+              </button>
+              
               <button className="ai-btn" onClick={() => {
                 let prompt = 'Hãy quét danh sách sản phẩm và tự động viết mô tả chi tiết, phân loại danh mục, thông số cho tất cả các sản phẩm đang ở trạng thái Draft';
                 if (selectedProducts.length > 0) {
@@ -582,78 +600,50 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                 }
                 sessionStorage.setItem('ai-prompt', prompt);
                 window.dispatchEvent(new Event('trigger-admin-ai-prompt'));
-              }} style={{ padding: '0 20px', borderRadius: '10px', backgroundColor: '#fff', color: '#1a1a2e', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600, boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#eab308" strokeWidth="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+              }} style={{ padding: '0 12px', height: '32px', borderRadius: '8px', backgroundColor: '#fff', color: '#1a1a2e', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '12px', whiteSpace: 'nowrap' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#eab308" strokeWidth="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
                 Viết nội dung (AI)
               </button>
-              <button className="primary-add-btn" onClick={onAddProduct} style={{ backgroundColor: '#1a1a2e', borderRadius: '10px', padding: '0 24px', height: '42px', display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(26,26,46,0.15)' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
+              
+              <button className="primary-add-btn" onClick={onAddProduct} style={{ backgroundColor: '#1a1a2e', borderRadius: '8px', padding: '0 14px', height: '32px', display: 'flex', alignItems: 'center', gap: '6px', color: '#fff', fontWeight: 600, border: 'none', cursor: 'pointer', fontSize: '12px', whiteSpace: 'nowrap' }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
                 Thêm SP
               </button>
             </div>
           </div>
 
-          {/* Sync Panels — Collapsible */}
-          <div style={{ marginBottom: '20px' }}>
-            <button 
-              onClick={() => setShowSyncPanels(!showSyncPanels)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
-                padding: '8px 16px', borderRadius: '10px',
-                border: '1px solid #e2e8f0', background: '#f8fafc',
-                cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-                color: '#475569', marginBottom: showSyncPanels ? '12px' : '0'
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                style={{ transform: showSyncPanels ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-                <polyline points="9 18 15 12 9 6"/>
-              </svg>
-              Đồng bộ dữ liệu
-              <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 400, marginLeft: '4px' }}>
-                (Dunvex)
-              </span>
+          {/* Dunvex Sync Panel — compact, collapsible via button above */}
+          {showSyncPanels && (
+          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '8px 14px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '12px', color: '#166534', fontWeight: 600, whiteSpace: 'nowrap', flex: 1 }}>
+              🔄 Đồng bộ tồn kho & giá từ Dunvex App
+            </span>
+            <button onClick={handleSyncFromDunvex} disabled={isSyncing} style={{ padding: '0 12px', height: '28px', borderRadius: '6px', border: 'none', backgroundColor: '#10b981', color: '#fff', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontWeight: 500, fontSize: '11px', whiteSpace: 'nowrap' }}>
+              <svg className={isSyncing ? "spin-animation" : ""} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              {isSyncing ? "Đang đồng bộ..." : "Đồng bộ ngay"}
             </button>
-            
-            {showSyncPanels && (<>
-          {/* Dunvex Sync Panel */}
-          <div className="dunvex-sync-panel" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', padding: '16px 20px', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#166534', fontWeight: 600, fontSize: '14px' }}>
-               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-               Đồng bộ tồn kho & giá từ Dunvex App
-            </div>
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: '13px', color: '#475569', flex: 1 }}>
-                Cập nhật trực tiếp toàn bộ danh sách sản phẩm, giá bán và số lượng tồn kho thực tế từ ứng dụng Dunvex.
-              </span>
-              <button onClick={handleSyncFromDunvex} disabled={isSyncing} style={{ padding: '0 16px', height: '40px', borderRadius: '8px', border: 'none', backgroundColor: '#10b981', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500, transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background='#059669'} onMouseOut={e => e.currentTarget.style.background='#10b981'}>
-                <svg className={isSyncing ? "spin-animation" : ""} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                {isSyncing ? "Đang đồng bộ..." : "Đồng bộ từ Dunvex"}
-              </button>
-            </div>
           </div>
+          )}
 
-            </>)}\n          </div>
-
-          {/* 3. BOTTOM ROW: Toolbar */}
-          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '16px', borderBottom: '1px solid #f1f5f9' }}>
-            <div style={{ display: 'flex', gap: '12px', flex: 1, minWidth: '300px' }}>
-              <div className="search-box" style={{ flex: 1, maxWidth: '400px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', margin: 0, padding: '10px 16px', borderRadius: '10px' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          {/* ROW 2: Toolbar — fixed height, delete always mounted */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', height: '38px' }}>
+            <div style={{ display: 'flex', gap: '8px', flex: 1, minWidth: 0 }}>
+              <div className="search-box" style={{ flex: 1, maxWidth: '340px', backgroundColor: '#fff', border: '1px solid #e2e8f0', margin: 0, padding: '0 12px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', height: '38px' }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 <input 
                   type="text" 
                   placeholder="Tìm kiếm sản phẩm..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{ fontSize: '14px', background: 'transparent' }}
+                  style={{ fontSize: '13px', background: 'transparent', border: 'none', outline: 'none', flex: 1, minWidth: 0 }}
                 />
               </div>
 
-              <div className="category-filter" style={{ minWidth: '200px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '0 12px' }}>
+              <div className="category-filter" style={{ width: '170px', flexShrink: 0, backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
                 <select 
                   value={selectedCategory} 
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  style={{ width: '100%', height: '100%', minHeight: '42px', border: 'none', background: 'transparent', outline: 'none', cursor: 'pointer', color: '#334155', fontWeight: 500, fontSize: '14px' }}
+                  style={{ width: '100%', height: '38px', border: 'none', background: 'transparent', outline: 'none', cursor: 'pointer', color: '#334155', fontWeight: 500, fontSize: '13px', padding: '0 10px' }}
                 >
                   {Array.from(allCategories).map(cat => (
                     <option key={cat} value={cat}>{cat === 'All' ? 'Tất cả danh mục' : cat}</option>
@@ -662,12 +652,24 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
               </div>
             </div>
             
-            {selectedProducts.length > 0 && (
-              <button onClick={handleBatchDelete} style={{ padding: '0 16px', height: '42px', borderRadius: '10px', backgroundColor: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background='#fee2e2'} onMouseOut={e => e.currentTarget.style.background='#fef2f2'}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-                Xoá ({selectedProducts.length})
-              </button>
-            )}
+            {/* Delete — always mounted, disabled when none selected */}
+            <button 
+              onClick={handleBatchDelete} 
+              disabled={selectedProducts.length === 0}
+              style={{ 
+                padding: '0 14px', height: '38px', borderRadius: '8px', 
+                backgroundColor: selectedProducts.length > 0 ? '#fef2f2' : '#f8fafc', 
+                color: selectedProducts.length > 0 ? '#ef4444' : '#cbd5e1', 
+                border: selectedProducts.length > 0 ? '1px solid #fecaca' : '1px solid #e2e8f0', 
+                display: 'flex', alignItems: 'center', gap: '5px', cursor: selectedProducts.length > 0 ? 'pointer' : 'not-allowed', 
+                fontWeight: 600, fontSize: '12px', whiteSpace: 'nowrap',
+                transition: 'all 0.2s',
+                flexShrink: 0
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+              Xoá{selectedProducts.length > 0 ? ` (${selectedProducts.length})` : ''}
+            </button>
           </div>
         </header>
 
