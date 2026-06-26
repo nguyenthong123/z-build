@@ -5,7 +5,6 @@ import { auth } from './firebase';
 import './App.css';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
-import CategorySection from './components/CategorySection';
 import PromoBanner from './components/PromoBanner';
 import ProductGrid from './components/ProductGrid';
 import Footer from './components/Footer';
@@ -16,7 +15,6 @@ import { useToast } from './context/ToastContext';
 import { useWishlist } from './context/WishlistContext';
 import { useStorefrontAI } from './hooks/useStorefrontAI';
 import { useAuth } from './context/AuthContext';
-import { useStore } from './context/StoreContext';
 
 // Lazy-loaded components (code splitting for performance)
 const OrderHistory = lazy(() => import('./components/OrderHistory'));
@@ -109,7 +107,6 @@ function NotFound() {
 
 // Home Page Component
 function HomePage({ handleAddToCart, navigate }) {
-  const { selectedCategory, handleCategorySelect } = useStore();
   
   return (
     <>
@@ -119,7 +116,6 @@ function HomePage({ handleAddToCart, navigate }) {
         canonical="/"
       />
       <Hero />
-      <CategorySection onCategorySelect={handleCategorySelect} activeCategory={selectedCategory} />
       <PromoBanner />
       <ProductGrid 
         onProductClick={(product) => navigate(`/product/${product.slug || product.id}`)} 
