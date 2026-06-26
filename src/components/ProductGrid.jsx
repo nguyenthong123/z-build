@@ -184,6 +184,11 @@ const ProductGrid = ({ onProductClick }) => {
     return `${catName} - Giá tại kho`;
   };
 
+  // Short category name for tabs (strip "- Giá tại kho" suffix)
+  const shortCategoryName = (catName) => {
+    return catName.replace(/\s*-\s*Giá tại kho$/i, '').trim();
+  };
+
   return (
     <section className="product-section container">
       {loading ? (
@@ -226,8 +231,9 @@ const ProductGrid = ({ onProductClick }) => {
                   key={catName}
                   className="category-tab-btn"
                   onClick={() => scrollToCategory(catName)}
+                  title={catName}
                 >
-                  {catName}
+                  {shortCategoryName(catName)}
                 </button>
               ))}
               {groupedProducts['Khác'] && groupedProducts['Khác'].length > 0 && (

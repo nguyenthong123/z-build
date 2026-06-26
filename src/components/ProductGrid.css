@@ -38,37 +38,34 @@
 /* Category Tabs Bar - Flat, centered, bold */
 .category-tabs-container {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: 28px;
+  gap: 12px;
   border-bottom: 2px solid var(--divider);
   padding: 0 0 2px 0;
   margin-bottom: 32px;
-  overflow-x: auto;
-  scrollbar-width: none; /* Hide scrollbar Firefox */
-  -ms-overflow-style: none;  /* Hide scrollbar IE/Edge */
-}
-
-.category-tabs-container::-webkit-scrollbar {
-  display: none; /* Hide scrollbar Chrome/Safari */
 }
 
 .category-tab-btn {
-  padding: 12px 6px;
+  padding: 10px 14px;
   background: transparent;
   color: var(--text-muted);
   border: none;
   border-bottom: 3px solid transparent;
   border-radius: 0;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
   cursor: pointer;
   white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   transition: all 0.25s ease;
   box-shadow: none;
   position: relative;
-  bottom: -2px; /* Pull down to overlay container border */
+  bottom: -2px;
 }
 
 .category-tab-btn:hover {
@@ -378,15 +375,19 @@
 
   .category-tabs-container {
     justify-content: flex-start;
-    gap: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
     padding: 0 4px 2px 4px;
     margin-bottom: 20px;
   }
 
   .category-tab-btn {
-    font-size: 0.8rem;
-    padding: 10px 4px;
-    letter-spacing: 0.05em;
+    font-size: 0.75rem;
+    padding: 8px 10px;
+    letter-spacing: 0.03em;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .category-product-block {
