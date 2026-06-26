@@ -461,7 +461,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
                         <div>
                           <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>TRỌNG LƯỢNG</label>
                           <div className="specs-badges">
-                            <span className="specs-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>⚖️ {product.weight} kg / tấm</span>
+                            <span className="specs-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>⚖️ {product.weight} kg / {product.unit ? product.unit.toLowerCase() : 'tấm'}</span>
                           </div>
                         </div>
                       )}
