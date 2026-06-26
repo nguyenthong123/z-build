@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import AdminAIAssistant from './AdminAIAssistant';
 import { useAuth } from '../context/AuthContext';
@@ -9,7 +9,7 @@ import './AdminLayout.css';
 
 import { AdminAIProvider } from '../context/AdminAIContext';
 
-export default function AdminLayout({ children }) {
+export default function AdminLayout() {
   const { isAdmin, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -27,7 +27,7 @@ export default function AdminLayout({ children }) {
       <div className="admin-container">
         <AdminSidebar />
         <main className="admin-main">
-          {children}
+          <Outlet />
         </main>
         <AdminAIAssistant />
       </div>
