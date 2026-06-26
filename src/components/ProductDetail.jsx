@@ -22,13 +22,12 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
   const renderSpecs = (specs) => {
     if (!specs) return null;
     
-    const isList = specs.includes(',') && (specs.length > 30 || specs.startsWith('('));
+    let cleanSpecs = specs.trim();
+    if (cleanSpecs.startsWith('(') && cleanSpecs.endsWith(')')) {
+      cleanSpecs = cleanSpecs.substring(1, cleanSpecs.length - 1);
+    }
     
-    if (isList) {
-      let cleanSpecs = specs.trim();
-      if (cleanSpecs.startsWith('(') && cleanSpecs.endsWith(')')) {
-        cleanSpecs = cleanSpecs.substring(1, cleanSpecs.length - 1);
-      }
+    if (cleanSpecs.includes(',')) {
       const items = cleanSpecs.split(',').map(item => item.trim()).filter(Boolean);
       
       return (
@@ -42,9 +41,16 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
     
     return (
       <div className="specs-badges">
-        <span className="specs-badge">{specs}</span>
+        <span className="specs-badge">{cleanSpecs}</span>
       </div>
     );
+  };
+
+  const formatWeight = (weight) => {
+    if (!weight) return '';
+    const str = String(weight).trim();
+    if (/[a-zA-Z]/.test(str)) return str;
+    return `${str} kg`;
   };
 
   // Fetch product from Firestore if not passed as prop
@@ -472,7 +478,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
             <p className="shipping-info">Miễn phí vận chuyển cho đơn hàng từ 500.000₫</p>
 
             {/* Specs Section */}
-            {(product.specs || (product.weight && parseFloat(product.weight) > 0) || product.packaging) && (
+            {(product.specs || (product.weight && String(product.weight).trim() !== '') || product.packaging) && (
               <div className="specs-detail-group" style={{ marginBottom: '25px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                   {product.specs && (
@@ -481,13 +487,13 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
                       {renderSpecs(product.specs)}
                     </div>
                   )}
-                  {((product.weight && parseFloat(product.weight) > 0) || product.packaging) && (
+                  {((product.weight && String(product.weight).trim() !== '') || product.packaging) && (
                     <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                      {product.weight && parseFloat(product.weight) > 0 && (
+                      {product.weight && String(product.weight).trim() !== '' && (
                         <div>
                           <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>TRỌNG LƯỢNG</label>
                           <div className="specs-badges">
-                            <span className="specs-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>⚖️ {product.weight} kg / {product.unit ? product.unit.toLowerCase() : 'tấm'}</span>
+                            <span className="specs-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>⚖️ {formatWeight(product.weight)}</span>
                           </div>
                         </div>
                       )}

@@ -264,6 +264,39 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
     }
   };
 
+  const normalizeCategory = (cat) => {
+    if (!cat) return 'Chung';
+    let clean = cat.trim();
+    const lower = clean.toLowerCase();
+    
+    if (lower === 'sơn - giá tại kho' || lower === 'sơn' || lower === 'son' || lower === 'son - gia tai kho') {
+      return 'Sơn sắt - Giá tại kho';
+    }
+    if (lower.startsWith('sơn sắt')) {
+      return 'Sơn sắt - Giá tại kho';
+    }
+    if (lower.startsWith('nhựa và phụ kiện')) {
+      return 'Nhựa và Phụ kiện tấm nhựa - Giá tại kho';
+    }
+    if (lower.startsWith('trần và phụ kiện')) {
+      return 'Trần và Phụ kiện - Giá tại kho';
+    }
+    if (lower.startsWith('tấm duraflex')) {
+      return 'Tấm DURAflex - Giá tại kho';
+    }
+    if (lower.startsWith('panel')) {
+      return 'Panel - Giá tại kho';
+    }
+    if (lower.startsWith('keo trám')) {
+      return 'Keo trám - Giá tại kho';
+    }
+    if (lower.startsWith('tính m2')) {
+      return 'Tính m2 - Giá tại kho';
+    }
+    
+    return clean.charAt(0).toUpperCase() + clean.slice(1);
+  };
+
   const handleSyncFromDunvex = async () => {
     setIsSyncing(true);
     try {
@@ -307,18 +340,72 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
         for (const dunvexProd of data.products) {
           if (!dunvexProd.name) continue;
           
-          const slug = slugify(dunvexProd.name);
-          const q = query(collection(db, "products"), where("slug", "==", slug), limit(1));
-          const snap = await getDocs(q);
+          const dunvexId = dunvexProd.id;
+          const initialSlug = slugify(dunvexProd.name);
+          let slug = initialSlug;
+          
+          // 1. Try to find by dunvexId first
+          let q = query(collection(db, "products"), where("dunvexId", "==", dunvexId), limit(1));
+          let snap = await getDocs(q);
+          
+          let productRef = null;
+          let existingProduct = null;
+
+          if (!snap.empty) {
+            productRef = doc(db, "products", snap.docs[0].id);
+            existingProduct = { id: snap.docs[0].id, ...snap.docs[0].data() };
+          } else {
+            // 2. Fallback: Find by slug (for backward compatibility)
+            q = query(collection(db, "products"), where("slug", "==", initialSlug), limit(1));
+            snap = await getDocs(q);
+            if (!snap.empty) {
+              const docData = snap.docs[0].data();
+              if (!docData.dunvexId) {
+                productRef = doc(db, "products", snap.docs[0].id);
+                existingProduct = { id: snap.docs[0].id, ...docData };
+              }
+            }
+          }
+
+          // 3. Resolve slug collision if creating new or if slug changed
+          if (!productRef || (existingProduct && existingProduct.slug !== slug)) {
+            let slugCount = 0;
+            let tempSlug = slug;
+            let slugCollision = true;
+            
+            while (slugCollision) {
+              const testQ = query(
+                collection(db, "products"), 
+                where("slug", "==", tempSlug), 
+                limit(1)
+              );
+              const testSnap = await getDocs(testQ);
+              
+              if (testSnap.empty) {
+                slugCollision = false;
+                slug = tempSlug;
+              } else {
+                if (productRef && testSnap.docs[0].id === productRef.id) {
+                  slugCollision = false;
+                  slug = tempSlug;
+                } else {
+                  slugCount++;
+                  tempSlug = `${initialSlug}-${slugCount}`;
+                }
+              }
+            }
+          }
           
           const priceVal = Number(dunvexProd.priceSell) || 0;
           const priceBuyVal = Number(dunvexProd.priceImport) || 0;
           const stockVal = Number(dunvexProd.stock) || 0;
+          const category = normalizeCategory(dunvexProd.category);
 
           const productData = {
+            dunvexId: dunvexId,
             title: dunvexProd.name,
             slug: slug,
-            category: dunvexProd.category || 'Chung',
+            category: category,
             basePrice: priceVal,
             discountPrice: priceVal,
             price: priceVal,
@@ -326,19 +413,18 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
             unit: dunvexProd.unit || '',
             weight: dunvexProd.weight || '',
             specs: dunvexProd.specification || '',
+            packaging: dunvexProd.packaging || '',
             stock: stockVal,
             articleNo: dunvexProd.articleNo || '',
             trackInventory: true,
             updatedAt: serverTimestamp()
           };
 
-          if (!snap.empty) {
+          if (productRef) {
             // Update existing
-            const productId = snap.docs[0].id;
-            const productRef = doc(db, "products", productId);
             await updateDoc(productRef, productData);
             updatedCount++;
-            newlySyncedIds.push(productId);
+            newlySyncedIds.push(productRef.id);
           } else {
             // Create new
             const productsRef = collection(db, "products");
@@ -354,10 +440,31 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
           }
         }
         
+        // 4. Clean up products that were deleted in Dunvex
+        const storefrontSnap = await getDocs(collection(db, "products"));
+        const dunvexIdsInResponse = new Set(data.products.map(p => p.id));
+        let deletedCount = 0;
+        
+        for (const docSnap of storefrontSnap.docs) {
+          const docId = docSnap.id;
+          const docData = docSnap.data();
+          
+          const isDunvexSourced = docData.dunvexId !== undefined || docData.createdBy === undefined;
+          
+          if (isDunvexSourced) {
+            const isStillActive = docData.dunvexId ? dunvexIdsInResponse.has(docData.dunvexId) : false;
+            
+            if (!isStillActive) {
+              await deleteDoc(doc(db, "products", docId));
+              deletedCount++;
+            }
+          }
+        }
+        
         setSyncedProductIds(newlySyncedIds);
         setSyncSuccessMessage({
           title: "Đồng bộ từ Dunvex App thành công!",
-          body: `Đã cập nhật ${updatedCount} sản phẩm, thêm mới ${createdCount} sản phẩm.`
+          body: `Đã cập nhật ${updatedCount} sản phẩm, thêm mới ${createdCount} sản phẩm${deletedCount > 0 ? `, gỡ bỏ ${deletedCount} sản phẩm đã xoá trên app` : ''}.`
         });
         setShowSyncSuccessModal(true);
         fetchProducts(); // Reload products table
