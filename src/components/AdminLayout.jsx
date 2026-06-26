@@ -17,7 +17,7 @@ export default function AdminLayout({ children }) {
     if (!loading && !isAdmin) {
       navigate('/login', { replace: true });
     }
-  }, [loading, isAdmin, router]);
+  }, [loading, isAdmin, navigate]);
 
   if (loading) return <div className="admin-loading">Đang tải cấu hình quản trị...</div>;
   if (!isAdmin) return null;
