@@ -199,7 +199,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
   };
 
   // Handle back navigation
-  const handleBack = onBack || (() => router.back());
+  const handleBack = onBack || (() => navigate(-1));
 
   const handleRelatedClick = (p) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
