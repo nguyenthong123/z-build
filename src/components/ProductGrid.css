@@ -85,6 +85,55 @@
   font-weight: 700;
 }
 
+/* Category Product Block */
+.category-product-block {
+  margin-bottom: 50px;
+}
+
+/* Category Ribbon Header - Slanted style matching example drawing */
+.category-header-container {
+  position: relative;
+  width: 100%;
+  border-bottom: 3px solid var(--primary-yellow); /* Yellow horizontal line */
+  margin-bottom: 28px;
+  margin-top: 36px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.category-title-ribbon {
+  display: inline-flex;
+  align-items: center;
+  background-color: #014488; /* Dark navy blue block */
+  color: #ffffff;
+  padding: 8px 24px 8px 16px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transform: skewX(-20deg); /* Slanted right edge */
+  margin-left: 8px; /* Offset for slant */
+  position: relative;
+  bottom: -3px; /* Align flush with the border-bottom line */
+  z-index: 2;
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.category-title-ribbon-text {
+  transform: skewX(20deg); /* Keep text vertical/straight */
+  display: flex;
+  align-items: center;
+}
+
+.category-title-ribbon-text::before {
+  content: '||';
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 300;
+  margin-right: 8px;
+  letter-spacing: -2px;
+}
+
 /* Product Grid */
 .product-grid {
   display: grid;
@@ -338,6 +387,32 @@
     font-size: 0.8rem;
     padding: 10px 4px;
     letter-spacing: 0.05em;
+  }
+
+  .category-product-block {
+    margin-bottom: 30px;
+  }
+
+  .category-header-container {
+    margin-top: 24px;
+    margin-bottom: 20px;
+    border-bottom-width: 2px;
+  }
+
+  .category-title-ribbon {
+    padding: 6px 16px 6px 12px;
+    font-size: 0.85rem;
+    bottom: -2px;
+    transform: skewX(-15deg);
+    margin-left: 4px;
+  }
+
+  .category-title-ribbon-text {
+    transform: skewX(15deg);
+  }
+
+  .category-title-ribbon-text::before {
+    margin-right: 4px;
   }
 
   .product-grid {
