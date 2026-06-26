@@ -227,8 +227,18 @@ const OrderDetail = ({ order, onBack, onCancelSuccess, onEditOrder, onReturnSucc
               </div>
               <div className="od-price-row">
                 <span>Phí vận chuyển</span>
-                <span className="free-text">Miễn phí</span>
+                {order.shippingCost > 0 ? (
+                  <span>{Number(order.shippingCost).toLocaleString('vi-VN')}₫</span>
+                ) : (
+                  <span className="free-text">Miễn phí</span>
+                )}
               </div>
+              {order.tax > 0 && (
+                <div className="od-price-row">
+                  <span>Thuế (8% VAT)</span>
+                  <span>{Number(order.tax).toLocaleString('vi-VN')}₫</span>
+                </div>
+              )}
 
               <div className="od-price-row od-total">
                 <span>Tổng cộng</span>

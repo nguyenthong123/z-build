@@ -20,7 +20,7 @@ const OrderConfirmation = ({ onContinueShopping, orderDetails }) => {
     );
   }
 
-  const { orderNumber, cartItems = [], total, shippingAddress = {} } = orderDetails;
+  const { orderNumber, cartItems = [], total, shippingAddress = {}, shippingCost = 0, tax = 0 } = orderDetails;
   
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
@@ -72,8 +72,18 @@ const OrderConfirmation = ({ onContinueShopping, orderDetails }) => {
                 </div>
                 <div className="row">
                   <span>Vận chuyển</span>
-                  <span className="free">Miễn phí</span>
+                  {shippingCost > 0 ? (
+                    <span>{Number(shippingCost).toLocaleString('vi-VN')}₫</span>
+                  ) : (
+                    <span className="free">Miễn phí</span>
+                  )}
                 </div>
+                {tax > 0 && (
+                  <div className="row">
+                    <span>Thuế (8% VAT)</span>
+                    <span>{Number(tax).toLocaleString('vi-VN')}₫</span>
+                  </div>
+                )}
                 <div className="row total">
                   <span>Tổng cộng</span>
                   <span className="final-price">VNĐ {Number(total || subtotal).toLocaleString('vi-VN')}₫</span>
