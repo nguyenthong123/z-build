@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import AdminAIAssistant from './AdminAIAssistant';
 import { useAuth } from '../context/AuthContext';
@@ -11,7 +11,7 @@ import { AdminAIProvider } from '../context/AdminAIContext';
 
 export default function AdminLayout({ children }) {
   const { isAdmin, loading } = useAuth();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!loading && !isAdmin) {

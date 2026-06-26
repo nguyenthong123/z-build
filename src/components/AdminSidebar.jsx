@@ -1,10 +1,10 @@
 import React from 'react';
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
+import { useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import './AdminSidebar.css';
 
 const AdminSidebar = () => {
-  const pathname = usePathname();
+  const location = useLocation(); const pathname = location.pathname;
   const menuItems = [
     { id: 'dashboard', path: '/admin/dashboard', label: 'Bảng điều khiển', icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>

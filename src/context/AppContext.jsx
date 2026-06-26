@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
 import { useStorefrontAI } from '../hooks/useStorefrontAI';
@@ -13,7 +13,7 @@ import { doc, getDoc } from 'firebase/firestore';
 const AppContext = createContext(null);
 
 export const AppProvider = ({ children }) => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { addToast } = useToast();
   
@@ -178,12 +178,12 @@ export const AppProvider = ({ children }) => {
   const handleOrderComplete = (data) => {
     setOrderData(data);
     setCartItems([]);
-    router.push('/order-confirmation');
+    navigate('/order-confirmation');
   };
 
   const handleLoginRequired = (destination) => {
     setIntendedDestination(destination);
-    router.push('/login');
+    navigate('/login');
   };
 
   return (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { useRouter } from 'next/navigation';
+import { useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 import './ProductDetail.css';
@@ -9,7 +9,7 @@ import SEOHead from './SEOHead';
 
 const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, onLoginRequired, setGlobalProduct }) => {
   const { productId } = useParams();
-  const router = useRouter();
+  const navigate = useNavigate();
   const [fetchedProduct, setFetchedProduct] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeMedia, setActiveMedia] = useState({ type: 'image', index: 0 });
@@ -203,7 +203,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
 
   const handleRelatedClick = (p) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    router.push(`/product/${p.slug || p.id}`);
+    navigate(`/product/${p.slug || p.id}`);
   };
 
   // === EARLY RETURNS (must be after ALL hooks) ===
@@ -323,7 +323,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
       <div className="container">
         {/* Breadcrumbs - Hidden on Mobile */}
         <nav className="breadcrumbs desktop-only">
-          <a href="#" onClick={(e) => { e.preventDefault(); router.push('/'); }}>Trang chủ</a> / <a href="#">{product.category || 'Danh mục'}</a> / <span className="current">{product.title}</span>
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/'); }}>Trang chủ</a> / <a href="#">{product.category || 'Danh mục'}</a> / <span className="current">{product.title}</span>
         </nav>
 
         <div className="product-main">
@@ -594,7 +594,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
                       localStorage.setItem('compareList', JSON.stringify(updated));
                       window.dispatchEvent(new Event('compareListUpdated'));
                     }
-                    router.push('/compare');
+                    navigate('/compare');
                   } catch (e) { console.error('Error adding to compare', e); }
                 }}
                 style={{

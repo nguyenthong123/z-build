@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import MobileNav from './MobileNav';
@@ -11,8 +11,8 @@ import { useAppContext } from '../context/AppContext';
 import { useWishlist } from '../context/WishlistContext';
 
 export default function LayoutWrapper({ children }) {
-  const pathname = usePathname();
-  const router = useRouter();
+  const location = useLocation(); const pathname = location.pathname;
+  const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
   const { 
     cartItems, compareCount, handleLoginRequired, 
@@ -67,9 +67,9 @@ export default function LayoutWrapper({ children }) {
     
     // If it's in the map, use the map. Otherwise prepend / if it's missing
     if (routeMap[target]) {
-      router.push(routeMap[target]);
+      navigate(routeMap[target]);
     } else {
-      router.push(target.startsWith('/') ? target : `/${target}`);
+      navigate(target.startsWith('/') ? target : `/${target}`);
     }
   };
 
@@ -81,10 +81,10 @@ export default function LayoutWrapper({ children }) {
           cartCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
           wishlistCount={wishlistCount}
           compareCount={compareCount}
-          onCartClick={() => router.push('/cart')}
-          onWishlistClick={() => router.push('/wishlist')}
-          onCompareClick={() => router.push('/compare')}
-          onProfileClick={() => user ? router.push('/profile') : handleLoginRequired('/profile')}
+          onCartClick={() => navigate('/cart')}
+          onWishlistClick={() => navigate('/wishlist')}
+          onCompareClick={() => navigate('/compare')}
+          onProfileClick={() => user ? navigate('/profile') : handleLoginRequired('/profile')}
           onLogout={() => { /* will handle logout in Navbar itself or pass down */ }}
         />
       )}
@@ -107,7 +107,7 @@ export default function LayoutWrapper({ children }) {
           }}
         >
           <button 
-            onClick={() => router.push('/admin/dashboard')}
+            onClick={() => navigate('/admin/dashboard')}
             style={{ background: '#1a1a2e', color: 'white', border: 'none', padding: '10px', borderRadius: '50%', cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}
             title="Quản trị viên"
           >

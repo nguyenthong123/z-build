@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, query, where, orderBy, limit, onSnapshot, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import './NotificationBell.css';
 
 const NotificationBell = ({ user }) => {
@@ -10,7 +10,7 @@ const NotificationBell = ({ user }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
-  const router = useRouter();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!user) {
@@ -78,7 +78,7 @@ const NotificationBell = ({ user }) => {
     if (!notif.read) markAsRead(notif.id);
     setIsOpen(false);
     if (notif.link) {
-      router.push(notif.link);
+      navigate(notif.link);
     }
   };
 
