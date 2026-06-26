@@ -491,6 +491,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
             customerEmail: formData.email || user?.email || '',
             customerAddress: `${formData.address}, ${formData.city}`.trim(),
             items: webhookItems,
+            shippingFee: Number(shippingCost) || 0,
             note: `Đơn đặt từ web storefront, Mã đơn: ${orderNumber}`
           };
 
