@@ -13,6 +13,8 @@ import { AdminAIProvider } from './context/AdminAIContext'
 import { AuthProvider } from './context/AuthContext'
 import { StoreProvider } from './context/StoreContext'
 
+import { AppProvider } from './context/AppContext'
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <I18nextProvider i18n={i18n}>
@@ -23,9 +25,11 @@ createRoot(document.getElementById('root')).render(
               <StoreProvider>
                 <WishlistProvider>
                   <ToastProvider>
-                    <AdminAIProvider>
-                      <App />
-                    </AdminAIProvider>
+                    <AppProvider>
+                      <AdminAIProvider>
+                        <App />
+                      </AdminAIProvider>
+                    </AppProvider>
                   </ToastProvider>
                 </WishlistProvider>
               </StoreProvider>
