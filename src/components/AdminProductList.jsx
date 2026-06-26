@@ -17,6 +17,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
   const [showSyncSuccessModal, setShowSyncSuccessModal] = useState(false);
   const [syncSuccessMessage, setSyncSuccessMessage] = useState({ title: '', body: '' });
   const [autoSyncTriggered, setAutoSyncTriggered] = useState(false);
+  const [showSyncPanels, setShowSyncPanels] = useState(true);
   
   // Batch delete states
   const [selectedProducts, setSelectedProducts] = useState([]);
@@ -827,6 +828,29 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
             </div>
           </div>
 
+          {/* Sync Panels — Collapsible */}
+          <div style={{ marginBottom: '20px' }}>
+            <button 
+              onClick={() => setShowSyncPanels(!showSyncPanels)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '8px 16px', borderRadius: '10px',
+                border: '1px solid #e2e8f0', background: '#f8fafc',
+                cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+                color: '#475569', marginBottom: showSyncPanels ? '12px' : '0'
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                style={{ transform: showSyncPanels ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+              Đồng bộ dữ liệu
+              <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 400, marginLeft: '4px' }}>
+                (Dunvex · Google Sheet)
+              </span>
+            </button>
+            
+            {showSyncPanels && (<>
           {/* Dunvex Sync Panel */}
           <div className="dunvex-sync-panel" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', padding: '16px 20px', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#166534', fontWeight: 600, fontSize: '14px' }}>
@@ -872,6 +896,8 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
               </button>
             </div>
           </div>
+
+            </>)}\n          </div>
 
           {/* 3. BOTTOM ROW: Toolbar */}
           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '16px', borderBottom: '1px solid #f1f5f9' }}>
