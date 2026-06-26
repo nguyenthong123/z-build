@@ -5,7 +5,6 @@ import { auth } from './firebase';
 import './App.css';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
-import PromoBanner from './components/PromoBanner';
 import ProductGrid from './components/ProductGrid';
 import Footer from './components/Footer';
 import MobileNav from './components/MobileNav';
@@ -116,7 +115,6 @@ function HomePage({ handleAddToCart, navigate }) {
         canonical="/"
       />
       <Hero />
-      <PromoBanner />
       <ProductGrid 
         onProductClick={(product) => navigate(`/product/${product.slug || product.id}`)} 
         onAddToCart={handleAddToCart} 
