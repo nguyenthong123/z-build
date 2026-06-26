@@ -40,7 +40,7 @@ const AdminSidebar = () => {
           return (
             <Link 
               key={item.id}
-              href={item.path}
+              to={item.path}
               className={`admin-nav-link ${isActive ? 'active' : ''}`}
               aria-label={item.label}
             >

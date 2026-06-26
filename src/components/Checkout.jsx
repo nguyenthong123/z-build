@@ -599,7 +599,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
     <div className="checkout-page animate-fade-in">
       {/* Mobile Header */}
       <div className="mobile-checkout-header">
-        <Link href="/" className="back-btn" style={{ textDecoration: 'none', display: 'flex' }}>
+        <Link to="/" className="back-btn" style={{ textDecoration: 'none', display: 'flex' }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         </Link>
         <div className="header-info">
@@ -613,14 +613,14 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
         <div className="checkout-layout">
           {/* Form Side */}
           <div className="checkout-form-section">
-            <Link href="/" className="checkout-logo desktop-only" style={{ textDecoration: 'none', display: 'inline-flex' }}>
+            <Link to="/" className="checkout-logo desktop-only" style={{ textDecoration: 'none', display: 'inline-flex' }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: '8px' }}>
                 <path d="M19 3H5C3.89 3 3 3.9 3 5V19C3 20.1 3.89 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM7 7H17V9L10 15H17V17H7V15L14 9H7V7Z" fill="#D4AF37"/>
               </svg>
               <span className="logo-text" style={{ color: '#1A2130' }}>ZBUILD</span>
             </Link>
             <div className="desktop-only" style={{ marginBottom: '24px' }}>
-              <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#64748B', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500', transition: 'color 0.2s', padding: '6px 0' }}
+              <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#64748B', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500', transition: 'color 0.2s', padding: '6px 0' }}
                     onMouseOver={(e) => e.currentTarget.style.color = '#1A2130'}
                     onMouseOut={(e) => e.currentTarget.style.color = '#64748B'}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
