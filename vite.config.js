@@ -13,6 +13,8 @@ export default defineConfig({
     'process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || ''),
     'process.env.NEXT_PUBLIC_FIREBASE_APP_ID': JSON.stringify(process.env.VITE_FIREBASE_APP_ID || ''),
     'process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID': JSON.stringify(process.env.VITE_FIREBASE_MEASUREMENT_ID || ''),
+    'process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY': JSON.stringify(process.env.VITE_FIREBASE_VAPID_KEY || 'REPLACE_ME'),
+    'process.env.NEXT_PUBLIC_ADMIN_EMAILS': JSON.stringify(process.env.VITE_ADMIN_EMAILS || 'nbt1024@gmail.com'),
   },
   build: {
     rollupOptions: {

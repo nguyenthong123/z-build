@@ -313,8 +313,8 @@ function App() {
   };
 
   const handleLogin = (userData) => {
-    setUser(userData);
-    addToast(`Chào mừng trở lại, ${userData.name}!`, 'success');
+    // onAuthStateChanged in AuthContext will auto-update user state
+    addToast(`Chào mừng trở lại, ${userData.name || userData.email}!`, 'success');
     if (intendedDestination) {
       navigate(intendedDestination);
       setIntendedDestination(null);
@@ -335,7 +335,7 @@ function App() {
   };
 
   const handleSignUp = (userData) => {
-    setUser(userData);
+    // onAuthStateChanged in AuthContext will auto-update user state
     addToast('Tạo tài khoản thành công! Chào bạn mới.', 'success');
     if (intendedDestination) {
       navigate(intendedDestination);
