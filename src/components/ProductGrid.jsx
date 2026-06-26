@@ -167,7 +167,6 @@ const ProductGrid = ({ onProductClick }) => {
     <section className="product-section container">
       <div className="section-header">
         <h2>{category ? `${category}` : searchQuery ? (searchQuery === "trending" ? "Tất cả sản phẩm" : `Kết quả tìm kiếm cho "${searchQuery}"`) : "Tất cả sản phẩm"}</h2>
-        <a href="#" className="view-all">Xem tất cả</a>
       </div>
       
       {categoriesList.length > 1 && (
