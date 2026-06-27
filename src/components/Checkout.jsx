@@ -654,10 +654,6 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
                   style={formErrors.email ? { borderColor: '#e74c3c' } : {}}
                 />
                 {formErrors.email && <span style={{ color: '#e74c3c', fontSize: '0.8rem' }}>{formErrors.email}</span>}
-                <div className="checkbox-row">
-                  <input type="checkbox" id="newsletter" />
-                  <label htmlFor="newsletter">Cập nhật tin tức và ưu đãi độc quyền cho tôi</label>
-                </div>
               </div>
             </section>
 
