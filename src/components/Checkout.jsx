@@ -812,7 +812,8 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
                         type="button"
                         onClick={(e) => { e.preventDefault(); handleGetLocation(); }}
                         disabled={isLocating}
-                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.9rem', color: '#334155', cursor: 'pointer' }}
+                        className="btn-secondary"
+                        style={{ marginTop: '8px' }}
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={isLocating ? 'rotating' : ''}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                         {isLocating ? 'Đang định vị...' : (distanceKm !== null ? 'Cập nhật lại vị trí giao hàng' : 'Lấy vị trí của tôi để tính phí giao hàng')}
@@ -1000,18 +1001,32 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
       <div className="mobile-checkout-cta">
         <div className="secure-info">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          THANH TOÁN BẢO MẬT SSL 256-BIT
+          THANH TOÁN BẢO MẬT • SSL 256-BIT
         </div>
-        {formData.paymentMethod === 'bank-transfer' && paymentStep === 1 && !pollingTimeout ? (
-          <div className="waiting-payment" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', color: '#10B981', fontWeight: '500', background: '#ECFDF5', padding: '15px', borderRadius: '8px', border: '1px solid #A7F3D0', margin: '20px 0' }}>
+        
+        {(formData.paymentMethod === 'bank-transfer' && paymentStep === 1 && !pollingTimeout) ? (
+          <div className="waiting-payment" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', color: '#10B981', fontWeight: '500', background: '#ECFDF5', padding: '14px', borderRadius: '12px', border: '1px solid #A7F3D0' }}>
             <div style={{ width: '18px', height: '18px', border: '3px solid #10B981', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
             Hệ thống đang chờ nhận tiền...
           </div>
         ) : (
-          <button className="btn-place-order" onClick={paymentStep === 1 ? handlePlaceOrder : () => onOrderComplete(generatedOrder)} disabled={isSubmitting}>
-            {isSubmitting ? 'Đang xử lý...' : (paymentStep === 1 ? (formData.paymentMethod === 'bank-transfer' ? 'Tôi đã thanh toán xong' : 'Xác nhận đơn hàng') : 'Tiếp tục mua sắm')}
-            {!isSubmitting && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>}
-          </button>
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }}>
+              <span style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 500 }}>Tổng thanh toán</span>
+              <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#E11D48' }}>{Number(total).toLocaleString('vi-VN')}₫</span>
+            </div>
+            <button className="btn-place-order" onClick={paymentStep === 1 ? handlePlaceOrder : () => onOrderComplete(generatedOrder)} disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <div style={{ width: '18px', height: '18px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                  Đang xử lý...
+                </>
+              ) : (
+                (paymentStep === 1 ? (formData.paymentMethod === 'bank-transfer' ? 'Tôi đã thanh toán xong' : 'Xác nhận đơn hàng') : 'Tiếp tục mua sắm')
+              )}
+              {!isSubmitting && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>}
+            </button>
+          </>
         )}
       </div>
     </div>
