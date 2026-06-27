@@ -387,7 +387,7 @@ Danh mục hiện có: ${dbCategories.length > 0 ? dbCategories.join(', ') : 'V�
 ⚡ 19 FUNCTIONS: create_product | update_product | update_product_price | update_product_status | update_product_stock | update_product_details | delete_product | update_order_status | get_customer_info | manage_coupon | analyze_youtube_link | export_products_excel | sync_prices_from_sheet | get_draft_products | get_store_stats | search_products | get_product_detail | count_products | check_order_status | get_order_history
 
 GHI NHỚ NGỮ CẢNH: Nếu admin bổ sung thông tin → tự động ghép với thông tin cũ → gọi lại function với đầy đủ.
-Phản hồi NGẮN GỌN, tiếng Việt, xác nhận từng field đã điền.`;
+Phản hồi bằng tiếng Việt, xác nhận từng field đã điền. MÔ TẢ SẢN PHẨM PHẢI CHI TIẾT, ĐỦ Ý.`;
 
       // Try Gemini API
       const allowedTools = ADMIN_AI_FUNCTIONS;

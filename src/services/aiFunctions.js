@@ -906,31 +906,50 @@ export async function createProduct(args) {
     const aiApiKey = process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY;
     if (aiApiKey) {
       try {
-        const prompt = `Viết một bài mô tả sản phẩm chuyên nghiệp, hấp dẫn, chuẩn SEO cho sản phẩm có tên là "${title}".
-Thông tin bổ sung: ${shortDesc ? `Mô tả ngắn: ${shortDesc}` : ''} | Quy cách: ${specs} | Đóng gói: ${packaging}.
-Yêu cầu:
-- Trình bày bố cục rõ ràng, chia thành các phần: Giới thiệu chung, Ưu điểm nổi bật, Ứng dụng.
-- Dùng định dạng HTML cơ bản (các thẻ h3, p, ul, li, strong).
-- Chỉ trả về đoạn mã HTML thuần, KHÔNG BỌC TRONG markdown block \`\`\`html.`;
+        const prompt = `Bạn là copywriter chuyên nghiệp. Viết một bài mô tả sản phẩm CHI TIẾT, CHUYÊN SÂU, chuẩn SEO cho sản phẩm: "${title}".
+Thông tin bổ sung: ${shortDesc ? `Mô tả ngắn: ${shortDesc}. ` : ''}Quy cách: ${specs || 'Chưa có'}. Đóng gói: ${packaging || 'Chưa có'}.
+
+YÊU CẦU BẮT BUỘC:
+- Bài viết TỐI THIỂU 500 TỪ, càng chi tiết càng tốt.
+- Bố cục rõ ràng: Giới thiệu chung → Ưu điểm nổi bật (5+ ý) → Thông số kỹ thuật → Ứng dụng thực tế → Cam kết chất lượng.
+- Dùng HTML cơ bản: h3, p, ul, li, strong, em.
+- Văn phong chuyên nghiệp, thuyết phục, hướng tới khách hàng xây dựng.
+- Chỉ trả về HTML, KHÔNG bọc trong \`\`\`html.`;
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 35000);
 
         const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${aiApiKey}` },
-          body: JSON.stringify({ model: "deepseek-chat", messages: [{ role: "user", content: prompt }], temperature: 0.7 }),
+          body: JSON.stringify({ model: "deepseek-chat", messages: [{ role: "user", content: prompt }], temperature: 0.7, max_tokens: 2048 }),
           signal: controller.signal
         });
         clearTimeout(timeoutId);
         
         if (response.ok) {
-          const data = await response.json();
-          let content = data.choices[0]?.message?.content || "";
-          description = content.replace(/```html/g, '').replace(/```/g, '').trim();
+          const raw = await response.text();
+          let data;
+          try { data = JSON.parse(raw); }
+          catch (parseErr) {
+            console.warn('Description JSON parse error — retrying once:', parseErr.message);
+            const retryRes = await fetch("https://api.deepseek.com/v1/chat/completions", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${aiApiKey}` },
+              body: JSON.stringify({ model: "deepseek-chat", messages: [{ role: "user", content: prompt }], temperature: 0.7, max_tokens: 2048 }),
+            });
+            if (retryRes.ok) {
+              const retryRaw = await retryRes.text();
+              data = JSON.parse(retryRaw);
+            }
+          }
+          if (data) {
+            let content = data.choices?.[0]?.message?.content || "";
+            description = content.replace(/```html/g, '').replace(/```/g, '').trim();
+          }
         }
       } catch (err) {
-        console.error("Auto generate description failed:", err);
+        console.error("Auto generate description failed:", err.message);
       }
     }
 
