@@ -7,13 +7,14 @@ import { useAppContext } from '../context/AppContext';
 import Fuse from 'fuse.js';
 import './ProductGrid.css';
 
-const ProductGrid = ({ onProductClick }) => {
+const ProductGrid = ({ onProductClick, onAddToCart: propOnAddToCart }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [categoriesList, setCategoriesList] = useState([]);
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { searchQuery, selectedCategory: category } = useStore();
-  const { handleAddToCart } = useAppContext();
+  const { handleAddToCart: ctxHandleAddToCart } = useAppContext();
+  const handleAddToCart = propOnAddToCart || ctxHandleAddToCart;
 
   useEffect(() => {
     const fetchAllProducts = async () => {
