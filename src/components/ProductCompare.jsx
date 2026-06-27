@@ -237,25 +237,74 @@ const ProductCompare = () => {
 
   const getCleanDesc = (product) => {
     const text = product.description || '';
-    return text.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').substring(0, 150);
+    if (!text) return '';
+    // Strip HTML tags and entities
+    let clean = text.replace(/<[^>]+>/g, ' ').replace(/&nbsp;|&amp;|&lt;|&gt;|&quot;/g, ' ');
+    // Collapse multiple spaces/newlines
+    clean = clean.replace(/\s+/g, ' ').trim();
+    // Take first 2 meaningful sentences (up to 250 chars)
+    const sentences = clean.split(/[.!?]+/).filter(s => s.trim().length > 5);
+    if (sentences.length >= 2) {
+      return sentences.slice(0, 2).join('. ') + '.';
+    }
+    return clean.substring(0, 250);
+  };
+
+  const getWeight = (product) => {
+    if (product.weight && String(product.weight).trim() !== '') {
+      const str = String(product.weight).trim();
+      if (/[a-zA-Z]/.test(str)) return str;
+      return `${str} kg`;
+    }
+    return null;
+  };
+
+  const getPackaging = (product) => {
+    if (product.packaging && String(product.packaging).trim() !== '') {
+      return String(product.packaging).trim();
+    }
+    return null;
   };
 
   const getFeatures = (product) => {
     const features = [];
-    if (product.specs) features.push(product.specs);
-    if (product.features && Array.isArray(product.features)) {
-      features.push(...product.features.slice(0, 3));
-    } else if (product.features && typeof product.features === 'string') {
-      features.push(product.features);
-    }
-    // Parse description for bullet points
-    if (!features.length && product.description) {
-      const bullets = product.description.match(/[•\-*]\s*.+/g);
-      if (bullets) {
-        features.push(...bullets.map(b => b.replace(/[•\-*]\s*/, '').replace(/<[^>]+>/g, '')).slice(0, 4));
+    // Try to extract meaningful bullet points from HTML description
+    if (product.description) {
+      // Match <li> items
+      const liMatches = product.description.match(/<li[^>]*>([\s\S]*?)<\/li>/gi);
+      if (liMatches && liMatches.length > 0) {
+        features.push(...liMatches
+          .map(li => li.replace(/<[^>]+>/g, '').trim())
+          .filter(t => t.length > 3)
+          .slice(0, 5));
+      }
+      // Fallback: bullet characters
+      if (features.length === 0) {
+        const bullets = product.description.match(/[•\-*—]\s*.+/g);
+        if (bullets) {
+          features.push(...bullets
+            .map(b => b.replace(/[•\-*—]\s*/, '').replace(/<[^>]+>/g, '').trim())
+            .filter(t => t.length > 3)
+            .slice(0, 5));
+        }
       }
     }
-    return features;
+    // If still empty, extract key phrases from description
+    if (features.length === 0 && product.description) {
+      const clean = product.description.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      const sentences = clean.split(/[.!?]+/).filter(s => s.trim().length > 10).slice(0, 4);
+      if (sentences.length > 0) {
+        features.push(...sentences.map(s => `• ${s.trim()}`));
+      }
+    }
+    // Also include specs if present
+    if (product.specs) {
+      const specsItems = product.specs.split(',').map(s => s.trim()).filter(Boolean);
+      if (specsItems.length > 1) {
+        features.unshift(...specsItems.map(s => `📐 ${s}`));
+      }
+    }
+    return features.slice(0, 6);
   };
 
   // --- Render: Empty State ---
@@ -425,8 +474,8 @@ const ProductCompare = () => {
           )}
         </div>
 
-        {/* Comparison Table */}
-        <div className="compare-table-wrapper">
+        {/* Comparison Table — Desktop */}
+        <div className="compare-table-wrapper desktop-only">
           <table className="compare-table">
             <thead>
               <tr>
@@ -500,18 +549,44 @@ const ProductCompare = () => {
                 {products.length === 0 && <td>—</td>}
               </tr>
 
-              {/* Description / Specs Row */}
+              {/* Weight Row */}
+              <tr>
+                <td>Trọng lượng</td>
+                {products.map(p => (
+                  <td key={p.id}>
+                    <span style={{ fontWeight: 600 }}>{getWeight(p) || '—'}</span>
+                  </td>
+                ))}
+                {products.length === 0 && <td>—</td>}
+              </tr>
+
+              {/* Packaging Row */}
+              <tr>
+                <td>Đóng gói</td>
+                {products.map(p => (
+                  <td key={p.id}>{getPackaging(p) || '—'}</td>
+                ))}
+                {products.length === 0 && <td>—</td>}
+              </tr>
+
+              {/* Specs / Dimensions Row */}
+              <tr>
+                <td>Quy cách</td>
+                {products.map(p => (
+                  <td key={p.id}>
+                    <span style={{ fontWeight: 600 }}>{p.specs || '—'}</span>
+                  </td>
+                ))}
+                {products.length === 0 && <td>—</td>}
+              </tr>
+
+              {/* Description / Summary Row */}
               <tr>
                 <td>Mô tả</td>
                 {products.map(p => (
                   <td key={p.id}>
                     <div className="compare-desc">
-                      {p.specs ? (
-                        <strong style={{ display: 'block', marginBottom: '4px', color: 'var(--text-main)' }}>
-                          {p.specs}
-                        </strong>
-                      ) : null}
-                      {getCleanDesc(p) || '—'}
+                      {getCleanDesc(p) || 'Chưa có mô tả'}
                     </div>
                   </td>
                 ))}
@@ -579,6 +654,105 @@ const ProductCompare = () => {
               </tr>
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card Comparison View */}
+        <div className="compare-cards mobile-only">
+          {products.map(p => (
+            <div key={p.id} className="compare-card">
+              <div className="compare-card-header">
+                <img
+                  src={p.image || 'https://placehold.co/400'}
+                  alt={p.title}
+                  onError={(e) => { e.target.src = 'https://placehold.co/400'; }}
+                />
+                <button className="compare-remove-btn" onClick={() => removeProduct(p.id)}>×</button>
+              </div>
+              <h3 className="compare-card-title">{p.title}</h3>
+              
+              <div className="compare-card-rows">
+                <div className="compare-card-row">
+                  <span className="compare-card-label">Giá</span>
+                  <span className="compare-card-value">
+                    <strong>{getFormattedPrice(p)}</strong>
+                    {getOldPrice(p) && <span className="old-price" style={{ marginLeft: 8, fontSize: '0.8rem' }}>{getOldPrice(p)}</span>}
+                  </span>
+                </div>
+                <div className="compare-card-row">
+                  <span className="compare-card-label">Danh mục</span>
+                  <span className="compare-card-value">{p.category || 'Chung'}</span>
+                </div>
+                <div className="compare-card-row">
+                  <span className="compare-card-label">Thương hiệu</span>
+                  <span className="compare-card-value">{p.brand || 'Zbuild'}</span>
+                </div>
+                {getWeight(p) && (
+                  <div className="compare-card-row">
+                    <span className="compare-card-label">Trọng lượng</span>
+                    <span className="compare-card-value">{getWeight(p)}</span>
+                  </div>
+                )}
+                {getPackaging(p) && (
+                  <div className="compare-card-row">
+                    <span className="compare-card-label">Đóng gói</span>
+                    <span className="compare-card-value">{getPackaging(p)}</span>
+                  </div>
+                )}
+                <div className="compare-card-row">
+                  <span className="compare-card-label">Quy cách</span>
+                  <span className="compare-card-value">{p.specs || '—'}</span>
+                </div>
+                <div className="compare-card-row">
+                  <span className="compare-card-label">Tồn kho</span>
+                  <span className="compare-card-value">
+                    {p.stock !== undefined && p.stock !== null ? (
+                      p.stock > 0 ? (
+                        <span style={{ color: '#22C55E', fontWeight: 600 }}>Còn hàng ({p.stock})</span>
+                      ) : (
+                        <span style={{ color: '#EF4444', fontWeight: 600 }}>Hết hàng</span>
+                      )
+                    ) : '—'}
+                  </span>
+                </div>
+              </div>
+
+              {getCleanDesc(p) && (
+                <div className="compare-card-section">
+                  <h4>Mô tả</h4>
+                  <p>{getCleanDesc(p)}</p>
+                </div>
+              )}
+              
+              {(() => {
+                const features = getFeatures(p);
+                if (features.length > 0) {
+                  return (
+                    <div className="compare-card-section">
+                      <h4>Đặc điểm nổi bật</h4>
+                      <ul>
+                        {features.map((f, i) => (
+                          <li key={i}>{f}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              <div className="compare-card-rating">
+                {(() => {
+                  const { rating, count } = getRating(p);
+                  return (
+                    <>
+                      <span className="compare-stars">{renderStars(rating)}</span>
+                      {count > 0 && <span className="compare-rating-count">({count})</span>}
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Bottom Actions */}
