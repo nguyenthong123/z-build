@@ -15,6 +15,7 @@
 import { db } from '../firebase';
 import { collection, getDocs, query, orderBy, where, doc, getDoc, addDoc, updateDoc, deleteDoc, limit, serverTimestamp } from 'firebase/firestore';
 import { calculateConstructionMaterials } from './MaterialService';
+import Fuse from 'fuse.js';
 
 // ============ FUNCTION DEFINITIONS (cho DeepSeek/OpenAI tools format) ============
 
@@ -541,24 +542,53 @@ const formatCurrency = (n) => new Intl.NumberFormat('vi-VN').format(n || 0) + '�
 
 async function searchProducts({ keyword = '', category = '', max_results = 5 }) {
   try {
-    // Giới hạn 300 sản phẩm — tránh load toàn bộ DB gây chậm & crash
-    const snap = await getDocs(query(collection(db, 'products'), limit(300)));
-    let products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Load tối đa 500 sản phẩm — đủ cho hầu hết cửa hàng
+    const snap = await getDocs(query(collection(db, 'products'), limit(500)));
+    let products = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.title);
 
-    // Filter by keyword
+    // Nếu có keyword → dùng Fuse.js fuzzy search (chịu được sai chính tả, dấu)
     if (keyword) {
-      const kw = keyword.toLowerCase();
-      products = products.filter(p =>
-        (p.title || '').toLowerCase().includes(kw) ||
-        (p.description || '').toLowerCase().includes(kw) ||
-        (p.category || '').toLowerCase().includes(kw)
-      );
+      const fuse = new Fuse(products, {
+        keys: ['title', 'description', 'category'],
+        threshold: 0.4,
+        ignoreLocation: true,
+        minMatchCharLength: 2,
+        includeScore: true
+      });
+      const results = fuse.search(keyword);
+      if (results.length > 0) {
+        products = results.slice(0, max_results).map(r => r.item);
+      } else {
+        // Fallback: tìm contains đơn giản (đã chuẩn hoá)
+        const kw = keyword.toLowerCase();
+        products = products.filter(p =>
+          (p.title || '').toLowerCase().includes(kw) ||
+          (p.description || '').toLowerCase().includes(kw) ||
+          (p.category || '').toLowerCase().includes(kw)
+        ).slice(0, max_results);
+      }
     }
 
-    // Filter by category
-    if (category) {
-      const cat = category.toLowerCase();
-      products = products.filter(p => (p.category || '').toLowerCase().includes(cat));
+    // Filter bổ sung theo category nếu có
+    if (category && products.length > 0) {
+      const fuseCat = new Fuse(products, {
+        keys: ['category'],
+        threshold: 0.3,
+        ignoreLocation: true,
+        minMatchCharLength: 1
+      });
+      const catResults = fuseCat.search(category);
+      if (catResults.length > 0) {
+        products = catResults.slice(0, max_results).map(r => r.item);
+      } else {
+        const cat = category.toLowerCase();
+        products = products.filter(p => (p.category || '').toLowerCase().includes(cat)).slice(0, max_results);
+      }
+    }
+
+    // Nếu không có keyword & không có category → trả về top sản phẩm
+    if (!keyword && !category) {
+      products = products.slice(0, max_results);
     }
 
     return products.slice(0, max_results).map(p => ({
