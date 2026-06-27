@@ -471,6 +471,25 @@
   .form-block .block-header { margin-bottom: 12px; }
   .form-block h3 { font-size: 1rem; font-weight: 700; color: #0F172A; }
 
+  /* Step indicator */
+  .block-step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: #0F172A;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-right: 8px;
+  }
+  .block-header { display: flex; align-items: center; gap: 4px; }
+
+  /* Method icon */
+  .method-icon { font-size: 1.4rem; flex-shrink: 0; line-height: 1; }
+
   /* Inputs */
   .input-group input,
   .form-grid input,

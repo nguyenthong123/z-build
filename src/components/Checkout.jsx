@@ -599,20 +599,25 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
     <div className="checkout-page animate-fade-in">
       {/* Mobile Header */}
       <div className="mobile-checkout-header">
-        <Link to="/" className="back-btn" style={{ textDecoration: 'none', display: 'flex' }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <Link to="/cart" className="back-btn" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', color: '#0F172A', fontWeight: 600, fontSize: '0.9rem' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         </Link>
         <div className="header-info">
           <span className="header-title">THANH TOÁN</span>
-          <span className="step-count">{paymentStep === 2 ? 'Bước 2: Quét mã QR' : `Bước ${step} trên 2`}</span>
         </div>
-        <div style={{ width: 24 }}></div>
+        {/* Step indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#D4AF37' }}></div>
+          <div style={{ width: '16px', height: '1.5px', background: '#e2e8f0' }}></div>
+          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#e2e8f0' }}></div>
+        </div>
       </div>
 
       <div className="container">
         <div className="checkout-layout">
           {/* Form Side */}
           <div className="checkout-form-section">
+            {/* Desktop-only logo + breadcrumbs */}
             <Link to="/" className="checkout-logo desktop-only" style={{ textDecoration: 'none', display: 'inline-flex' }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: '8px' }}>
                 <path d="M19 3H5C3.89 3 3 3.9 3 5V19C3 20.1 3.89 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM7 7H17V9L10 15H17V17H7V15L14 9H7V7Z" fill="#D4AF37"/>
@@ -620,305 +625,173 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
               <span className="logo-text" style={{ color: '#1A2130' }}>ZBUILD</span>
             </Link>
             <div className="desktop-only" style={{ marginBottom: '24px' }}>
-              <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#64748B', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500', transition: 'color 0.2s', padding: '6px 0' }}
-                    onMouseOver={(e) => e.currentTarget.style.color = '#1A2130'}
-                    onMouseOut={(e) => e.currentTarget.style.color = '#64748B'}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#64748B', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 Trở về trang chủ
               </Link>
             </div>
 
-            <nav className="checkout-breadcrumbs desktop-only">
-              <span style={{ cursor: 'pointer', transition: 'color 0.2s' }} onClick={onBack} onMouseOver={e => e.currentTarget.style.color = '#1A2130'} onMouseOut={e => e.currentTarget.style.color = ''}>Giỏ hàng</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-              <span className="active" style={{ cursor: 'pointer' }} onClick={() => document.getElementById('info-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>Thông tin</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-              <span style={{ cursor: 'pointer', transition: 'color 0.2s' }} onClick={() => document.getElementById('shipping-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} onMouseOver={e => e.currentTarget.style.color = '#1A2130'} onMouseOut={e => e.currentTarget.style.color = ''}>Vận chuyển</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-              <span style={{ cursor: 'pointer', transition: 'color 0.2s' }} onClick={() => document.getElementById('payment-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} onMouseOver={e => e.currentTarget.style.color = '#1A2130'} onMouseOut={e => e.currentTarget.style.color = ''}>Thanh toán</span>
-            </nav>
-
+            {/* ========== SECTION 1: CONTACT INFO ========== */}
             <section className="form-block" id="info-section">
               <div className="block-header">
+                <span className="block-step">1</span>
                 <h3>Thông tin liên hệ</h3>
-                <p className="login-link">Đã có tài khoản? <a href="#">Đăng nhập</a></p>
+                {user && <span className="login-link" style={{ fontSize: '0.75rem', color: '#22c55e' }}>✓ Đã đăng nhập</span>}
               </div>
-              <div className="input-group">
-                <input 
-                  type="email" 
-                  name="email" 
-                  placeholder="Email hoặc số điện thoại" 
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  style={formErrors.email ? { borderColor: '#e74c3c' } : {}}
-                />
-                {formErrors.email && <span style={{ color: '#e74c3c', fontSize: '0.8rem' }}>{formErrors.email}</span>}
+              <div className="input-group" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ position: 'relative' }}>
+                  <svg style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', zIndex: 1 }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  <input 
+                    type="email" name="email" placeholder="Email" 
+                    value={formData.email} onChange={handleInputChange} required
+                    style={{ paddingLeft: '42px', ...(formErrors.email ? { borderColor: '#e74c3c' } : {}) }}
+                  />
+                </div>
+                {formErrors.email && <span style={{ color: '#e74c3c', fontSize: '0.78rem', marginTop: '-4px' }}>{formErrors.email}</span>}
+                <div style={{ position: 'relative' }}>
+                  <svg style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', zIndex: 1 }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  <input 
+                    type="tel" name="phone" placeholder="Số điện thoại" 
+                    value={formData.phone} onChange={handleInputChange} required
+                    style={{ paddingLeft: '42px', ...(formErrors.phone ? { borderColor: '#e74c3c' } : {}) }}
+                  />
+                </div>
+                {formErrors.phone && <span style={{ color: '#e74c3c', fontSize: '0.78rem', marginTop: '-4px' }}>{formErrors.phone}</span>}
               </div>
             </section>
 
+            {/* ========== SECTION 2: ADDRESS ========== */}
             <section className="form-block">
               <div className="block-header">
+                <span className="block-step">2</span>
                 <h3>Địa chỉ nhận hàng</h3>
               </div>
-              <div className="form-grid">
-                <input 
-                  type="text" 
-                  name="firstName" 
-                  placeholder="Họ" 
-                  className="half"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                />
-                <input 
-                  type="text" 
-                  name="lastName" 
-                  placeholder="Tên" 
-                  className="half"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                />
-                <input 
-                  type="text" 
-                  name="address" 
-                  placeholder="Địa chỉ" 
-                  className="full"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                />
-                <input 
-                  type="text" 
-                  name="city" 
-                  placeholder="Thành phố" 
-                  className="half"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                />
-                <input 
-                  type="text" 
-                  name="state" 
-                  placeholder="Tỉnh / Thành" 
-                  className="half"
-                  value={formData.state}
-                  onChange={handleInputChange}
-                />
-                <input 
-                  type="text" 
-                  name="zipCode" 
-                  placeholder="Mã bưu điện" 
-                  className="half"
-                  value={formData.zipCode}
-                  onChange={handleInputChange}
-                />
-                <select 
-                  name="country" 
-                  className="half"
-                  value={formData.country}
-                  onChange={handleInputChange}
-                >
-                  <option>Vietnam</option>
-                  <option>United States</option>
-                  <option>Canada</option>
-                </select>
-                <input 
-                  type="tel" 
-                  name="phone" 
-                  placeholder="Số điện thoại" 
-                  className="full"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  style={formErrors.phone ? { borderColor: '#e74c3c' } : {}}
-                />
-                {formErrors.phone && <span style={{ color: '#e74c3c', fontSize: '0.8rem', display: 'block', marginTop: '-8px', marginBottom: '8px' }}>{formErrors.phone}</span>}
-                <div style={{ marginTop: '10px' }}>
-                  <button 
-                    type="button" 
-                    className="btn-secondary" 
-                    style={{ padding: '8px 16px', fontSize: '0.9rem', width: 'auto' }}
-                    onClick={async () => {
-                      if (user) {
-                        try {
-                          await setDoc(doc(db, 'users', user.uid), {
-                            firstName: formData.firstName,
-                            lastName: formData.lastName,
-                            address: formData.address,
-                            city: formData.city,
-                            state: formData.state,
-                            zipCode: formData.zipCode,
-                            country: formData.country,
-                            phone: formData.phone
-                          }, { merge: true });
-                          alert('Đã lưu thông tin cơ bản!');
-                        } catch (err) {
-                          alert('Lỗi lưu thông tin: ' + err.message);
-                        }
-                      } else {
-                        alert('Bạn cần đăng nhập để lưu thông tin!');
-                      }
-                    }}
-                  >
-                    💾 Lưu thông tin cơ bản
-                  </button>
+              <div className="form-grid" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input type="text" name="firstName" placeholder="Họ" className="half" value={formData.firstName} onChange={handleInputChange} />
+                  <input type="text" name="lastName" placeholder="Tên" className="half" value={formData.lastName} onChange={handleInputChange} />
+                </div>
+                <input type="text" name="address" placeholder="Địa chỉ cụ thể (số nhà, tên đường...)" className="full" value={formData.address} onChange={handleInputChange} />
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input type="text" name="city" placeholder="Quận / Huyện" className="half" value={formData.city} onChange={handleInputChange} />
+                  <input type="text" name="state" placeholder="Tỉnh / Thành phố" className="half" value={formData.state} onChange={handleInputChange} />
                 </div>
               </div>
             </section>
 
+            {/* ========== SECTION 3: SHIPPING ========== */}
             <section className="form-block" id="shipping-section">
               <div className="block-header">
+                <span className="block-step">3</span>
                 <h3>Phương thức vận chuyển</h3>
               </div>
               <div className="shipping-methods">
                 <label className={`method-option ${formData.shippingMethod === 'standard' ? 'active' : ''}`}>
-                  <input 
-                    type="radio" 
-                    name="shippingMethod" 
-                    value="standard"
-                    checked={formData.shippingMethod === 'standard'}
-                    onChange={handleInputChange}
-                  />
+                  <input type="radio" name="shippingMethod" value="standard" checked={formData.shippingMethod === 'standard'} onChange={handleInputChange} />
+                  <span className="method-icon">🏭</span>
                   <div className="method-info">
                     <span className="name">Lấy hàng tại kho</span>
-                    <span className="desc">Tới kho lấy hàng</span>
+                    <span className="desc">Đến kho trực tiếp nhận hàng</span>
                   </div>
                   <span className="price">Miễn phí</span>
                 </label>
-                <label className={`method-option ${formData.shippingMethod === 'express' ? 'active' : ''}`} style={{ flexWrap: 'wrap' }}>
-                  <div style={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <input 
-                        type="radio" 
-                        name="shippingMethod" 
-                        value="express"
-                        checked={formData.shippingMethod === 'express'}
-                        onChange={handleInputChange}
-                      />
-                      <div className="method-info">
-                        <span className="name">Giao tới nơi</span>
-                        <span className="desc">Giao hàng tận nơi</span>
-                      </div>
-                    </div>
-                    <span className="price">
-                      {distanceKm !== null ? `${shippingCost.toLocaleString('vi-VN')}₫` : 'Tính theo khoảng cách'}
-                    </span>
+                <label className={`method-option ${formData.shippingMethod === 'express' ? 'active' : ''}`}>
+                  <input type="radio" name="shippingMethod" value="express" checked={formData.shippingMethod === 'express'} onChange={handleInputChange} />
+                  <span className="method-icon">🚚</span>
+                  <div className="method-info">
+                    <span className="name">Giao hàng tận nơi</span>
+                    <span className="desc">Vận chuyển đến địa chỉ của bạn</span>
                   </div>
-                  
-                  {formData.shippingMethod === 'express' && (
-                    <div style={{ width: '100%', paddingLeft: '34px', marginTop: '12px' }}>
-                      <button 
-                        type="button"
-                        onClick={(e) => { e.preventDefault(); handleGetLocation(); }}
-                        disabled={isLocating}
-                        className="btn-secondary"
-                        style={{ marginTop: '8px' }}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={isLocating ? 'rotating' : ''}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                        {isLocating ? 'Đang định vị...' : (distanceKm !== null ? 'Cập nhật lại vị trí giao hàng' : 'Lấy vị trí của tôi để tính phí giao hàng')}
-                      </button>
-                      
-                      {distanceKm !== null && (
-                        <div style={{ marginTop: '10px', fontSize: '0.85rem', color: '#64748b', background: '#f8fafc', padding: '8px', borderRadius: '6px', border: '1px dashed #cbd5e1' }}>
-                          <div style={{ marginBottom: '4px' }}>📏 Khoảng cách tới kho: <strong>{distanceKm.toFixed(1)} km</strong></div>
-                          <div style={{ marginBottom: '4px' }}>⚖️ Tổng trọng lượng: <strong>{totalWeight} kg</strong></div>
-                          <div>🚚 Chi phí ước tính: <strong style={{ color: '#E11D48' }}>{shippingCost.toLocaleString('vi-VN')}₫</strong></div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  <span className="price">{distanceKm !== null ? `${shippingCost.toLocaleString('vi-VN')}₫` : '—'}</span>
                 </label>
               </div>
+              {formData.shippingMethod === 'express' && (
+                <div style={{ marginTop: '12px', padding: '14px', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+                  <button type="button" onClick={(e) => { e.preventDefault(); handleGetLocation(); }} disabled={isLocating} className="btn-secondary" style={{ margin: 0, width: '100%' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    {isLocating ? 'Đang định vị...' : (distanceKm !== null ? '📍 Cập nhật vị trí' : '📍 Lấy vị trí để tính phí')}
+                  </button>
+                  {distanceKm !== null && (
+                    <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
+                      <div><div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Khoảng cách</div><strong style={{ fontSize: '0.9rem' }}>{distanceKm.toFixed(1)} km</strong></div>
+                      <div><div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Trọng lượng</div><strong style={{ fontSize: '0.9rem' }}>{totalWeight} kg</strong></div>
+                      <div><div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Phí vận chuyển</div><strong style={{ fontSize: '0.9rem', color: '#E11D48' }}>{shippingCost.toLocaleString('vi-VN')}₫</strong></div>
+                    </div>
+                  )}
+                </div>
+              )}
             </section>
 
+            {/* ========== SECTION 4: PAYMENT ========== */}
             <section className="form-block" id="payment-section">
               <div className="block-header">
+                <span className="block-step">4</span>
                 <h3>Thanh toán</h3>
-                <p className="secure-tag">Tất cả các giao dịch đều được bảo mật và mã hóa.</p>
+                <p className="secure-tag" style={{ margin: 0 }}>🔒 Bảo mật SSL</p>
               </div>
-              <div className="shipping-methods" style={{ marginBottom: '20px' }}>
+              <div className="shipping-methods" style={{ marginBottom: formData.paymentMethod === 'bank-transfer' ? '12px' : '0' }}>
                 <label className={`method-option ${formData.paymentMethod === 'bank-transfer' ? 'active' : ''}`}>
-                  <input 
-                    type="radio" 
-                    name="paymentMethod" 
-                    value="bank-transfer"
-                    checked={formData.paymentMethod === 'bank-transfer'}
-                    onChange={handleInputChange}
-                  />
+                  <input type="radio" name="paymentMethod" value="bank-transfer" checked={formData.paymentMethod === 'bank-transfer'} onChange={handleInputChange} />
+                  <span className="method-icon">🏦</span>
                   <div className="method-info">
-                    <span className="name">Chuyển khoản (VietQR)</span>
-                    <span className="desc">Hệ thống duyệt đơn tự động</span>
+                    <span className="name">Chuyển khoản ngân hàng</span>
+                    <span className="desc">Quét mã VietQR — tự động xác nhận</span>
                   </div>
                 </label>
                 <label className={`method-option ${formData.paymentMethod === 'cod' ? 'active' : ''}`}>
-                  <input 
-                    type="radio" 
-                    name="paymentMethod" 
-                    value="cod"
-                    checked={formData.paymentMethod === 'cod'}
-                    onChange={handleInputChange}
-                  />
+                  <input type="radio" name="paymentMethod" value="cod" checked={formData.paymentMethod === 'cod'} onChange={handleInputChange} />
+                  <span className="method-icon">💵</span>
                   <div className="method-info">
-                    <span className="name">Thanh toán khi nhận hàng (COD)</span>
-                    <span className="desc">Giao hàng tới nơi mới thu tiền</span>
+                    <span className="name">Thanh toán khi nhận hàng</span>
+                    <span className="desc">Trả tiền mặt khi nhận hàng (COD)</span>
                   </div>
                 </label>
               </div>
 
               {formData.paymentMethod === 'bank-transfer' && (
-                <div className="card-fields animate-fade-in">
-                  <div className="qr-hint-box" style={{ padding: '20px', backgroundColor: '#f8f9fa', border: '1px solid #e2e8f0', borderRadius: '12px', color: 'var(--text-main)', textAlign: 'center' }}>
-                    <div style={{ fontWeight: '600', marginBottom: '8px', color: '#1A2130', fontSize: '1.1rem' }}>
-                      Thanh toán chuyển khoản (VietQR)
-                    </div>
-                    <p style={{ margin: '0 0 15px 0', color: '#64748B', fontSize: '0.95rem' }}>
-                      Tổng tiền thanh toán: <strong style={{ color: '#E11D48', fontSize: '1.2rem' }}>{Number(total).toLocaleString('vi-VN')}₫</strong>
-                    </p>
-                    
-                    {shopBankInfo?.bankCode && shopBankInfo?.accountNumber && (
-                      <div style={{ background: '#fff', padding: '15px', borderRadius: '8px', display: 'inline-block', border: '1px solid #e2e8f0', marginBottom: '15px' }}>
-                        <img 
-                          src={`https://img.vietqr.io/image/${shopBankInfo.bankCode}-${shopBankInfo.accountNumber}-compact2.png?amount=${total}&addInfo=${orderNumber}&accountName=${encodeURIComponent(shopBankInfo.accountName || '')}`}
-                          alt="VietQR"
-                          style={{ width: '200px', height: '200px', objectFit: 'contain' }}
-                        />
-                      </div>
-                    )}
-                    
-                    <div style={{ textAlign: 'left', background: '#f1f5f9', padding: '15px', borderRadius: '8px', fontSize: '0.9rem', marginBottom: '15px' }}>
-                      <div style={{ marginBottom: '8px' }}><strong>Ngân hàng:</strong> {shopBankInfo?.bankName}</div>
-                      <div style={{ marginBottom: '8px' }}><strong>Số tài khoản:</strong> {shopBankInfo?.accountNumber}</div>
-                      <div style={{ marginBottom: '8px' }}><strong>Chủ tài khoản:</strong> {shopBankInfo?.accountName}</div>
-                      <div><strong>Nội dung:</strong> {orderNumber} <span style={{ color: '#E11D48', fontSize: '0.8rem', marginLeft: '5px' }}>(Hệ thống sẽ tự duyệt đơn)</span></div>
-                    </div>
-                    
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#10b981' }}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                      <span>Vui lòng quét mã trên để thanh toán trước khi bấm <b>Xác nhận đơn hàng</b>.</span>
-                    </div>
+                <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '16px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontWeight: 700, marginBottom: '4px', fontSize: '0.95rem' }}>
+                    Tổng cần chuyển: <span style={{ color: '#E11D48', fontSize: '1.2rem' }}>{Number(total).toLocaleString('vi-VN')}₫</span>
+                  </div>
+                  <p style={{ margin: '0 0 12px', color: '#64748B', fontSize: '0.8rem' }}>Nội dung chuyển khoản: <strong>{orderNumber}</strong></p>
+                  {shopBankInfo?.bankCode && shopBankInfo?.accountNumber && (
+                    <img 
+                      src={`https://img.vietqr.io/image/${shopBankInfo.bankCode}-${shopBankInfo.accountNumber}-compact2.png?amount=${total}&addInfo=${orderNumber}&accountName=${encodeURIComponent(shopBankInfo.accountName || '')}`}
+                      alt="VietQR" style={{ width: '180px', height: '180px', objectFit: 'contain', margin: '0 auto' }}
+                    />
+                  )}
+                  <div style={{ background: '#fff', borderRadius: '10px', padding: '12px', marginTop: '12px', fontSize: '0.8rem', textAlign: 'left', border: '1px solid #f1f5f9' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}><span style={{ color: '#94a3b8' }}>Ngân hàng</span><strong>{shopBankInfo?.bankName}</strong></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}><span style={{ color: '#94a3b8' }}>Số TK</span><strong>{shopBankInfo?.accountNumber}</strong></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#94a3b8' }}>Chủ TK</span><strong>{shopBankInfo?.accountName}</strong></div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '10px', color: '#10b981', fontSize: '0.8rem' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    Hệ thống tự động xác nhận sau khi chuyển khoản
                   </div>
                 </div>
               )}
             </section>
 
+            {/* Desktop form footer */}
             <div className="form-footer desktop-only">
               <button className="btn-return" onClick={onBack}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                 Quay lại giỏ hàng
               </button>
-              {formData.paymentMethod === 'bank-transfer' && !pollingTimeout ? (
-                <div className="waiting-payment" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#10B981', fontWeight: '500', background: '#ECFDF5', padding: '12px 20px', borderRadius: '8px', border: '1px solid #A7F3D0' }}>
-                  <div style={{ width: '18px', height: '18px', border: '3px solid #10B981', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-                  Hệ thống đang chờ nhận tiền...
-                </div>
-              ) : (
-                <button className="btn-primary-action" onClick={handlePlaceOrder} disabled={isSubmitting}>
-                  {isSubmitting ? 'Đang xử lý...' : (formData.paymentMethod === 'bank-transfer' ? 'Tôi đã thanh toán xong' : 'Xác nhận đơn hàng')}
-                </button>
-              )}
+              <button className="btn-primary-action" onClick={handlePlaceOrder} disabled={isSubmitting}>
+                {isSubmitting ? 'Đang xử lý...' : 'Xác nhận đơn hàng'}
+              </button>
             </div>
           </div>
 
-          {/* Summary Side */}
+          {/* ========== ORDER SUMMARY ========== */}
           <div className="checkout-summary-section">
             <div className="summary-sticky">
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 12px 0', color: '#0F172A' }}>
+                📋 Đơn hàng ({cartItems.length} sản phẩm)
+              </h3>
+              
               <div className="summary-items">
                 {cartItems.map(item => (
                   <div key={item.id} className="summary-item">
@@ -928,7 +801,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
                     </div>
                     <div className="item-meta">
                       <span className="name">{item.name}</span>
-                      <span className="variant">{item.variant}</span>
+                      <span className="variant">{Number(item.price).toLocaleString('vi-VN')}₫</span>
                     </div>
                     <span className="price">{Number(item.price * item.quantity).toLocaleString('vi-VN')}₫</span>
                   </div>
@@ -950,8 +823,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
                 ) : (
                   <>
                     <input
-                      type="text"
-                      placeholder="Nhập mã giảm giá"
+                      type="text" placeholder="Mã giảm giá"
                       value={couponCode}
                       onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponError(''); }}
                       onKeyDown={e => e.key === 'Enter' && handleApplyCoupon()}
@@ -966,26 +838,14 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
               {couponError && <div className="coupon-error">{couponError}</div>}
 
               <div className="billing-details">
-                <div className="line">
-                  <span>Tạm tính</span>
-                  <span>{Number(subtotal).toLocaleString('vi-VN')}₫</span>
-                </div>
-                <div className="line">
-                  <span>Vận chuyển</span>
-                  <span className={shippingCost === 0 ? 'free' : ''}>{shippingCost === 0 ? 'Miễn phí' : `${Number(shippingCost).toLocaleString('vi-VN')}₫`}</span>
-                </div>
-
+                <div className="line"><span>Tạm tính</span><span>{Number(subtotal).toLocaleString('vi-VN')}₫</span></div>
+                <div className="line"><span>Vận chuyển</span><span className={shippingCost === 0 ? 'free' : ''}>{shippingCost === 0 ? 'Miễn phí' : `${Number(shippingCost).toLocaleString('vi-VN')}₫`}</span></div>
                 {discount > 0 && (
-                  <div className="line discount-line">
-                    <span>Giảm giá ({appliedCoupon?.code})</span>
-                    <span className="discount-value">-{Number(discount).toLocaleString('vi-VN')}₫</span>
-                  </div>
+                  <div className="line discount-line"><span>Giảm giá ({appliedCoupon?.code})</span><span className="discount-value">-{Number(discount).toLocaleString('vi-VN')}₫</span></div>
                 )}
                 <div className="line total">
                   <span>Tổng cộng</span>
-                  <span className="total-price">
-                    <span className="currency">VNĐ</span> {Number(total).toLocaleString('vi-VN')}₫
-                  </span>
+                  <span className="total-price">{Number(total).toLocaleString('vi-VN')}₫</span>
                 </div>
               </div>
             </div>
@@ -1009,7 +869,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }}>
               <span style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 500 }}>Tổng thanh toán</span>
-              <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#E11D48' }}>{Number(total).toLocaleString('vi-VN')}₫</span>
+              <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#E11D48' }}>{Number(total).toLocaleString('vi-VN')}₫</span>
             </div>
             <button className="btn-place-order" onClick={paymentStep === 1 ? handlePlaceOrder : () => onOrderComplete(generatedOrder)} disabled={isSubmitting}>
               {isSubmitting ? (
