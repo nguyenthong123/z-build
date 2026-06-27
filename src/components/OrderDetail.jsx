@@ -304,7 +304,7 @@ const OrderDetail = ({ order, onBack, onCancelSuccess, onEditOrder, onReturnSucc
             </div>
 
             {/* Cancel/Edit Button */}
-            {order.status === 'pending' && isWithinOneHour && (
+            {order.status === 'pending' && (
               <div className="od-card od-cancel-card">
                 {!showCancelConfirm ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -328,12 +328,6 @@ const OrderDetail = ({ order, onBack, onCancelSuccess, onEditOrder, onReturnSucc
                     </div>
                   </div>
                 )}
-              </div>
-            )}
-            
-            {order.status === 'pending' && !isWithinOneHour && (
-              <div className="od-card" style={{ padding: '15px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0', fontSize: '13px', color: '#64748B' }}>
-                <p style={{ margin: 0 }}>Đã quá 60 phút kể từ khi đặt hàng. Không thể tự hủy hoặc sửa đơn. Vui lòng liên hệ hỗ trợ nếu cần.</p>
               </div>
             )}
 

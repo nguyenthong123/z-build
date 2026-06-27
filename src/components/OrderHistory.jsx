@@ -20,8 +20,7 @@ const OrderHistory = ({ user, onBack, onViewDetails, onNavigate, onLogout }) => 
       try {
         const q = query(
           collection(db, 'orders'),
-          where('userId', '==', user.uid),
-          orderBy('createdAt', 'desc')
+          where('userId', '==', user.uid)
         );
         const snapshot = await getDocs(q);
         const orderData = snapshot.docs.map(doc => {
@@ -48,6 +47,14 @@ const OrderHistory = ({ user, onBack, onViewDetails, onNavigate, onLogout }) => 
             returnReason: data.returnReason || ''
           };
         });
+        
+        // Sort by createdAt descending in memory to avoid requiring a composite index
+        orderData.sort((a, b) => {
+          const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+          const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+          return timeB - timeA;
+        });
+
         setOrders(orderData);
       } catch (error) {
         console.error('Error fetching orders:', error);

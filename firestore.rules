@@ -11,9 +11,10 @@ service cloud.firestore {
       );
     }
 
-    // Products: Anyone can read, only admin can write
+    // Products: Anyone can read, only admin can write everything, but anyone can update stock
     match /products/{productId} {
       allow read: if true;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock']);
       allow write: if isAdmin();
     }
     
@@ -46,6 +47,7 @@ service cloud.firestore {
     match /coupons/{couponId} {
       allow get: if true;
       allow list: if true; // Frontend queries currently require this, will need refactoring to restrict to active only
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedCount']);
       allow write: if isAdmin();
     }
     

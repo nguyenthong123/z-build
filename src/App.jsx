@@ -222,10 +222,15 @@ function App() {
     setupMessaging();
   }, [user]);
 
-  const updateQuantity = (id, delta) => {
-    setCartItems(prev => prev.map(item => 
-      item.id === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item
-    ));
+  const updateQuantity = (id, amount, isAbsolute = false) => {
+    setCartItems(prev => prev.map(item => {
+      if (item.id === id) {
+        let newQuantity = isAbsolute ? amount : item.quantity + amount;
+        if (!isAbsolute && newQuantity < 0) newQuantity = 0;
+        return { ...item, quantity: newQuantity };
+      }
+      return item;
+    }));
   };
 
   const removeItem = (id) => {

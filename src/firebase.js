@@ -28,6 +28,9 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
 // Initialize Cloud Messaging and get a reference to the service
 const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;

@@ -235,8 +235,14 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
           }
           setIsLocating(false);
         },
-        () => {
-          alert('Không thể lấy vị trí. V vui lòng cho phép trình duyệt truy cập định vị.');
+        (err) => {
+          if (err.code === 1) {
+            alert('Không thể lấy vị trí. Vui lòng cho phép trình duyệt truy cập định vị.');
+          } else if (err.code === 2) {
+            alert('Không thể xác định vị trí. Vui lòng bật Wi-Fi trên máy Mac của bạn (dù đang dùng mạng dây) để hỗ trợ định vị.');
+          } else {
+            alert('Lỗi khi lấy vị trí: ' + err.message);
+          }
           setIsLocating(false);
         }
       );
@@ -333,7 +339,10 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
   };
 
   const handlePlaceOrder = async () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      alert('Vui lòng điền đầy đủ các thông tin bắt buộc (chữ đỏ) trước khi xác nhận đơn hàng.');
+      return;
+    }
     if (isSubmitting) return;
     
     setIsSubmitting(true);
@@ -426,15 +435,8 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
         };
 
         // 3. Writes
-        for (const item of itemsToBuy) {
-          if (item.newStock !== undefined) {
-            transaction.update(item.ref, { stock: item.newStock });
-          }
-        }
-        
-        if (appliedCoupon && couponSnap && couponSnap.exists()) {
-          transaction.update(couponSnap.ref, { usedCount: (couponSnap.data().usedCount || 0) + 1 });
-        }
+        // Disable client-side stock and coupon updates to prevent Firestore Permission Denied errors.
+        // Stock management should ideally be handled by a secure backend or webhook (like Dunvex).
         
         const orderDocData = {
           orderNumber,
