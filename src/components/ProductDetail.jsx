@@ -14,7 +14,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
   const [loading, setLoading] = useState(false);
   const [activeMedia, setActiveMedia] = useState({ type: 'image', index: 0 });
   const [selectedVariants, setSelectedVariants] = useState({});
-  const [quantity] = useState(1);
+  const [quantity, setQuantity] = useState(1);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0);
   const [visibleThumbs, setVisibleThumbs] = useState(4);
@@ -524,7 +524,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
                 Thêm vào giỏ hàng
               </button>
-              <button className="btn-buy-now" style={{ flex: 1 }}>Mua ngay</button>
+              <button className="btn-buy-now" style={{ flex: 1 }} onClick={() => { onAddToCart(product, quantity); navigate('/checkout'); }}>Mua ngay</button>
             </div>
 
             {/* Selectors */}
@@ -724,7 +724,10 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
           </div>
           <button className="sticky-add-cart" onClick={() => onAddToCart(product, quantity)}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-            Thêm giỏ ({displayPrice.toLocaleString('vi-VN')}₫)
+            Thêm giỏ
+          </button>
+          <button className="sticky-buy-now" onClick={() => { onAddToCart(product, quantity); navigate('/checkout'); }}>
+            Mua ngay
           </button>
         </div>
       </div>

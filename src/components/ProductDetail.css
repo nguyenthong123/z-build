@@ -853,6 +853,26 @@
     background: #E5B800;
   }
 
+  .sticky-buy-now {
+    flex: 0 0 auto;
+    background: #1a1a2e;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(26, 26, 46, 0.3);
+  }
+
+  .sticky-buy-now:active {
+    transform: scale(0.97);
+    background: #2d3748;
+  }
+
   /* Hide original CTA on mobile — sticky bar replaces it */
   .cta-section {
     display: none !important;
