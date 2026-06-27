@@ -581,7 +581,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
           }
           toolbar={
             <>
-              <div style={{ display: 'flex', gap: '8px', flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', gap: '8px', flex: 1, minWidth: 0, flexWrap: 'wrap' }}>
                 <div className="search-box" style={{ flex: 1, maxWidth: '340px', backgroundColor: '#fff', border: '1px solid #e2e8f0', margin: 0, padding: '0 12px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', height: '38px' }}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                   <input 
@@ -704,11 +704,73 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
 
               {/* Mobile Grid View */}
               <div className="mobile-product-list mobile-only">
+                {/* Quick-select bar for mobile */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  marginBottom: '10px', padding: '0 2px'
+                }}>
+                  <button
+                    onClick={() => {
+                      if (filteredProducts.length > 0 && filteredProducts.every(p => selectedProducts.includes(p.id))) {
+                        setSelectedProducts([]);
+                      } else {
+                        setSelectedProducts(filteredProducts.map(p => p.id));
+                      }
+                    }}
+                    style={{
+                      fontSize: '12px', fontWeight: 600, padding: '6px 12px',
+                      borderRadius: '20px', border: '1px solid #e2e8f0',
+                      background: '#fff', color: '#475569', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: '4px',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={filteredProducts.length > 0 && filteredProducts.every(p => selectedProducts.includes(p.id))}
+                      readOnly
+                      style={{ width: '14px', height: '14px', cursor: 'pointer', margin: 0 }}
+                    />
+                    {filteredProducts.length > 0 && filteredProducts.every(p => selectedProducts.includes(p.id))
+                      ? `Bỏ chọn (${selectedProducts.length})`
+                      : `Chọn tất cả (${filteredProducts.length})`}
+                  </button>
+                  {selectedProducts.length > 0 && (
+                    <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 600 }}>
+                      Đã chọn {selectedProducts.length}
+                    </span>
+                  )}
+                </div>
                 {filteredProducts.map(product => (
-                  <div className="mobile-card" key={product.id} onClick={() => onPreviewProduct(product)}>
+                  <div className="mobile-card" key={product.id} onClick={() => onPreviewProduct(product)} style={{ position: 'relative' }}>
+                    {/* Selection checkbox — top-right corner */}
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectProduct(product.id);
+                      }}
+                      style={{
+                        position: 'absolute', top: '12px', right: '12px', zIndex: 5,
+                        width: '26px', height: '26px', borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: selectedProducts.includes(product.id)
+                          ? '#D4AF37'
+                          : 'rgba(255,255,255,0.9)',
+                        border: selectedProducts.includes(product.id)
+                          ? '2px solid #D4AF37'
+                          : '2px solid #d1d5db',
+                        cursor: 'pointer',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {selectedProducts.includes(product.id) && (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                      )}
+                    </div>
                     <div className="card-header">
                       <img src={product.image ? product.image.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/') : 'https://placehold.co/100'} alt="" />
-                      <div className="card-title-info">
+                      <div className="card-title-info" style={{ paddingRight: '36px' }}>
                         <strong>{product.name}</strong>
                         <span className="card-extra">{product.sku} • {product.category}</span>
                         <div className="card-status" style={{ color: getStatusColor(product.status) }}>

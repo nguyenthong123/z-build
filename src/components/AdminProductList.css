@@ -289,6 +289,14 @@
 
   .search-box {
     max-width: none;
+    flex: 1 1 auto !important;
+    min-width: 0;
+  }
+  
+  .category-filter {
+    width: auto !important;
+    flex: 0 0 auto;
+    min-width: 120px;
   }
 
   .btn-group {

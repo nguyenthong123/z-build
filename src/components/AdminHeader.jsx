@@ -1,4 +1,5 @@
 import React from 'react';
+import './AdminHeader.css';
 
 /**
  * AdminHeader — unified card header for all admin pages.
@@ -11,46 +12,18 @@ import React from 'react';
  */
 export default function AdminHeader({ title, actions, extra, toolbar }) {
   return (
-    <header 
-      style={{ 
-        position: 'sticky',
-        top: '32px',
-        zIndex: 40,
-        background: '#fff',
-        borderRadius: '14px 14px 0 0',
-        padding: '24px 28px 20px 28px',
-        borderBottom: '1px solid #e2e8f0'
-      }}
-    >
+    <header className="admin-header">
       {/* Row 1: Title + Actions */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '16px', 
-        marginBottom: extra || toolbar ? '14px' : '0',
-        minHeight: '40px'
-      }}>
-        <div style={{ flex: '0 0 auto' }}>
-          <h1 style={{ 
-            margin: 0, 
-            fontSize: '1.35rem', 
-            fontWeight: 700, 
-            color: '#0F172A', 
-            whiteSpace: 'nowrap',
-            letterSpacing: '-0.01em'
-          }}>
-            {title}
-          </h1>
+      <div 
+        className="admin-header-row"
+        style={{ marginBottom: extra || toolbar ? '14px' : '0' }}
+      >
+        <div className="admin-header-title">
+          <h1>{title}</h1>
         </div>
         
         {actions && (
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px', 
-            marginLeft: 'auto', 
-            flexShrink: 0 
-          }}>
+          <div className="admin-header-actions">
             {actions}
           </div>
         )}
@@ -61,12 +34,7 @@ export default function AdminHeader({ title, actions, extra, toolbar }) {
 
       {/* Row 2: Toolbar */}
       {toolbar && (
-        <div style={{ 
-          display: 'flex', 
-          gap: '8px', 
-          alignItems: 'center', 
-          minHeight: '40px' 
-        }}>
+        <div className="admin-header-toolbar">
           {toolbar}
         </div>
       )}

@@ -518,6 +518,15 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
               </div>
             )}
 
+            {/* Quick CTA: Thêm vào giỏ + Mua ngay — đặt ngay dưới trọng lượng */}
+            <div className="cta-quick-row" style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+              <button className="btn-add-cart" onClick={() => onAddToCart(product, quantity)} style={{ flex: 1 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                Thêm vào giỏ hàng
+              </button>
+              <button className="btn-buy-now" style={{ flex: 1 }}>Mua ngay</button>
+            </div>
+
             {/* Selectors */}
             <div className="selectors">
               {product.variants && product.variants.map((variant, vIdx) => (
@@ -638,11 +647,6 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
                 </svg>
                 So sánh
               </button>
-              <button className="btn-add-cart" onClick={() => onAddToCart(product, quantity)}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                Thêm vào giỏ hàng
-              </button>
-              <button className="btn-buy-now">Mua ngay</button>
             </div>
 
           </div>
