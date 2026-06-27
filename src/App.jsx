@@ -250,7 +250,7 @@ function App() {
             const quantity = item.quantity;
             const existingItem = next.find(i => i.id === product.id);
             if (existingItem) {
-              next = next.map(i => i.id === product.id ? { ...i, quantity: i.quantity + quantity } : i);
+              next = next.map(i => i.id === product.id ? { ...i, quantity: i.quantity + quantity, weight: i.weight || parseFloat(product.weight) || 0 } : i);
             } else {
               next.push({
                 id: product.id,
@@ -258,6 +258,7 @@ function App() {
                 price: product.discountPrice || product.basePrice || product.price,
                 quantity: quantity,
                 image: product.image || product.img,
+                weight: parseFloat(product.weight) || 0,
                 variant: 'Default'
               });
             }
@@ -276,7 +277,7 @@ function App() {
       const existingItem = prev.find(item => item.id === product.id);
       if (existingItem) {
         return prev.map(item => 
-          item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
+          item.id === product.id ? { ...item, quantity: item.quantity + quantity, weight: item.weight || parseFloat(product.weight) || 0 } : item
         );
       }
       return [...prev, {
@@ -285,6 +286,7 @@ function App() {
         price: product.discountPrice || product.basePrice || product.price,
         quantity: quantity,
         image: product.image || product.img,
+        weight: parseFloat(product.weight) || 0,
         variant: 'Default'
       }];
     });
