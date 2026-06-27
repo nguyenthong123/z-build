@@ -541,7 +541,8 @@ const formatCurrency = (n) => new Intl.NumberFormat('vi-VN').format(n || 0) + '�
 
 async function searchProducts({ keyword = '', category = '', max_results = 5 }) {
   try {
-    const snap = await getDocs(collection(db, 'products'));
+    // Giới hạn 300 sản phẩm — tránh load toàn bộ DB gây chậm & crash
+    const snap = await getDocs(query(collection(db, 'products'), limit(300)));
     let products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
     // Filter by keyword

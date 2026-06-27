@@ -102,15 +102,15 @@ export const useAdminAI = () => {
   const [userName, setUserName] = useState("Thong Nguyen");
 
 
-  // Load Knowledge Base & Products
+  // Load Knowledge Base & Products — tăng limit + lazy search
   useEffect(() => {
     const loadKB = async () => {
       try {
         const [unitsSnap, baseSnap, consultationsSnap, productsSnap] = await Promise.all([
           getDocs(collection(db, "ai_knowledge_units")),
           getDocs(collection(db, "ai_knowledge_base")),
-          getDocs(query(collection(db, "ai_consultations"), orderBy("createdAt", "desc"), limit(50))),
-          getDocs(query(collection(db, "products"), orderBy("title", "asc"), limit(200)))
+          getDocs(query(collection(db, "ai_consultations"), orderBy("createdAt", "desc"), limit(100))),
+          getDocs(query(collection(db, "products"), orderBy("title", "asc"), limit(500)))
         ]);
 
         const knowledgeUnits = unitsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -158,20 +158,25 @@ export const useAdminAI = () => {
   }, []);
 
   const getKnowledgeContext = useCallback((msgText) => {
-    const recentUserMessages = messages.filter(m => !m.isBot).slice(-2).map(m => m.text).join(" ");
-    const searchContext = `${recentUserMessages} ${msgText}`;
     const units = knowledgeBase.all_units || [];
-    if (!units.length) return "";
+    if (!units.length) return "==== TÀI LIỆU NỘI BỘ ====\n[TRỐNG - CHƯA CÓ TRONG CƠ SỞ DỮ LIỆU]\n==========================\n";
     
-    const fuse = new Fuse(units, { keys: ['content', 'keywords', 'summary', 'category'], threshold: 0.45, ignoreLocation: true });
-    const results = fuse.search(searchContext);
+    // Dùng Fuse tìm kiếm với threshold thấp hơn cho kết quả chính xác hơn
+    const fuse = new Fuse(units, { 
+      keys: ['content', 'keywords', 'summary', 'category'], 
+      threshold: 0.5, 
+      ignoreLocation: true,
+      minMatchCharLength: 2,
+      includeScore: true
+    });
+    const results = fuse.search(msgText);
     if (!results.length) return "==== TÀI LIỆU NỘI BỘ ====\n[TRỐNG - CHƯA CÓ TRONG CƠ SỞ DỮ LIỆU]\n==========================\n";
     
     let contextText = "==== TÀI LIỆU NỘI BỘ ====\n";
-    results.slice(0, 20).forEach(r => contextText += `- [Chuyên mục: ${r.item.category || 'Chung'}] Nội dung: ${r.item.content}\n---\n`);
+    results.slice(0, 15).forEach(r => contextText += `- [Chuyên mục: ${r.item.category || 'Chung'}] Nội dung: ${r.item.content?.slice(0, 500)}\n---\n`);
     return contextText + "==========================\n";
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages]);
+  }, [knowledgeBase.all_units]);
 
   const callAI = useCallback(async (msgText, systemPrompt, imageUrls = [], allowedTools = ADMIN_AI_FUNCTIONS) => {
     const aiApiKey = process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY;
@@ -199,45 +204,88 @@ export const useAdminAI = () => {
         ? `[Người dùng gửi ${urls.length} ảnh] ${msgText}`
         : `[Người dùng gửi ${urls.length} ảnh — hãy hỏi lại nếu cần mô tả chi tiết]`;
     }
-    const apiMessages = [{ role: "system", content: systemPrompt }, ...history, { role: "user", content: currentUserContent }];
+    const apiMessages = [{ role: "system", content: systemPrompt }, ...history.slice(-20), { role: "user", content: currentUserContent }];
 
-    // Gemini with Function Calling
-    try {
-      let res = await fetch("https://api.deepseek.com/v1/chat/completions", {
-        method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${aiApiKey}` },
-        body: JSON.stringify({ model: "deepseek-chat", messages: apiMessages, tools: allowedTools, tool_choice: "auto", temperature: 0.3 })
-      });
-      if (res.ok) {
-        let d = await res.json();
-        setActiveModel('DeepSeek-V3');
-        let responseMsg = d.choices[0]?.message;
+    // DeepSeek API call với timeout & JSON parse an toàn
+    const TIMEOUT_MS = 45000;
+    const callDeepSeek = async (messages, retries = 2) => {
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
         
-        let rounds = 0;
-        while (responseMsg?.tool_calls && rounds < 3) {
-          rounds++;
-          apiMessages.push(responseMsg);
-          const toolResults = await Promise.all(responseMsg.tool_calls.map(async (tc) => {
+        try {
+          const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${aiApiKey}` },
+            body: JSON.stringify({ model: "deepseek-chat", messages, tools: allowedTools, tool_choice: "auto", temperature: 0.3, max_tokens: 4096 }),
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+          
+          if (!res.ok) {
+            const errText = await res.text().catch(() => '');
+            console.error(`DeepSeek API error ${res.status}:`, errText.slice(0, 200));
+            if (attempt < retries) { await new Promise(r => setTimeout(r, 1000 * (attempt + 1))); continue; }
+            return { error: `⚠️ Lỗi API (${res.status}): ${errText.slice(0, 100) || 'Không xác định'}` };
+          }
+          
+          // Parse JSON an toàn — tránh crash khi response bị cắt ngang
+          const raw = await res.text();
+          let d;
+          try {
+            d = JSON.parse(raw);
+          } catch (parseErr) {
+            console.warn('JSON parse error — response may be truncated:', parseErr.message);
+            if (attempt < retries) { await new Promise(r => setTimeout(r, 1500 * (attempt + 1))); continue; }
+            return { error: '⚠️ Phản hồi AI bị lỗi định dạng — vui lòng thử lại.' };
+          }
+          return d;
+        } catch (fetchErr) {
+          clearTimeout(timeoutId);
+          if (fetchErr.name === 'AbortError') {
+            console.warn(`DeepSeek timeout after ${TIMEOUT_MS}ms`);
+            if (attempt < retries) continue;
+            return { error: '⚠️ AI phản hồi quá chậm (timeout). Hãy thử câu hỏi ngắn hơn.' };
+          }
+          console.warn('DeepSeek network error:', fetchErr.message);
+          if (attempt < retries) { await new Promise(r => setTimeout(r, 1000 * (attempt + 1))); continue; }
+          return { error: '⚠️ Lỗi mạng: Không thể kết nối tới AI. Kiểm tra kết nối internet.' };
+        }
+      }
+      return { error: '⚠️ AI không phản hồi sau nhiều lần thử.' };
+    };
+
+    try {
+      let d = await callDeepSeek(apiMessages);
+      if (d.error) return d.error;
+      
+      setActiveModel('DeepSeek-V3');
+      let responseMsg = d.choices?.[0]?.message;
+      if (!responseMsg) return "⚠️ Bot không phản hồi — định dạng response không đúng.";
+      
+      let rounds = 0;
+      while (responseMsg?.tool_calls && rounds < 5) {
+        rounds++;
+        apiMessages.push(responseMsg);
+        const toolResults = await Promise.all(responseMsg.tool_calls.map(async (tc) => {
+          try {
             const result = await executeFunction(tc.function.name, tc.function.arguments);
             return { role: "tool", tool_call_id: tc.id, name: tc.function.name, content: JSON.stringify(result) };
-          }));
-          apiMessages.push(...toolResults);
-          const followUp = await fetch("https://api.deepseek.com/v1/chat/completions", {
-            method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${aiApiKey}` },
-            body: JSON.stringify({ model: "deepseek-chat", messages: apiMessages, tools: allowedTools, tool_choice: "auto", temperature: 0.3 })
-          });
-          if (!followUp.ok) break;
-          d = await followUp.json();
-          responseMsg = d.choices[0]?.message;
-        }
-        return responseMsg?.content || "Bot không phản hồi.";
-      } else {
-        const errorData = await res.json();
-        console.error("Gemini Error:", errorData);
-        return `⚠️ Lỗi từ API: ${errorData.error?.message || "Không xác định"}`;
+          } catch (toolErr) {
+            console.warn(`Tool ${tc.function.name} error:`, toolErr);
+            return { role: "tool", tool_call_id: tc.id, name: tc.function.name, content: JSON.stringify({ error: toolErr.message }) };
+          }
+        }));
+        apiMessages.push(...toolResults);
+        
+        d = await callDeepSeek(apiMessages, 0); // tool follow-up: không retry
+        if (d.error) return d.error;
+        responseMsg = d.choices?.[0]?.message;
       }
+      return responseMsg?.content || "Bot không phản hồi.";
     } catch (err) { 
-      console.warn("Gemini network error", err); 
-      return "⚠️ Lỗi mạng: Không thể kết nối tới Google AI.";
+      console.error("AdminAI critical error:", err); 
+      return "⚠️ Lỗi hệ thống: Vui lòng thử lại hoặc refresh trang.";
     }
   }, [messages]);
 
