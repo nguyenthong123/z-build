@@ -44,17 +44,33 @@ const CartItemRow = ({ item, updateQuantity, removeItem }) => {
           {/* Mobile Price */}
           <span className="item-price-mobile">{Number(item.price).toLocaleString('vi-VN')}₫</span>
           
-          {/* Mobile Quantity Selector inside info for mobile layout */}
+          {/* Mobile Quantity Selector with +/- buttons */}
           <div className="item-qty-mobile">
-             <div className="qty-control" style={{ background: 'transparent', padding: 0 }}>
-                <input 
-                  type="text" 
-                  value={inputValue} 
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  style={{ width: '80px', textAlign: 'center', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px', fontSize: '14px' }}
-                />
-              </div>
+            <span className="qty-label">Số lượng:</span>
+            <div className="qty-control-row">
+              <button
+                type="button"
+                className="qty-btn"
+                onClick={() => {
+                  const newQty = Math.max(0.1, item.quantity - 1);
+                  updateQuantity(item.id, newQty, true);
+                }}
+              >–</button>
+              <input
+                type="text"
+                value={inputValue}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className="qty-input"
+              />
+              <button
+                type="button"
+                className="qty-btn"
+                onClick={() => {
+                  updateQuantity(item.id, item.quantity + 1, true);
+                }}
+              >+</button>
+            </div>
           </div>
         </div>
       </div>

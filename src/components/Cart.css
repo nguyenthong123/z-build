@@ -340,7 +340,64 @@
 
   .item-qty-mobile {
     display: block;
-    margin-top: 5px;
+    margin-top: 10px;
+    background: var(--bg-light);
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+
+  .qty-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  .qty-control-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: white;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+  }
+
+  .qty-btn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    background: var(--bg-light);
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .qty-btn:active {
+    background: #e2e8f0;
+  }
+
+  .qty-input {
+    flex: 1;
+    height: 44px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border: none;
+    border-left: 1px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+    background: white;
+    outline: none;
+    color: var(--primary-dark);
+    min-width: 0;
   }
 
   .remove-item {
@@ -396,4 +453,12 @@
 .item-price-mobile,
 .item-qty-mobile {
   display: none;
+}
+
+/* Show mobile elements on mobile only */
+@media (min-width: 769px) {
+  .item-price-mobile,
+  .item-qty-mobile {
+    display: none;
+  }
 }
