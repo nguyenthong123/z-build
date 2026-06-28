@@ -450,12 +450,7 @@
   }
 }
 
-.item-price-mobile,
-.item-qty-mobile {
-  display: none;
-}
-
-/* Show mobile elements on mobile only */
+/* Hide mobile elements on desktop */
 @media (min-width: 769px) {
   .item-price-mobile,
   .item-qty-mobile {
