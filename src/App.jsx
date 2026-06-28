@@ -148,9 +148,11 @@ function App() {
     } catch { return []; }
   });
 
+  const getCompareKey = () => `zbuild_compare_${user?.uid || 'guest'}`;
+
   const [compareCount, setCompareCount] = useState(() => {
     try {
-      const saved = localStorage.getItem(compareKey);
+      const saved = localStorage.getItem(getCompareKey());
       return saved ? JSON.parse(saved).length : 0;
     } catch { return 0; }
   });
@@ -163,19 +165,19 @@ function App() {
   useEffect(() => {
     const handleCompareUpdate = () => {
       try {
-        const saved = localStorage.getItem(compareKey);
+        const saved = localStorage.getItem(getCompareKey());
         setCompareCount(saved ? JSON.parse(saved).length : 0);
       } catch { setCompareCount(0); }
     };
     window.addEventListener('compareListUpdated', handleCompareUpdate);
     window.addEventListener('storage', (e) => {
-      if (e.key === compareKey) handleCompareUpdate();
+      if (e.key === getCompareKey()) handleCompareUpdate();
     });
     return () => {
       window.removeEventListener('compareListUpdated', handleCompareUpdate);
       window.removeEventListener('storage', handleCompareUpdate);
     };
-  }, []);
+  }, [user]);
 
   // Set up Firebase Cloud Messaging for Push Notifications
   useEffect(() => {
@@ -196,7 +198,7 @@ function App() {
           const isPlaceholder = !vapidKey || vapidKey.includes('REPLACE') || vapidKey.includes('YOUR_VAPID_KEY');
           
           if (isPlaceholder) {
-            console.warn('FCM VAPID Key is missing or using a placeholder. Skipping token generation.');
+            // console.warn('FCM VAPID Key is missing or using a placeholder. Skipping token generation.');
             return;
           }
 

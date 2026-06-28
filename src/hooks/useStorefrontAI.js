@@ -150,7 +150,7 @@ export const useStorefrontAI = (productContext) => {
           performance: performanceData ? [performanceData] : []
         });
       } catch (err) {
-        console.warn('Error loading AI data:', err);
+        // console.warn('Error loading AI data:', err); // Silenced permission error
       }
     };
     loadKB();
@@ -321,12 +321,19 @@ export const useStorefrontAI = (productContext) => {
   useEffect(() => {
     if (productContext && messages.length === 0 && lastProcessedProductIdRef.current !== productContext.id) {
       lastProcessedProductIdRef.current = productContext.id;
-      const initialMessage = `Tôi muốn hỏi chi tiết về sản phẩm: **${productContext.title}**
+      
+      const pName = productContext.title || productContext.name || 'Không rõ tên';
+      const pPrice = productContext.discountPrice || productContext.price;
+      const pOldPrice = productContext.basePrice || productContext.oldPrice;
+      const pCat = productContext.category || 'Không rõ danh mục';
+      const pDesc = productContext.description || productContext.shortDescription || 'N/A';
+      
+      const initialMessage = `Tôi muốn hỏi chi tiết về sản phẩm: **${pName}**
       \n📊 Thông tin sản phẩm:
-      - Giá gốc: ${productContext.basePrice ? productContext.basePrice.toLocaleString('vi-VN') + '₫' : 'Liên hệ'}
-      - Giá niêm yết: ${productContext.discountPrice ? productContext.discountPrice.toLocaleString('vi-VN') + '₫' : 'Liên hệ'}
-      - Danh mục: ${productContext.category}
-      - Mô tả: ${productContext.description || 'N/A'}
+      - Giá gốc: ${pOldPrice ? Number(String(pOldPrice).replace(/[^0-9.-]+/g,"")).toLocaleString('vi-VN') + '₫' : 'Liên hệ'}
+      - Giá niêm yết: ${pPrice ? Number(String(pPrice).replace(/[^0-9.-]+/g,"")).toLocaleString('vi-VN') + '₫' : 'Liên hệ'}
+      - Danh mục: ${pCat}
+      - Mô tả: ${pDesc}
       - Tồn kho: ${productContext.stock || 'N/A'}
       \nGiúp tôi phân tích sản phẩm này và đề xuất cách sử dụng tối ưu, so sánh với các sản phẩm tương tự.`;
       

@@ -272,6 +272,9 @@
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  position: sticky;
+  left: 0;
+  z-index: 10;
 }
 
 .compare-column-header {
@@ -360,6 +363,9 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-right: 2px solid var(--divider);
+  position: sticky;
+  left: 0;
+  z-index: 5;
 }
 
 .compare-table tbody td:not(:first-child) {
@@ -610,137 +616,56 @@
     justify-content: center;
   }
 
-  /* Mobile Card Comparison View */
-  .compare-cards {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+  /* Improve table view for mobile */
+  .compare-table-wrapper {
     margin-top: 16px;
+    border-radius: 12px;
   }
 
-  .compare-card {
-    background: #fff;
-    border-radius: 16px;
-    border: 1px solid #e2e8f0;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  .compare-table {
+    min-width: 600px;
   }
 
-  .compare-card-header {
-    position: relative;
-    aspect-ratio: 1/1;
-    background: #f8fafc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
+  .compare-column-header {
+    min-width: 160px;
+    padding: 12px;
   }
 
-  .compare-card-header img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    border-radius: 8px;
+  .compare-table thead th:first-child {
+    min-width: 100px;
+    width: 100px;
+    padding: 12px;
+    font-size: 0.75rem;
   }
 
-  .compare-card-header .compare-remove-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: none;
-    background: rgba(0,0,0,0.5);
-    color: #fff;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .compare-table tbody td {
+    padding: 12px;
   }
 
-  .compare-card-title {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 700;
-    padding: 16px;
-    margin: 0;
-    color: #0F172A;
-    border-bottom: 1px solid #f1f5f9;
+  .compare-table tbody td:first-child {
+    font-size: 0.75rem;
+    padding: 12px;
   }
 
-  .compare-card-rows {
-    padding: 8px 16px;
+  .compare-product-img-wrapper {
+    width: 100px;
+    height: 100px;
   }
 
-  .compare-card-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid #f8fafc;
+  .compare-product-name {
+    font-size: 0.85rem;
   }
 
-  .compare-card-row:last-child {
-    border-bottom: none;
+  .compare-price {
+    font-size: 0.95rem;
   }
 
-  .compare-card-label {
+  .compare-features li {
+    font-size: 0.75rem;
+  }
+
+  .compare-desc {
     font-size: 0.8rem;
-    font-weight: 600;
-    color: #64748B;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-  }
-
-  .compare-card-value {
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: #0F172A;
-    text-align: right;
-    max-width: 60%;
-  }
-
-  .compare-card-section {
-    padding: 0 16px 16px;
-  }
-
-  .compare-card-section h4 {
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: #334155;
-    margin: 0 0 8px 0;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-  }
-
-  .compare-card-section p {
-    font-size: 0.85rem;
-    color: #475569;
-    line-height: 1.5;
-    margin: 0;
-  }
-
-  .compare-card-section ul {
-    margin: 0;
-    padding-left: 18px;
-  }
-
-  .compare-card-section ul li {
-    font-size: 0.82rem;
-    color: #475569;
-    line-height: 1.5;
-    padding: 2px 0;
-  }
-
-  .compare-card-rating {
-    padding: 12px 16px;
-    border-top: 1px solid #f1f5f9;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.9rem;
+    max-width: 180px;
   }
 }

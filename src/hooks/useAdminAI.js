@@ -151,7 +151,7 @@ export const useAdminAI = () => {
           performance: performanceData ? [performanceData] : []
         });
       } catch (err) {
-        console.warn('Error loading AI data:', err);
+        // console.warn('Error loading AI data:', err); // Silenced permission error
       }
     };
     loadKB();

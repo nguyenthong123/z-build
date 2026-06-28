@@ -136,6 +136,9 @@ const ProductGrid = ({ onProductClick, onAddToCart: propOnAddToCart }) => {
     <div key={product.id} className="product-card" onClick={() => onProductClick(product)}>
       <div className="product-img-wrapper">
         <span className="product-tag">{product.tag}</span>
+        {product.stock !== undefined && (
+          <span className="product-stock">Kho: {product.stock}</span>
+        )}
         <button 
           className={`wishlist-heart ${isInWishlist(product.id) ? 'active' : ''}`}
           onClick={(e) => {

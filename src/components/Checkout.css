@@ -87,6 +87,14 @@
   box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.15);
 }
 
+.error-text {
+  color: #E11D48;
+  font-size: 0.8rem;
+  margin-top: 6px;
+  display: block;
+  font-weight: 500;
+}
+
 .checkbox-row {
   display: flex;
   align-items: center;
@@ -403,6 +411,11 @@
   font-weight: 500;
 }
 
+.billing-details .line span {
+  min-width: 0;
+  word-break: break-word;
+}
+
 .line.total {
   margin-top: 15px;
   padding-top: 20px;
@@ -435,7 +448,7 @@
    ============================================================= */
 @media (max-width: 1024px) {
   .checkout-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     padding-bottom: 0;
     gap: 0;
   }
@@ -496,6 +509,8 @@
   .form-grid select,
   .discount-code-row input {
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box !important;
     padding: 14px 16px;
     border: 1.5px solid #e2e8f0;
     border-radius: 12px;
@@ -531,6 +546,8 @@
     border-radius: 12px;
     cursor: pointer;
     background: #fff;
+    max-width: 100%;
+    box-sizing: border-box !important;
   }
 
   .method-option.active {

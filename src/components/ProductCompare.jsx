@@ -274,7 +274,7 @@ const ProductCompare = () => {
       const liMatches = product.description.match(/<li[^>]*>([\s\S]*?)<\/li>/gi);
       if (liMatches && liMatches.length > 0) {
         features.push(...liMatches
-          .map(li => li.replace(/<[^>]+>/g, '').trim())
+          .map(li => li.replace(/<[^>]+>/g, '').replace(/&nbsp;|&amp;|&lt;|&gt;|&quot;/g, ' ').trim())
           .filter(t => t.length > 3)
           .slice(0, 5));
       }
@@ -283,7 +283,7 @@ const ProductCompare = () => {
         const bullets = product.description.match(/[•\-*—]\s*.+/g);
         if (bullets) {
           features.push(...bullets
-            .map(b => b.replace(/[•\-*—]\s*/, '').replace(/<[^>]+>/g, '').trim())
+            .map(b => b.replace(/[•\-*—]\s*/, '').replace(/<[^>]+>/g, '').replace(/&nbsp;|&amp;|&lt;|&gt;|&quot;/g, ' ').trim())
             .filter(t => t.length > 3)
             .slice(0, 5));
         }
@@ -323,21 +323,8 @@ const ProductCompare = () => {
             <div style={{ width: '100px' }} />
           </div>
 
-          <div className="compare-empty">
-            <div className="compare-empty-icon">⚖️</div>
-            <h2>Chưa có sản phẩm nào để so sánh</h2>
-            <p>Thêm sản phẩm từ trang chi tiết hoặc tìm kiếm bên dưới để bắt đầu so sánh.</p>
-            <button className="browse-btn" onClick={() => navigate('/')}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                <polyline points="9 22 9 12 15 12 15 22"/>
-              </svg>
-              Xem sản phẩm
-            </button>
-          </div>
-
           {/* Search even on empty state */}
-          <div className="compare-add-section" style={{ marginTop: '32px' }}>
+          <div className="compare-add-section" style={{ marginTop: '16px', marginBottom: '32px', justifyContent: 'center' }}>
             <div className="compare-search-wrapper" ref={searchRef}>
               <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
@@ -384,6 +371,19 @@ const ProductCompare = () => {
                 Tối đa {MAX_COMPARE} sản phẩm để so sánh
               </div>
             )}
+          </div>
+
+          <div className="compare-empty">
+            <div className="compare-empty-icon">⚖️</div>
+            <h2>Chưa có sản phẩm nào để so sánh</h2>
+            <p>Thêm sản phẩm từ trang chi tiết hoặc tìm kiếm ở trên để bắt đầu so sánh.</p>
+            <button className="browse-btn" onClick={() => navigate('/')}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+              Xem sản phẩm
+            </button>
           </div>
         </div>
       </div>
@@ -474,8 +474,8 @@ const ProductCompare = () => {
           )}
         </div>
 
-        {/* Comparison Table — Desktop */}
-        <div className="compare-table-wrapper desktop-only">
+        {/* Comparison Table */}
+        <div className="compare-table-wrapper">
           <table className="compare-table">
             <thead>
               <tr>
@@ -654,105 +654,6 @@ const ProductCompare = () => {
               </tr>
             </tbody>
           </table>
-        </div>
-
-        {/* Mobile Card Comparison View */}
-        <div className="compare-cards mobile-only">
-          {products.map(p => (
-            <div key={p.id} className="compare-card">
-              <div className="compare-card-header">
-                <img
-                  src={p.image || 'https://placehold.co/400'}
-                  alt={p.title}
-                  onError={(e) => { e.target.src = 'https://placehold.co/400'; }}
-                />
-                <button className="compare-remove-btn" onClick={() => removeProduct(p.id)}>×</button>
-              </div>
-              <h3 className="compare-card-title">{p.title}</h3>
-              
-              <div className="compare-card-rows">
-                <div className="compare-card-row">
-                  <span className="compare-card-label">Giá</span>
-                  <span className="compare-card-value">
-                    <strong>{getFormattedPrice(p)}</strong>
-                    {getOldPrice(p) && <span className="old-price" style={{ marginLeft: 8, fontSize: '0.8rem' }}>{getOldPrice(p)}</span>}
-                  </span>
-                </div>
-                <div className="compare-card-row">
-                  <span className="compare-card-label">Danh mục</span>
-                  <span className="compare-card-value">{p.category || 'Chung'}</span>
-                </div>
-                <div className="compare-card-row">
-                  <span className="compare-card-label">Thương hiệu</span>
-                  <span className="compare-card-value">{p.brand || 'Zbuild'}</span>
-                </div>
-                {getWeight(p) && (
-                  <div className="compare-card-row">
-                    <span className="compare-card-label">Trọng lượng</span>
-                    <span className="compare-card-value">{getWeight(p)}</span>
-                  </div>
-                )}
-                {getPackaging(p) && (
-                  <div className="compare-card-row">
-                    <span className="compare-card-label">Đóng gói</span>
-                    <span className="compare-card-value">{getPackaging(p)}</span>
-                  </div>
-                )}
-                <div className="compare-card-row">
-                  <span className="compare-card-label">Quy cách</span>
-                  <span className="compare-card-value">{p.specs || '—'}</span>
-                </div>
-                <div className="compare-card-row">
-                  <span className="compare-card-label">Tồn kho</span>
-                  <span className="compare-card-value">
-                    {p.stock !== undefined && p.stock !== null ? (
-                      p.stock > 0 ? (
-                        <span style={{ color: '#22C55E', fontWeight: 600 }}>Còn hàng ({p.stock})</span>
-                      ) : (
-                        <span style={{ color: '#EF4444', fontWeight: 600 }}>Hết hàng</span>
-                      )
-                    ) : '—'}
-                  </span>
-                </div>
-              </div>
-
-              {getCleanDesc(p) && (
-                <div className="compare-card-section">
-                  <h4>Mô tả</h4>
-                  <p>{getCleanDesc(p)}</p>
-                </div>
-              )}
-              
-              {(() => {
-                const features = getFeatures(p);
-                if (features.length > 0) {
-                  return (
-                    <div className="compare-card-section">
-                      <h4>Đặc điểm nổi bật</h4>
-                      <ul>
-                        {features.map((f, i) => (
-                          <li key={i}>{f}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-
-              <div className="compare-card-rating">
-                {(() => {
-                  const { rating, count } = getRating(p);
-                  return (
-                    <>
-                      <span className="compare-stars">{renderStars(rating)}</span>
-                      {count > 0 && <span className="compare-rating-count">({count})</span>}
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
-          ))}
         </div>
 
         {/* Bottom Actions */}

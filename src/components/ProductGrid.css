@@ -204,6 +204,22 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* Product Stock Label */
+.product-stock {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #d97706; /* Amber color to make it visible but not alarming */
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  z-index: 5;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(217, 119, 6, 0.3);
+}
+
 /* Wishlist Heart */
 .wishlist-heart {
   position: absolute;
@@ -430,6 +446,13 @@
     top: 8px;
     left: 8px;
     font-size: 0.55rem;
+    padding: 2px 6px;
+  }
+
+  .product-stock {
+    bottom: 8px;
+    left: 8px;
+    font-size: 0.6rem;
     padding: 2px 6px;
   }
 

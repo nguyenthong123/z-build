@@ -7,11 +7,14 @@ const CartItemRow = ({ item, updateQuantity, removeItem }) => {
   const [inputValue, setInputValue] = useState(String(item.quantity).replace('.', ','));
 
   useEffect(() => {
-    const currentParsed = parseFloat(inputValue.replace(',', '.'));
-    if (!isNaN(currentParsed) && currentParsed !== item.quantity && !inputValue.endsWith(',')) {
-      setInputValue(String(item.quantity).replace('.', ','));
-    }
-  }, [item.quantity, inputValue]);
+    setInputValue(prev => {
+      const currentParsed = parseFloat(prev.replace(',', '.'));
+      if (!isNaN(currentParsed) && currentParsed !== item.quantity && !prev.endsWith(',')) {
+        return String(item.quantity).replace('.', ',');
+      }
+      return prev;
+    });
+  }, [item.quantity]);
 
   const handleChange = (e) => {
     let valStr = e.target.value.replace(/[^0-9.,]/g, '').replace('.', ',');
