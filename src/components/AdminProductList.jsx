@@ -266,6 +266,13 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
           const priceBuyVal = Number(dunvexProd.priceImport) || 0;
           const stockVal = Number(dunvexProd.stock) || 0;
 
+          // Map đầy đủ các field từ Dunvex (hỗ trợ nhiều tên field khác nhau)
+          const dunvexSpecs = dunvexProd.specs || dunvexProd.spec || dunvexProd.unit || '';
+          const dunvexWeight = dunvexProd.weight || dunvexProd.netWeight || '';
+          const dunvexPackaging = dunvexProd.packaging || dunvexProd.packing || '';
+          const dunvexImage = dunvexProd.image || dunvexProd.imageUrl || dunvexProd.thumbnail || '';
+          const dunvexShortDesc = dunvexProd.shortDesc || dunvexProd.shortDescription || '';
+
           if (productRef) {
             // Update existing: CHỈ cập nhật giá và tồn kho, giữ nguyên nội dung đã chỉnh sửa
             const updateData = {
@@ -294,12 +301,15 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
               priceBuy: priceBuyVal,
               stock: stockVal,
               trackInventory: true,
+              specs: dunvexSpecs,
+              weight: dunvexWeight,
+              packaging: dunvexPackaging,
+              image: dunvexImage,
+              shortDescription: dunvexShortDesc,
+              description: dunvexProd.note || '',
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
               status: 'Active',
-              shortDesc: '',
-              description: dunvexProd.note || '',
-              imageUrl: '',
             };
             const newDocRef = await addDoc(collection(db, "products"), newProductData);
             createdCount++;
