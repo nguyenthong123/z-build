@@ -287,7 +287,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
               dunvexId: dunvexId,
               title: dunvexProd.name,
               slug: slug,
-              category: normalizeCategory(dunvexProd.name),
+              category: normalizeCategory(dunvexProd.category || ''),
               basePrice: priceVal,
               discountPrice: priceVal,
               price: priceVal,
