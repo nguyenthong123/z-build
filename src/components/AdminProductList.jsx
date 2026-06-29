@@ -299,15 +299,19 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
           const dunvexImage = dunvexProd.image || dunvexProd.imageUrl || dunvexProd.thumbnail || '';
           const dunvexShortDesc = dunvexProd.shortDesc || dunvexProd.shortDescription || '';
 
-            const dunvexCatStr = typeof dunvexProd.category === 'object' && dunvexProd.category !== null 
-              ? (dunvexProd.category.name || dunvexProd.name || '') 
-              : (dunvexProd.category || dunvexProd.name || '');
+          // Lấy chính xác danh mục từ Dunvex, KHÔNG dùng hàm tự động (normalizeCategory)
+          let exactCategory = 'Chưa phân loại';
+          if (typeof dunvexProd.category === 'object' && dunvexProd.category !== null && dunvexProd.category.name) {
+              exactCategory = dunvexProd.category.name;
+          } else if (typeof dunvexProd.category === 'string' && dunvexProd.category.trim() !== '') {
+              exactCategory = dunvexProd.category;
+          }
 
           if (productRef) {
-            // Update existing: Cập nhật giá, tồn kho và ghi đè lại danh mục (để dọn rác do lỗi tạo nhầm danh mục)
+            // Update existing: Cập nhật giá, tồn kho và ghi đè lại danh mục gốc từ Dunvex
             const updateData = {
               dunvexId: dunvexId,
-              category: normalizeCategory(dunvexCatStr),
+              category: exactCategory,
               basePrice: priceVal,
               discountPrice: priceVal,
               price: priceVal,
@@ -325,7 +329,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
               dunvexId: dunvexId,
               title: dunvexProd.name,
               slug: slug,
-              category: normalizeCategory(dunvexCatStr),
+              category: exactCategory,
               basePrice: priceVal,
               discountPrice: priceVal,
               price: priceVal,
