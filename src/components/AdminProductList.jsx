@@ -281,8 +281,30 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
             await updateDoc(productRef, updateData);
             updatedCount++;
             newlySyncedIds.push(productRef.id);
+          } else {
+            // Create new product
+            const newProductData = {
+              dunvexId: dunvexId,
+              title: dunvexProd.name,
+              slug: slug,
+              category: normalizeCategory(dunvexProd.name),
+              basePrice: priceVal,
+              discountPrice: priceVal,
+              price: priceVal,
+              priceBuy: priceBuyVal,
+              stock: stockVal,
+              trackInventory: true,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              status: 'Active',
+              shortDesc: '',
+              description: dunvexProd.note || '',
+              imageUrl: '',
+            };
+            const newDocRef = await addDoc(collection(db, "products"), newProductData);
+            createdCount++;
+            newlySyncedIds.push(newDocRef.id);
           }
-          // KHÔNG tạo SP mới khi sync — chỉ cập nhật SP đã có dunvexId
         }
         
         // 4. Clean up: CHỈ xoá sản phẩm có dunvexId (từ Dunvex) mà đã bị xoá trên app
@@ -305,12 +327,12 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
         setSyncedProductIds(newlySyncedIds);
         // Lưu timestamp đồng bộ
         await setDoc(doc(db, 'storeSettings', 'main'), 
-          { syncMetadata: { lastAutoSync: serverTimestamp(), lastResult: `Thủ công: ${updatedCount} cập nhật${deletedCount > 0 ? `, ${deletedCount} xoá` : ''}` } }, 
+          { syncMetadata: { lastAutoSync: serverTimestamp(), lastResult: `Thủ công: ${updatedCount} cập nhật, ${createdCount} tạo mới${deletedCount > 0 ? `, ${deletedCount} xoá` : ''}` } }, 
           { merge: true }
         );
         setSyncSuccessMessage({
           title: "Đồng bộ từ Dunvex App thành công!",
-          body: `Đã cập nhật ${updatedCount} sản phẩm${deletedCount > 0 ? `, gỡ bỏ ${deletedCount} sản phẩm đã xoá trên app` : ''}.\n\n⚠️ Không tạo SP mới — chỉ đồng bộ SP đã có trong store.`
+          body: `Đã cập nhật ${updatedCount} sản phẩm, TẠO MỚI ${createdCount} sản phẩm${deletedCount > 0 ? `, gỡ bỏ ${deletedCount} sản phẩm đã xoá trên app` : ''}.`
         });
         setShowSyncSuccessModal(true);
         fetchProducts(); // Reload products table
