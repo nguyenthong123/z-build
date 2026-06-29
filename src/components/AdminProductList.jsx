@@ -299,10 +299,15 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
           const dunvexImage = dunvexProd.image || dunvexProd.imageUrl || dunvexProd.thumbnail || '';
           const dunvexShortDesc = dunvexProd.shortDesc || dunvexProd.shortDescription || '';
 
+            const dunvexCatStr = typeof dunvexProd.category === 'object' && dunvexProd.category !== null 
+              ? (dunvexProd.category.name || dunvexProd.name || '') 
+              : (dunvexProd.category || dunvexProd.name || '');
+
           if (productRef) {
-            // Update existing: CHỈ cập nhật giá và tồn kho, giữ nguyên nội dung đã chỉnh sửa
+            // Update existing: Cập nhật giá, tồn kho và ghi đè lại danh mục (để dọn rác do lỗi tạo nhầm danh mục)
             const updateData = {
               dunvexId: dunvexId,
+              category: normalizeCategory(dunvexCatStr),
               basePrice: priceVal,
               discountPrice: priceVal,
               price: priceVal,
@@ -320,7 +325,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
               dunvexId: dunvexId,
               title: dunvexProd.name,
               slug: slug,
-              category: normalizeCategory(dunvexProd.category || ''),
+              category: normalizeCategory(dunvexCatStr),
               basePrice: priceVal,
               discountPrice: priceVal,
               price: priceVal,
