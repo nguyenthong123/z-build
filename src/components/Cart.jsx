@@ -7,6 +7,7 @@ const CartItemRow = ({ item, updateQuantity, removeItem }) => {
   const [inputValue, setInputValue] = useState(String(item.quantity).replace('.', ','));
 
   useEffect(() => {
+    // eslint-disable-next-line
     setInputValue(prev => {
       const currentParsed = parseFloat(prev.replace(',', '.'));
       if (!isNaN(currentParsed) && currentParsed !== item.quantity && !prev.endsWith(',')) {

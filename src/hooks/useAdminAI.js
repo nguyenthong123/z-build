@@ -334,11 +334,11 @@ Phản hồi bằng tiếng Việt, xác nhận từng field đã điền. MÔ T
       // Try Gemini API
       const allowedTools = ADMIN_AI_FUNCTIONS;
 
-      const botResult = await callAI(msgText, systemPrompt, imageUrls, allowedTools);
+      const botResult = await callAI(msgText, systemPrompt, localPreviews, allowedTools);
       
-      let cleanResponse = botResult;
+      let cleanResponse = typeof botResult === 'string' ? botResult : (JSON.stringify(botResult) || "");
       let boardData = null;
-      const dataMatch = botResult.match(/\[\[RENDER_DATA_BOARD:\s*(\{[\s\S]*?\})\s*\]\]/);
+      const dataMatch = cleanResponse.match(/\[\[RENDER_DATA_BOARD:\s*(\{[\s\S]*?\})\s*\]\]/);
       if (dataMatch) {
          try {
            boardData = JSON.parse(dataMatch[1]);

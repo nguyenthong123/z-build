@@ -1510,6 +1510,12 @@ async function getM2Quotation({ projectType, area = 1, keyword = '' }) {
 
     const formatNumber = (n) => new Intl.NumberFormat('vi-VN').format(n || 0);
 
+    const parsePrice = (price) => {
+      if (typeof price === 'number') return price;
+      if (typeof price === 'string') return parseFloat(price.replace(/[^0-9.-]+/g, "")) || 0;
+      return 0;
+    };
+
     let responseText = `### 📋 Báo Giá ${projectType}${keyword ? ' - ' + keyword : ''}${area > 1 ? ' (' + area + 'm²)' : ''}\n\n`;
 
     if (area > 1 && products.length > 0) {
