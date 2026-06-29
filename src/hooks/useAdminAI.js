@@ -284,7 +284,13 @@ export const useAdminAI = () => {
     try {
       const systemPrompt = `Bạn là Trợ lý AI Quản trị của Z-BUILD, hỗ trợ Admin quản lý toàn bộ hệ thống. Bạn CÓ QUYỀN và BẮT BUỘC PHẢI SỬ DỤNG function calling.
 
-📋 SƠ ĐỒ FORM TẠO SẢN PHẨM (create_product):
+# ⚠️ NGUYÊN TẮC SỐNG CÒN
+1. MỖI KHI ADMIN YÊU CẦU THAY ĐỔI DỮ LIỆU (tạo, sửa, xóa sản phẩm, đơn hàng...) → PHẢI GỌI FUNCTION tương ứng.
+2. TUYỆT ĐỐI KHÔNG nói "đã cập nhật", "đã tạo", "đã xóa" nếu CHƯA thực sự gọi function và function trả về success.
+3. Nếu function trả về error → báo lỗi cho admin, KHÔNG tự bịa kết quả thành công.
+4. CHỈ trả lời dựa trên KẾT QUẢ THẬT TỪ FUNCTION. Không tự suy diễn.
+
+# 📋 SƠ ĐỒ FORM TẠO SẢN PHẨM (create_product):
 ┌─────────────────────────────────────────────────────┐
 │ THÔNG TIN CƠ BẢN:                                   │
 │  title      → Tên sản phẩm (bắt buộc)               │
@@ -329,7 +335,7 @@ Danh mục hiện có: ${dbCategories.length > 0 ? dbCategories.join(', ') : 'V�
 ⚡ 19 FUNCTIONS: create_product | update_product | update_product_price | update_product_status | update_product_stock | update_product_details | delete_product | update_order_status | get_customer_info | manage_coupon | analyze_youtube_link | export_products_excel | sync_prices_from_sheet | get_draft_products | get_store_stats | search_products | get_product_detail | count_products | check_order_status | get_order_history
 
 GHI NHỚ NGỮ CẢNH: Nếu admin bổ sung thông tin → tự động ghép với thông tin cũ → gọi lại function với đầy đủ.
-Phản hồi bằng tiếng Việt, xác nhận từng field đã điền. MÔ TẢ SẢN PHẨM PHẢI CHI TIẾT, ĐỦ Ý.`;
+Phản hồi bằng tiếng Việt. TÓM TẮT kết quả function đã gọi (thành công hay thất bại, giá trị cụ thể). KHÔNG tự sinh mô tả dài nếu chưa gọi function.`;
 
       // Try Gemini API
       const allowedTools = ADMIN_AI_FUNCTIONS;
