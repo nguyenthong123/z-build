@@ -344,14 +344,31 @@ export const STOREFRONT_AI_FUNCTIONS = [
     type: "function",
     function: {
       name: "calculate_construction_materials",
-      description: "Tính toán số lượng vật tư cần thiết cho các hạng mục thi công.",
+      description: "Tính toán số lượng vật tư cần thiết cho các hạng mục thi công. CHỈ DÙNG KHI KHÁCH MUỐN BẢNG VẬT TƯ CHI TIẾT. QUAN TRỌNG: Với trần thả, PHẢI hỏi khách muốn thả kiểu 60x60 (hộp vuông, cắt đôi tấm) hay 60x120 (nguyên tấm) TRƯỚC KHI gọi function này.",
       parameters: {
         type: "object",
         properties: {
           projectType: { type: "string", description: "Loại hạng mục: Trần thả, Trần chìm, Vách ngăn, Sàn nhẹ" },
-          area: { type: "number", description: "Diện tích cần thi công (m2)" }
+          area: { type: "number", description: "Diện tích cần thi công (m2)" },
+          tileLayout: { type: "string", description: "CHỈ CHO TRẦN THẢ: '60x60' (hộp vuông, cắt đôi tấm 605x1210) hoặc '60x120' (nguyên tấm). LUÔN HỎI KHÁCH TRƯỚC. Mặc định: 60x120." }
         },
         required: ["projectType", "area"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_m2_quotation",
+      description: "Báo giá nhanh theo mét vuông (m2). Dùng khi khách chỉ muốn biết GIÁ/M2 hoặc tổng chi phí theo diện tích, không cần bảng vật tư chi tiết. Function này trả về danh sách sản phẩm phù hợp kèm đơn giá/m2.",
+      parameters: {
+        type: "object",
+        properties: {
+          projectType: { type: "string", description: "Loại hạng mục: Trần thả, Trần chìm, Vách ngăn, Sàn nhẹ, hoặc 'Tất cả' nếu không rõ" },
+          area: { type: "number", description: "Diện tích (m2). Nếu khách chỉ hỏi giá/m2, để area = 1" },
+          keyword: { type: "string", description: "Từ khóa tìm kiếm sản phẩm (nếu khách hỏi sản phẩm cụ thể, ví dụ: 'tấm ánh kim')" }
+        },
+        required: ["projectType"]
       }
     }
   },
@@ -1429,6 +1446,118 @@ async function updateProduct({ product_name, new_title, category, price, stock, 
   }
 }
 
+/**
+ * Báo giá nhanh theo mét vuông (m2)
+ * Tìm sản phẩm phù hợp, tính giá/m2 dựa trên specs thực tế
+ * KHÔNG hardcode category — tự phân tích từ dữ liệu sản phẩm
+ */
+async function getM2Quotation({ projectType, area = 1, keyword = '' }) {
+  try {
+    const snap = await getDocs(collection(db, 'products'));
+    let allProducts = snap.docs.map(d => ({ id: d.id, ...d.data(), name: d.data().title || '' }));
+
+    const formatCurrency = (n) => new Intl.NumberFormat('vi-VN').format(n || 0) + '₫';
+
+    // Lọc sản phẩm: active + KHÔNG phải vật tư phụ (vít, keo, thanh xương, bột...)
+    const isMaterial = (name) => /vít|keo d[áa]n|thanh|xương|bột|ty treo|tắc kê|foam|sơn|băng keo|bông thủy tinh|ghim|đinh/i.test(name);
+    
+    let products = allProducts.filter(p => {
+      if (p.status === 'Inactive' || !p.title) return false;
+      const name = (p.title + ' ' + (p.category || '') + ' ' + (p.specs || '')).toLowerCase();
+      if (isMaterial(name)) return false;
+
+      // Nếu có keyword cụ thể → tìm chính xác
+      if (keyword) {
+        return name.includes(keyword.toLowerCase());
+      }
+
+      // Không có keyword → tìm theo loại công trình (chỉ dùng category gợi ý, không hardcode)
+      if (projectType === 'Tất cả' || !projectType) return true;
+      
+      // Match linh hoạt: tìm trong category và title
+      const typeWords = projectType.toLowerCase().split(/[\s,]+/);
+      return typeWords.some(w => w.length > 2 && name.includes(w));
+    });
+
+    // Giới hạn kết quả
+    products = products.slice(0, 10);
+
+    if (products.length === 0) {
+      // Fallback: bỏ filter project type, chỉ giữ filter vật tư phụ + active
+      products = allProducts.filter(p => {
+        if (p.status === 'Inactive' || !p.title) return false;
+        const name = (p.title + ' ' + (p.category || '')).toLowerCase();
+        return !isMaterial(name);
+      }).slice(0, 8);
+
+      if (products.length === 0) {
+        return {
+          success: true,
+          markdown_response: `### Báo giá ${projectType || 'Sản phẩm'}\n\nChưa tìm thấy sản phẩm phù hợp trong hệ thống.\n\nVui lòng thử từ khóa khác hoặc liên hệ trực tiếp để được tư vấn.`
+        };
+      }
+    }
+
+    // Extract diện tích tấm từ specs để tính số tấm/m2
+    const extractArea = (item) => {
+      const str = `${item.specs || ''} ${item.name || ''}`;
+      const matchMM = str.match(/(\d{3,4})\s*[xX*]\s*(\d{3,4})/);
+      if (matchMM) {
+        return (parseFloat(matchMM[1]) / 1000) * (parseFloat(matchMM[2]) / 1000);
+      }
+      return 2.9768; // Default: 1220x2440
+    };
+
+    const formatNumber = (n) => new Intl.NumberFormat('vi-VN').format(n || 0);
+
+    let responseText = `### 📋 Báo Giá ${projectType}${keyword ? ' - ' + keyword : ''}${area > 1 ? ' (' + area + 'm²)' : ''}\n\n`;
+
+    if (area > 1 && products.length > 0) {
+      responseText += `Dưới đây là các sản phẩm phù hợp và chi phí ước tính cho diện tích **${area}m²**:\n\n`;
+    }
+
+    responseText += `| Sản Phẩm | Đơn Giá/m² | ${area > 1 ? 'Số Lượng' : 'KL/Tấm'} | ${area > 1 ? 'Thành Tiền' : 'Quy Cách'} | Tồn Kho |\n`;
+    responseText += `| :--- | :--- | :--- | :--- | :--- |\n`;
+
+    let cheapestProduct = null;
+    let cheapestTotal = Infinity;
+
+    products.forEach(p => {
+      const panelArea = extractArea(p);
+      const pricePerUnit = parsePrice(p.discountPrice || p.price || p.basePrice);
+      const pricePerM2 = panelArea > 0 ? Math.round(pricePerUnit / panelArea) : pricePerUnit;
+      const qty = area > 1 ? Math.ceil(area / panelArea) : 1;
+      const lineTotal = pricePerUnit * qty;
+
+      if (lineTotal < cheapestTotal) {
+        cheapestTotal = lineTotal;
+        cheapestProduct = p;
+      }
+
+      responseText += `| ${p.name} | ${formatCurrency(pricePerM2)} | ${area > 1 ? qty + ' tấm' : (p.weight || '-')} | ${area > 1 ? formatCurrency(lineTotal) : (p.specs || '-')} | ${p.stock > 0 ? '✅ ' + p.stock : '❌ Hết'} |\n`;
+    });
+
+    if (area > 1 && cheapestProduct) {
+      responseText += `\n**💰 Tổng chi phí thấp nhất:** \`${formatCurrency(cheapestTotal)}\` với **${cheapestProduct.name}**\n`;
+    }
+
+    responseText += `\n> 💡 *Đây là báo giá theo m2. Để có bảng vật tư đầy đủ (kèm thanh xương, vít, keo...), hãy yêu cầu "tính vật tư chi tiết".*`;
+
+    return {
+      success: true,
+      products: products.map(p => ({
+        id: p.id,
+        name: p.name,
+        price: parsePrice(p.discountPrice || p.price || p.basePrice),
+        stock: p.stock || 0
+      })),
+      markdown_response: responseText
+    };
+  } catch (err) {
+    return { error: 'Lỗi báo giá m2: ' + err.message };
+  }
+}
+
 // ============ FUNCTION EXECUTOR ============
 
 export async function executeFunction(name, args) {
@@ -1445,6 +1574,7 @@ export async function executeFunction(name, args) {
     case 'add_to_cart_batch': return await addToCartBatch(parsedArgs);
     case 'get_store_stats': return await getStoreStats(parsedArgs);
     case 'calculate_construction_materials': return await calculateConstructionMaterials(parsedArgs);
+    case 'get_m2_quotation': return await getM2Quotation(parsedArgs);
     case 'create_order': return await createOrder(parsedArgs);
     case 'create_product': return await createProduct(parsedArgs);
     case 'get_draft_products': return await getDraftProducts(parsedArgs);

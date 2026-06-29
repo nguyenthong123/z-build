@@ -34,12 +34,26 @@ const NORMS = {
   "Trần thả": {
     "name": "Hệ trần nổi (605x1210)",
     "wastage": 0.05,
+    "variants": {
+      "60x60": {
+        "label": "Hộp vuông 60x60 (cắt đôi tấm 605x1210)",
+        "description": "Mỗi tấm 605x1210 cắt thành 2 tấm 605x605. 1 tấm = 2 hộp vuông. Cần thêm thanh phụ 600.",
+        "panelMultiplier": 0.5, // 1 tấm 605x1210 = 2 tấm 605x605
+        "extraNote": "⚠️ Tấm 605x1210 sẽ được cắt đôi tại công trình. Hao hụt cắt cao hơn."
+      },
+      "60x120": {
+        "label": "Hộp chữ nhật 60x120 (nguyên tấm 605x1210)",
+        "description": "Dùng nguyên tấm 605x1210, không cắt. Tiết kiệm nhân công, ít hao hụt.",
+        "panelMultiplier": 1, // 1 tấm = 1 ô
+        "extraNote": ""
+      }
+    },
     "required": [
       { "keyword": "thanh chính trần thả", "searchTerms": ["thanh chính", "xương chính", "t3600"], "unit": "thanh", "norm": 0.23, "label": "Thanh chính (3.66m)" },
       { "keyword": "thanh phụ 1.2", "searchTerms": ["thanh phụ 12", "thanh phụ 1.2", "t1200"], "unit": "thanh", "norm": 1.37, "label": "Thanh phụ (1.22m)" },
-      { "keyword": "thanh phụ 0.6", "searchTerms": ["thanh phụ 60", "thanh phụ 0.6", "t600"], "unit": "thanh", "norm": 1.37, "label": "Thanh phụ (0.61m)" },
+      { "keyword": "thanh phụ 0.6", "searchTerms": ["thanh phụ 60", "thanh phụ 0.6", "t600"], "unit": "thanh", "norm": 1.37, "label": "Thanh phụ (0.61m)", "note": "Dùng nhiều hơn khi thả 60x60" },
       { "keyword": "thanh viền tường", "searchTerms": ["viền tường", "thanh v", "v góc"], "unit": "thanh", "norm": 0.2, "label": "Thanh viền V (3m)" },
-      { "keyword": "tấm trần thả", "searchTerms": ["tấm trần thả", "tấm 605", "605x1210", "tấm ánh kim", "thạch cao in hoa văn"], "unit": "tấm", "isPanel": true, "defaultArea": 0.732, "label": "Tấm trần trang trí" },
+      { "keyword": "tấm trần thả", "searchTerms": ["tấm trần thả", "tấm 605", "605x1210", "tấm ánh kim", "thạch cao in hoa văn"], "unit": "tấm", "isPanel": true, "defaultArea": 0.732, "label": "Tấm trần trang trí (605x1210)" },
       { "keyword": "ty treo", "searchTerms": ["ty treo", "tắc kê", "tăng đơ", "phụ kiện"], "unit": "bộ", "norm": 0.6, "label": "Vật tư phụ (Ty treo, tắc kê)" }
     ]
   },
@@ -85,9 +99,15 @@ const parsePrice = (priceStr) => {
   return parseInt(clean) || 0;
 };
 
-export const calculateConstructionMaterials = async ({ projectType, area }) => {
+export const calculateConstructionMaterials = async ({ projectType, area, tileLayout }) => {
   const system = NORMS[projectType];
   if (!system) return { error: `Không tìm thấy loại công trình "${projectType}". Các loại hợp lệ: Trần thả, Trần chìm, Vách ngăn, Sàn nhẹ.` };
+
+  // Xác định kiểu thả (chỉ áp dụng cho Trần thả)
+  let variant = null;
+  if (system.variants) {
+    variant = system.variants[tileLayout] || system.variants['60x120']; // Mặc định 60x120 nếu không chỉ định
+  }
 
   try {
     const snap = await getDocs(collection(db, 'products'));
@@ -119,12 +139,25 @@ export const calculateConstructionMaterials = async ({ projectType, area }) => {
       for (const q of queriesToTry) {
         const results = fuse.search(q);
         if (results.length > 0) {
-          const activeResults = results.filter(r => {
-             const isInactive = r.item.status && r.item.status.toString().toLowerCase().includes("inactive");
-             return !isInactive;
+          // Lọc: loại bỏ sản phẩm bán theo m2 và sản phẩm không phải vật tư xây dựng
+          const materialResults = results.filter(r => {
+            const item = r.item;
+            // Bỏ qua sản phẩm đã ngừng bán
+            const isInactive = item.status && item.status.toString().toLowerCase().includes("inactive");
+            if (isInactive) return false;
+            // Bỏ qua sản phẩm bán theo m2 (tấm ốp trang trí, sàn gỗ...)
+            const isPerM2 = (item.pricing_type === 'per_m2' || item.sell_by === 'm2' || item.unit === 'm2');
+            if (isPerM2) return false;
+            // Bỏ qua sản phẩm có tag "trang trí" hoặc "hoàn thiện" — không phải vật tư thô
+            const category = (item.category || '').toLowerCase();
+            if (category.includes('trang trí') || category.includes('hoàn thiện')) return false;
+            return true;
           });
-          const targetResults = activeResults.length > 0 ? activeResults : results;
-          if (targetResults[0].score < highestScore) {
+          const targetResults = materialResults.length > 0 ? materialResults : results.filter(r => {
+            const isInactive = r.item.status && r.item.status.toString().toLowerCase().includes("inactive");
+            return !isInactive;
+          });
+          if (targetResults.length > 0 && targetResults[0].score < highestScore) {
              highestScore = targetResults[0].score;
              bestMatch = targetResults[0].item;
           }
@@ -132,9 +165,16 @@ export const calculateConstructionMaterials = async ({ projectType, area }) => {
       }
 
       let theoreticalQty = 0;
+      let extraInfo = '';
       if (req.isPanel) {
         const panelArea = extractAreaFromSpecs(bestMatch?.specs || bestMatch?.name) || req.defaultArea;
-        theoreticalQty = (area * (req.multiplier || 1)) / panelArea;
+        // Nếu có variant (vd: 60x60), mỗi tấm tạo ra 1/multiplier tấm nhỏ
+        const multiplier = variant ? variant.panelMultiplier : 1;
+        const effectiveArea = panelArea * multiplier; // Diện tích thực mỗi tấm sau khi cắt
+        theoreticalQty = (area * (req.multiplier || 1)) / effectiveArea;
+        if (multiplier < 1) {
+          extraInfo = ` (cắt ${Math.round(1/multiplier)} tấm nhỏ/tấm lớn)`;
+        }
       } else {
         theoreticalQty = area * req.norm;
       }
@@ -169,7 +209,10 @@ export const calculateConstructionMaterials = async ({ projectType, area }) => {
       totalWeight += lineWeight;
     });
 
-    let responseText = `### Bảng Dự Toán Vật Tư ${projectType} ${area}m²\n\n`;
+    let responseText = `### Bảng Dự Toán Vật Tư ${projectType} ${area}m²${variant ? ' — ' + variant.label : ''}\n\n`;
+    if (variant?.extraNote) {
+      responseText += `> ${variant.extraNote}\n\n`;
+    }
     responseText += `| Tên Sản Phẩm | Quy Cách | Số Lượng | Đơn Vị | Đơn Giá (VNĐ) | Thành Tiền (VNĐ) | Trọng Lượng |\n`;
     responseText += `| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n`;
     

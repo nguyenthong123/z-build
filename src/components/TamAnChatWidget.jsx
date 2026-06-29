@@ -4,11 +4,12 @@ import remarkGfm from 'remark-gfm';
 
 
 const TamAnChatWidget = ({ onMaximize, advisorState }) => {
-  const { messages, input, setInput, isTyping, handleSend } = advisorState;
+  const { messages, input, setInput, isTyping, handleSend, handleFeedback } = advisorState;
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [feedbackSent, setFeedbackSent] = useState({}); // Track feedback per message
 
   const displayMessages = React.useMemo(() => messages.length === 0 ? [
     { id: 1, text: "Chào bạn! Tôi là trợ lý AI tại **Cơ sở thạch cao Tâm An**. Tôi có thể giúp bạn báo giá, tính toán vật tư, lên đơn tự động hoặc hướng dẫn kỹ thuật thi công. Bạn cần hỗ trợ gì ạ?", isBot: true, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
@@ -119,6 +120,34 @@ const TamAnChatWidget = ({ onMaximize, advisorState }) => {
                 </div>
               )}
               <span className="sfcb-msg-time">{m.time}</span>
+              {m.isBot && m.id > 1000000 && (
+                <div className="sfcb-feedback">
+                  {feedbackSent[m.id] ? (
+                    <span className="sfcb-feedback-done">
+                      {feedbackSent[m.id] === 'good' ? '👍' : '👎'} Cảm ơn phản hồi!
+                    </span>
+                  ) : (
+                    <>
+                      <button 
+                        className="sfcb-feedback-btn" 
+                        onClick={() => { 
+                          setFeedbackSent(prev => ({ ...prev, [m.id]: 'good' }));
+                          handleFeedback(m.id, 'good', m.text);
+                        }}
+                        title="Hữu ích"
+                      >👍</button>
+                      <button 
+                        className="sfcb-feedback-btn" 
+                        onClick={() => { 
+                          setFeedbackSent(prev => ({ ...prev, [m.id]: 'bad' }));
+                          handleFeedback(m.id, 'bad', m.text);
+                        }}
+                        title="Chưa tốt"
+                      >👎</button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         ))}

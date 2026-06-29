@@ -367,6 +367,50 @@
   padding: 0 4px;
 }
 
+/* Feedback Buttons */
+.sfcb-feedback {
+  display: flex;
+  gap: 6px;
+  padding: 4px 4px 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.sfcb-msg:hover .sfcb-feedback {
+  opacity: 1;
+}
+
+.sfcb-feedback-btn {
+  background: transparent;
+  border: 1px solid #E2E8F0;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.sfcb-feedback-btn:hover {
+  border-color: #DAA520;
+  background: #FFFBEB;
+  transform: scale(1.15);
+}
+
+.sfcb-feedback-btn:active {
+  transform: scale(0.9);
+}
+
+.sfcb-feedback-done {
+  font-size: 0.75rem;
+  color: #64748B;
+  font-style: italic;
+}
+
 .sfcb-msg.user .sfcb-msg-time {
   text-align: right;
 }

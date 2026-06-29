@@ -4,44 +4,12 @@ import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, li
 import Fuse from 'fuse.js';
 import { STOREFRONT_AI_FUNCTIONS, executeFunction } from '../services/aiFunctions';
 
-const deleteCloudinaryImage = async (secureUrl) => {
-  try {
-    const match = secureUrl.match(/\/v\d+\/(.+)\.[a-zA-Z]+$/);
-    if (!match) return;
-    const publicId = match[1];
-    
-    const apiSecret = process.env.NEXT_PUBLIC_CLOUDINARY_API_SECRET;
-    const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    
-    if (!apiSecret || !apiKey || !cloudName) return;
-
-    const timestamp = Math.floor(Date.now() / 1000);
-    const strToSign = `public_id=${publicId}&timestamp=${timestamp}${apiSecret}`;
-    
-    const encoder = new TextEncoder();
-    const data = encoder.encode(strToSign);
-    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-    const formData = new FormData();
-    formData.append('public_id', publicId);
-    formData.append('timestamp', timestamp);
-    formData.append('api_key', apiKey);
-    formData.append('signature', signature);
-
-    await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`, {
-      method: 'POST',
-      body: formData
-    });
-  } catch (err) {
-    console.error("Failed to delete from Cloudinary:", err);
-  }
-};
-
 /**
  * Custom hook to manage AI Advisor state and logic.
+ * 
+ * Ảnh chat không còn upload lên Cloudinary — dùng blob URL local.
+ * Cleanup ảnh rác Cloudinary nên làm bằng script server-side:
+ *   scripts/cleanup_cloudinary.js
  */
 export const useStorefrontAI = (productContext) => {
   const storageKey = `zbuild_ai_messages_storefront`;
@@ -51,15 +19,8 @@ export const useStorefrontAI = (productContext) => {
       if (saved) {
         let parsed = JSON.parse(saved);
         const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000);
-        const validMessages = [];
-        
-        for (const msg of parsed) {
-          if (msg.id < threeDaysAgo) {
-            if (msg.image) deleteCloudinaryImage(msg.image);
-          } else {
-            validMessages.push(msg);
-          }
-        }
+        // Chỉ giữ message < 3 ngày, xóa message cũ (ảnh blob tự hết hạn)
+        const validMessages = parsed.filter(msg => msg.id >= threeDaysAgo);
         
         if (validMessages.length !== parsed.length) {
           localStorage.setItem(storageKey, JSON.stringify(validMessages));
@@ -256,37 +217,60 @@ export const useStorefrontAI = (productContext) => {
     
     setMessages(prev => [...prev, userMsg]);
 
-    let imageUrl = null;
+    // Ảnh chat KHÔNG upload lên Cloudinary nữa — chỉ dùng blob URL local
+    // để tiết kiệm dung lượng storage. Ảnh hết phiên (F5/tắt tab) sẽ tự mất.
+    let imageUrl = localPreviewUrl;
     if (imageFile) {
-      try {
-        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dtdgrcznj';
-        const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'zbuild';
-        const formData = new FormData();
-        formData.append('file', imageFile);
-        formData.append('upload_preset', uploadPreset);
-        
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-          method: 'POST',
-          body: formData,
-        });
-        const data = await res.json();
-        if (data.secure_url) {
-          imageUrl = data.secure_url;
-          setMessages(prev => prev.map(m => m.id === tempId ? { ...m, image: imageUrl } : m));
-        } else {
-          console.error("Cloudinary error:", data);
-        }
-      } catch (err) {
-        console.error("Upload image failed:", err);
-      }
+      setMessages(prev => prev.map(m => m.id === tempId ? { ...m, image: localPreviewUrl } : m));
     }
 
     try {
-      const systemPrompt = `Bạn là Giám Đốc Kinh Doanh B2B của Z-BUILD, tư vấn cho ĐẠI LÝ: ${userName}.
-        🔧 NĂNG LỰC ĐẶC BIỆT - FUNCTION CALLING: Sử dụng tools khi cần thông tin real-time về sản phẩm, đơn hàng, thống kê.
-        - Nếu khách hàng yêu cầu tính toán vật tư, HÃY GỌI FUNCTION 'calculate_construction_materials'. KẾT QUẢ TRẢ VỀ TỪ FUNCTION LÀ ĐỊNH DẠNG MARKDOWN, HÃY IN RA NGUYÊN VĂN BẢNG MARKDOWN ĐÓ ĐỂ GIAO DIỆN HIỂN THỊ ĐẸP NHẤT.
-        - Nếu khách hàng yêu cầu THÊM, MUA, ĐẶT HÀNG, LÊN ĐƠN sản phẩm, hãy gọi function 'add_to_cart_batch'.
-        Tài liệu nội bộ: ${getKnowledgeContext(msgText)}`;
+      const systemPrompt = `# VAI TRÒ
+Bạn là Chuyên gia Tư vấn Vật liệu Xây dựng của Z-BUILD, tư vấn cho ĐẠI LÝ: ${userName}.
+
+# NGUYÊN TẮC CỐT LÕI
+
+## 1. LUÔN ĐỌC DỮ LIỆU SẢN PHẨM TRƯỚC KHI TƯ VẤN
+Mỗi khi khách hỏi về sản phẩm hoặc hạng mục, việc ĐẦU TIÊN là gọi search_products hoặc get_product_detail để lấy thông tin THẬT từ hệ thống. KHÔNG tự suy đoán.
+
+## 2. PHÂN TÍCH QUY CÁCH — TỰ SUY LUẬN TỪ SỐ LIỆU
+Khi có specs sản phẩm (vd: "605x1210mm", "1220x2440mm"), hãy TỰ PHÂN TÍCH:
+- Kích thước dài x rộng là bao nhiêu?
+- 1 tấm = bao nhiêu m²?
+- Có thể chia/cắt thành tấm nhỏ hơn không? (vd: 1210/2=605 → cắt đôi được)
+- Ứng dụng phù hợp dựa trên kích thước? (tấm nhỏ ~0.7m² → trần thả; tấm lớn ~3m² → trần chìm/vách/sàn)
+
+## 3. KHI NÀO CẦN HỎI LẠI KHÁCH
+CHỈ hỏi lại khi specs sản phẩm CHO THẤY có nhiều hơn 1 cách sử dụng:
+- VD: Tấm 605x1210 → CÓ THỂ cắt đôi (60x60) hoặc dùng nguyên (60x120) → HỎI khách chọn kiểu nào
+- VD: Tấm nano ốp tường 600x1200mm → CHỈ 1 cách dùng (ốp nguyên tấm) → KHÔNG cần hỏi, tính luôn
+- VD: Sơn, keo, bột → đơn vị kg/lít → không có "kiểu thi công" → KHÔNG hỏi
+
+Quy tắc: CHỈ hỏi khi specs thực tế cho thấy >1 phương án. Nếu specs không rõ ràng → hỏi khách cung cấp thêm.
+
+## 4. PHÂN BIỆT LOẠI CÔNG TRÌNH QUA TỪ KHÓA
+- "trần thả", "trần nổi", "la phông" → Trần thả
+- "trần chìm", "trần thạch cao", "trần phẳng" → Trần chìm  
+- "vách ngăn", "tường ngăn", "vách thạch cao" → Vách ngăn
+- "sàn", "lót sàn", "sàn nhẹ" → Sàn nhẹ
+- "ốp tường", "tường", "mặt tiền" → không có trong 4 loại trên → Dùng get_m2_quotation THAY VÌ calculate_construction_materials
+
+Nếu khách dùng từ không thuộc 4 loại hạng mục, KHÔNG ép vào calculate_construction_materials. Dùng search_products + get_m2_quotation.
+
+## 5. KHI NÀO DÙNG FUNCTION NÀO
+- 'search_products' → LUÔN gọi đầu tiên khi khách nhắc đến sản phẩm
+- 'get_product_detail' → Khi cần specs, giá, tồn kho của 1 sản phẩm cụ thể
+- 'get_m2_quotation' → Báo giá nhanh theo m² cho bất kỳ sản phẩm nào
+- 'calculate_construction_materials' → CHỈ cho 4 hạng mục: Trần thả, Trần chìm, Vách ngăn, Sàn nhẹ. Kết quả là bảng vật tư đầy đủ. Nếu specs cho thấy có thể cắt/chia → truyền thêm tileLayout.
+- 'generate_quotation' → Báo giá tổng hợp nhiều sản phẩm
+- 'add_to_cart_batch' → Khi khách chốt mua
+
+## 6. CÁCH TRẢ LỜI
+- Ngắn gọn, vào thẳng vấn đề
+- Khi trả về bảng Markdown từ function → IN NGUYÊN VĂN, không tự ý sửa
+- Luôn kèm đề xuất bước tiếp theo (vd: "Anh muốn chốt đơn luôn hay cần báo giá chi tiết hơn?")
+
+Tài liệu nội bộ: ${getKnowledgeContext(msgText)}`;
 
       // Try Gemini API
       const allowedTools = STOREFRONT_AI_FUNCTIONS;
@@ -342,8 +326,25 @@ export const useStorefrontAI = (productContext) => {
     }
   }, [productContext, messages.length, handleSend]);
 
+  // Feedback handler — lưu phản hồi người dùng để AI tự cải thiện
+  const handleFeedback = useCallback(async (messageId, rating, messageText) => {
+    try {
+      const lastUserMsg = [...messages].reverse().find(m => !m.isBot);
+      await addDoc(collection(db, "ai_feedback"), {
+        messageId,
+        rating, // 'good' | 'bad'
+        botResponse: messageText,
+        userQuery: lastUserMsg?.text || '',
+        userId: auth.currentUser?.uid || 'anonymous',
+        createdAt: serverTimestamp(),
+      });
+    } catch (err) {
+      console.warn("Feedback save failed:", err);
+    }
+  }, [messages]);
+
   return {
     messages, input, setInput, isTyping, activeModel, productSuggestions, userName,
-    handleSend
+    handleSend, handleFeedback
   };
 };

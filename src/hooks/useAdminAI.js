@@ -4,44 +4,12 @@ import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, li
 import Fuse from 'fuse.js';
 import { ADMIN_AI_FUNCTIONS, executeFunction } from '../services/aiFunctions';
 
-const deleteCloudinaryImage = async (secureUrl) => {
-  try {
-    const match = secureUrl.match(/\/v\d+\/(.+)\.[a-zA-Z]+$/);
-    if (!match) return;
-    const publicId = match[1];
-    
-    const apiSecret = process.env.NEXT_PUBLIC_CLOUDINARY_API_SECRET;
-    const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    
-    if (!apiSecret || !apiKey || !cloudName) return;
-
-    const timestamp = Math.floor(Date.now() / 1000);
-    const strToSign = `public_id=${publicId}&timestamp=${timestamp}${apiSecret}`;
-    
-    const encoder = new TextEncoder();
-    const data = encoder.encode(strToSign);
-    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-    const formData = new FormData();
-    formData.append('public_id', publicId);
-    formData.append('timestamp', timestamp);
-    formData.append('api_key', apiKey);
-    formData.append('signature', signature);
-
-    await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`, {
-      method: 'POST',
-      body: formData
-    });
-  } catch (err) {
-    console.error("Failed to delete from Cloudinary:", err);
-  }
-};
-
 /**
- * Custom hook to manage AI Advisor state and logic.
+ * Custom hook to manage AI Advisor state and logic (Admin).
+ * 
+ * Ảnh chat không còn upload lên Cloudinary — dùng blob URL local.
+ * Cleanup ảnh rác Cloudinary nên làm bằng script server-side:
+ *   scripts/cleanup_cloudinary.js
  */
 export const useAdminAI = () => {
   const storageKey = `zbuild_ai_messages_admin`;
@@ -51,15 +19,8 @@ export const useAdminAI = () => {
       if (saved) {
         let parsed = JSON.parse(saved);
         const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000);
-        const validMessages = [];
-        
-        for (const msg of parsed) {
-          if (msg.id < threeDaysAgo) {
-            if (msg.image) deleteCloudinaryImage(msg.image);
-          } else {
-            validMessages.push(msg);
-          }
-        }
+        // Chỉ giữ message < 3 ngày, xóa message cũ (ảnh blob tự hết hạn)
+        const validMessages = parsed.filter(msg => msg.id >= threeDaysAgo);
         
         if (validMessages.length !== parsed.length) {
           localStorage.setItem(storageKey, JSON.stringify(validMessages));
@@ -310,33 +271,14 @@ export const useAdminAI = () => {
     
     setMessages(prev => [...prev, userMsg]);
 
-    let imageUrls = [];
+    // Ảnh chat KHÔNG upload lên Cloudinary nữa — chỉ dùng blob URL local
+    // để tiết kiệm dung lượng storage. Ảnh hết phiên (F5/tắt tab) sẽ tự mất.
     if (hasImages) {
-      try {
-        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dtdgrcznj';
-        const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'zbuild';
-        
-        const uploadPromises = files.map(async (file) => {
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('upload_preset', uploadPreset);
-          const res = await fetch('https://api.cloudinary.com/v1_1/' + cloudName + '/image/upload', {
-            method: 'POST',
-            body: formData,
-          });
-          const data = await res.json();
-          return data.secure_url || null;
-        });
-        imageUrls = (await Promise.all(uploadPromises)).filter(Boolean);
-        
-        setMessages(prev => prev.map(m => m.id === tempId ? { 
-          ...m, 
-          images: imageUrls,
-          image: imageUrls[0] || undefined
-        } : m));
-      } catch (err) {
-        console.error("Upload images failed:", err);
-      }
+      setMessages(prev => prev.map(m => m.id === tempId ? { 
+        ...m, 
+        images: localPreviews,
+        image: localPreviews[0] || undefined
+      } : m));
     }
 
     try {
