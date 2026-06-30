@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, getDocs, doc, query, where, serverTimestamp, getDoc, runTransaction, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -6,6 +6,7 @@ import './Checkout.css';
 
 const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false); // ⚡ Ref chặn double-click (sync, không bị stale closure)
   const [formErrors, setFormErrors] = useState({});
 
   const [formData, setFormData] = useState({
@@ -346,12 +347,15 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
   };
 
   const handlePlaceOrder = async () => {
+    // ⚡ Chặn double-click ngay lập tức (ref sync, state async)
+    if (isSubmittingRef.current) return;
+    
     if (!validateForm()) {
       alert('Vui lòng điền đầy đủ các thông tin bắt buộc (chữ đỏ) trước khi xác nhận đơn hàng.');
       return;
     }
-    if (isSubmitting) return;
     
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
     try {
       // Validate items before proceeding
@@ -564,6 +568,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
       console.error('Error placing order:', error);
       alert(error.message || 'Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại!');
     } finally {
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
   };
