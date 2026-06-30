@@ -544,52 +544,6 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
         }
       }
 
-      // Send emails (non-blocking)
-      try {
-        const payload = {
-          email: formData.email || user?.email,
-          orderNumber,
-          customerName: `${formData.firstName} ${formData.lastName}`,
-          items: finalOrderData.cartItems.map(item => ({
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-            image: item.image || ''
-          })),
-          total: finalOrderData.total,
-          shippingAddress: finalOrderData.shippingAddress,
-          paymentMethod: formData.paymentMethod,
-          shippingMethod: formData.shippingMethod
-        };
-
-        // Email cho khách hàng
-        fetch('https://script.google.com/macros/s/AKfycbyMQ8DHAd1yC7IrKJLQB_cBZsJkG3BqymJqhcjfABC4hNpsnZ7oo2u77nxfSWeoMZHl/exec', {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        }).catch(err => console.log('Email send (non-critical):', err));
-
-        // Email cho Admin
-        const adminDoc = await getDoc(doc(db, 'settings', 'admins'));
-        if (adminDoc.exists()) {
-          const adminEmails = adminDoc.data().emails || [];
-          adminEmails.forEach(adminEmail => {
-            fetch('https://script.google.com/macros/s/AKfycbyMQ8DHAd1yC7IrKJLQB_cBZsJkG3BqymJqhcjfABC4hNpsnZ7oo2u77nxfSWeoMZHl/exec', {
-              method: 'POST',
-              mode: 'no-cors',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                ...payload,
-                email: adminEmail,
-                orderNumber: `[ĐƠN HÀNG MỚI] ${orderNumber}`,
-              })
-            }).catch(e => console.log('Admin Email error:', e));
-          });
-        }
-      } catch (emailErr) {
-        console.log('Email error (non-critical):', emailErr);
-      }
 
       if (formData.paymentMethod === 'bank-transfer') {
         setGeneratedOrder(finalOrderData);
