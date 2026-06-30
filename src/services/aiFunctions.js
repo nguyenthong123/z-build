@@ -98,23 +98,7 @@ export const ADMIN_AI_FUNCTIONS = [
       parameters: { type: "object", properties: {} }
     }
   },
-  {
-    type: "function",
-    function: {
-      name: "update_product_details",
-      description: "Cập nhật chi tiết một sản phẩm (mô tả SEO HTML, quy cách, danh mục).",
-      parameters: {
-        type: "object",
-        properties: {
-          product_id: { type: "string", description: "ID của sản phẩm cần cập nhật" },
-          description: { type: "string", description: "Đoạn mã HTML mô tả" },
-          category: { type: "string", description: "Danh mục sản phẩm" },
-          specs: { type: "string", description: "Thông số kỹ thuật/quy cách" }
-        },
-        required: ["product_id", "description"]
-      }
-    }
-  },
+
   {
     type: "function",
     function: {
@@ -1567,7 +1551,20 @@ async function getM2Quotation({ projectType, area = 1, keyword = '' }) {
 // ============ FUNCTION EXECUTOR ============
 
 export async function executeFunction(name, args) {
-  const parsedArgs = typeof args === 'string' ? JSON.parse(args) : args;
+  let parsedArgs = args;
+  if (typeof args === 'string') {
+    try {
+      parsedArgs = JSON.parse(args);
+    } catch (e) {
+      try {
+        // Fix unescaped newlines and tabs
+        let sanitized = args.replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
+        parsedArgs = JSON.parse(sanitized);
+      } catch (e2) {
+        throw new Error("Lỗi tham số từ AI (JSON không hợp lệ). Vui lòng thử yêu cầu ngắn gọn hơn hoặc không dùng ngoặc kép trong nội dung.");
+      }
+    }
+  }
 
   switch (name) {
     case 'update_product': return await updateProduct(parsedArgs);

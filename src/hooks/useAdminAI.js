@@ -228,12 +228,15 @@ export const useAdminAI = () => {
       while (responseMsg?.tool_calls && rounds < 5) {
         rounds++;
         apiMessages.push(responseMsg);
+        let toolErrors = [];
         const toolResults = await Promise.all(responseMsg.tool_calls.map(async (tc) => {
           try {
             const result = await executeFunction(tc.function.name, tc.function.arguments);
+            if (result && result.error) toolErrors.push(`[${tc.function.name}] ${result.error}`);
             return { role: "tool", tool_call_id: tc.id, name: tc.function.name, content: JSON.stringify(result) };
           } catch (toolErr) {
             console.warn(`Tool ${tc.function.name} error:`, toolErr);
+            toolErrors.push(`[${tc.function.name}] ${toolErr.message}`);
             return { role: "tool", tool_call_id: tc.id, name: tc.function.name, content: JSON.stringify({ error: toolErr.message }) };
           }
         }));
@@ -242,6 +245,9 @@ export const useAdminAI = () => {
         d = await callDeepSeek(apiMessages, 0); // tool follow-up: không retry
         if (d.error) return d.error;
         responseMsg = d.choices?.[0]?.message;
+        if (toolErrors.length > 0) {
+          responseMsg.content = (responseMsg.content || "") + `\n\n⚠️ LƯU Ý TỪ HỆ THỐNG: Quá trình thực thi lệnh gặp lỗi:\n- ${toolErrors.join('\n- ')}`;
+        }
       }
       return responseMsg?.content || "Bot không phản hồi.";
     } catch (err) { 
@@ -321,6 +327,7 @@ export const useAdminAI = () => {
 5. KHÔNG tự bịa category — chọn từ danh sách có sẵn hoặc hỏi admin
 6. specs là QUY CÁCH (vd: "10x20cm, dày 2mm"), KHÔNG phải mô tả dài
 7. packaging là ĐÓNG GÓI (vd: "Thùng 10 tấm", "Bao 25kg")
+8. QUAN TRỌNG: Khi viết mã HTML vào tham số "description", KHÔNG sử dụng dấu nháy kép (") bên trong HTML để tránh lỗi JSON. Hãy sử dụng dấu nháy đơn (') hoặc không dùng dấu nháy cho các thuộc tính HTML.
 
 📸 KHI ADMIN GỬI ẢNH KÈM TEXT:
 Ví dụ: [3 ảnh] "Tạo SP Sơn Dulux màu trắng, giá 450k, danh mục Sơn"
