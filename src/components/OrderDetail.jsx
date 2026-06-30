@@ -120,15 +120,7 @@ const OrderDetail = ({ order, onBack, onCancelSuccess, onEditOrder, onReturnSucc
     }
   };
 
-  // Check if within 1 hour
-  let isWithinOneHour = false;
-  if (order.createdAt) {
-    const orderTime = order.createdAt?.toDate ? order.createdAt.toDate().getTime() : order.createdAt;
-    const now = new Date().getTime();
-    if (now - orderTime <= 60 * 60 * 1000) {
-      isWithinOneHour = true;
-    }
-  }
+
 
   const subtotal = (order.items || []).reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const statusStep = getStatusStep(order.status);

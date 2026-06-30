@@ -110,8 +110,8 @@ export const useStorefrontAI = (productContext) => {
           raw_docs: knowledgeBaseRaw,
           performance: performanceData ? [performanceData] : []
         });
-      } catch (err) {
-        // console.warn('Error loading AI data:', err); // Silenced permission error
+      } catch {
+        // Silenced permission error
       }
     };
     loadKB();

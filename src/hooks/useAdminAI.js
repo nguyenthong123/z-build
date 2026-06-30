@@ -111,7 +111,7 @@ export const useAdminAI = () => {
           raw_docs: knowledgeBaseRaw,
           performance: performanceData ? [performanceData] : []
         });
-      } catch (err) {
+      } catch {
         // console.warn('Error loading AI data:', err); // Silenced permission error
       }
     };
@@ -136,7 +136,7 @@ export const useAdminAI = () => {
     let contextText = "==== TÀI LIỆU NỘI BỘ ====\n";
     results.slice(0, 15).forEach(r => contextText += `- [Chuyên mục: ${r.item.category || 'Chung'}] Nội dung: ${r.item.content?.slice(0, 500)}\n---\n`);
     return contextText + "==========================\n";
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [knowledgeBase.all_units]);
 
   const callAI = useCallback(async (msgText, systemPrompt, imageUrls = [], allowedTools = ADMIN_AI_FUNCTIONS) => {

@@ -116,12 +116,13 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
             setIsSyncing(false);
           }
         }
-      } catch (e) {
+      } catch {
         // Silent fail for auto-sync
       }
     };
     
     checkAutoSync();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoSyncTriggered]);
 
 
@@ -130,64 +131,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
 
 
 
-  const normalizeCategory = (cat) => {
-    if (!cat) return 'Chung';
-    let clean = cat.trim();
-    const lower = clean.toLowerCase();
-    
-    // ── SƠN ──
-    if (lower.includes('sơn') && !lower.includes('sơn sắt')) {
-      if (lower.includes('sắt') || lower.includes('chống rỉ') || lower.includes('mạ kẽm')) return 'Sơn sắt - Giá tại kho';
-      return 'Sơn - Giá tại kho';
-    }
-    if (lower.includes('sơn sắt') || lower.includes('chống rỉ')) return 'Sơn sắt - Giá tại kho';
-    
-    // ── KEO + SILICONE ──
-    if (lower.includes('keo')) {
-      if (lower.includes('trám') || lower.includes('silicon') || lower.includes('apollo')) return 'Keo trám - Giá tại kho';
-      if (lower.includes('dán') || lower.includes('gạch') || lower.includes('đá')) return 'Keo dán - Giá tại kho';
-      return 'Keo - Giá tại kho'; // Fallback keo chung
-    }
-    if (lower.includes('silicon') || lower.includes('silicone')) return 'Keo trám - Giá tại kho';
-    
-    // ── NHỰA & PHỤ KIỆN ──
-    if (lower.includes('nhựa') || lower.includes('pvc') || lower.includes('nẹp')) return 'Nhựa và Phụ kiện tấm nhựa - Giá tại kho';
-    
-    // ── TRẦN & PHỤ KIỆN ──
-    if (lower.includes('trần') || lower.includes('la phông')) return 'Trần và Phụ kiện - Giá tại kho';
-    
-    // ── TẤM DURAFLEX / CEMBOARD ──
-    if (lower.includes('duraflex') || lower.includes('cemboard') || lower.includes('xi măng')) return 'Tấm DURAflex - Giá tại kho';
-    
-    // ── PANEL / TẤM ỐP ──
-    if (lower.includes('panel') || lower.includes('tấm ốp') || lower.includes('ốp tường')) return 'Panel - Giá tại kho';
-    
-    // ── TÍNH M2 ──
-    if (lower.includes('tính m2') || lower.includes('theo m2') || lower.includes('mét vuông')) return 'Tính m2 - Giá tại kho';
-    
-    // ── VÍT / PHỤ KIỆN KIM KHÍ ──
-    if (lower.includes('vít') || lower.includes('đinh') || lower.includes('bu lông') || lower.includes('tắc kê')) return 'Vít & Phụ kiện - Giá tại kho';
-    
-    // ── BỘT / BẢ ──
-    if (lower.includes('bột') || lower.includes('bả') || lower.includes('trét')) return 'Bột trét & Xử lý - Giá tại kho';
-    
-    // ── GIẤY NHÁM / DỤNG CỤ ──
-    if (lower.includes('giấy nhám') || lower.includes('dao') || lower.includes('kéo') || lower.includes('băng keo')) return 'Dụng cụ - Giá tại kho';
-    
-    // ── BÔNG THỦY TINH / CÁCH ÂM CÁCH NHIỆT ──
-    if (lower.includes('bông') || lower.includes('cách âm') || lower.includes('cách nhiệt')) return 'Cách âm cách nhiệt - Giá tại kho';
 
-    // ── FOAM / BỌT NỞ ──
-    if (lower.includes('foam') || lower.includes('bọt')) return 'Foam & Bọt nở - Giá tại kho';
-
-    // Fallback: nếu không khớp gì → lấy từ đầu tiên làm danh mục
-    // Tránh tạo quá nhiều danh mục lẻ từ tên Dunvex
-    const firstWord = clean.split(/[\s-]+/)[0];
-    if (firstWord.length > 2) {
-      return firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase() + ' - Giá tại kho';
-    }
-    return 'Chung';
-  };
 
   const handleSyncFromDunvex = async () => {
     setIsSyncing(true);
@@ -537,23 +481,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
     }
   };
 
-  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      if (currentScrollY > lastScrollY && currentScrollY > 50) {
-        setIsHeaderVisible(false);
-      } else {
-        setIsHeaderVisible(true);
-      }
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
 
   // allCategories is managed in state
 

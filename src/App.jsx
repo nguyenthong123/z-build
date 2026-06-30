@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy, useCallback } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from './firebase';
@@ -14,6 +14,7 @@ import { useToast } from './context/ToastContext';
 import { useWishlist } from './context/WishlistContext';
 import { useStorefrontAI } from './hooks/useStorefrontAI';
 import { useAuth } from './context/AuthContext';
+import { useAppNavigation } from './hooks/useAppNavigation';
 
 // Lazy-loaded components (code splitting for performance)
 const OrderHistory = lazy(() => import('./components/OrderHistory'));
@@ -124,7 +125,7 @@ function HomePage({ handleAddToCart, navigate }) {
 }
 
 function App() {
-  const navigate = useNavigate();
+  const { goBack, navigate } = useAppNavigation();
   const location = useLocation();
   
   const { user, isAdmin } = useAuth();
@@ -148,7 +149,7 @@ function App() {
     } catch { return []; }
   });
 
-  const getCompareKey = () => `zbuild_compare_${user?.uid || 'guest'}`;
+  const getCompareKey = useCallback(() => `zbuild_compare_${user?.uid || 'guest'}`, [user?.uid]);
 
   const [compareCount, setCompareCount] = useState(() => {
     try {
@@ -177,7 +178,7 @@ function App() {
       window.removeEventListener('compareListUpdated', handleCompareUpdate);
       window.removeEventListener('storage', handleCompareUpdate);
     };
-  }, [user]);
+  }, [user, getCompareKey]);
 
   // Set up Firebase Cloud Messaging for Push Notifications
   useEffect(() => {
@@ -337,7 +338,7 @@ function App() {
     }
   };
 
-  const handleSignUp = (userData) => {
+  const handleSignUp = () => {
     // onAuthStateChanged in AuthContext will auto-update user state
     addToast('Tạo tài khoản thành công! Chào bạn mới.', 'success');
     if (intendedDestination) {
@@ -430,7 +431,7 @@ function App() {
           } />
           <Route path="/product/:productId" element={
             <ProductDetail 
-              onBack={() => navigate(-1)} 
+              onBack={() => goBack('/')} 
               onAddToCart={(product, qty) => handleAddToCart(product, qty)} 
               isLoggedIn={!!user}
               onLoginRequired={() => handleLoginRequired(location.pathname)}
@@ -440,7 +441,7 @@ function App() {
           } />
           <Route path="/cart" element={
             <Cart 
-              onBack={() => navigate('/')} 
+              onBack={() => goBack('/')} 
               onCheckout={() => user ? navigate('/checkout') : handleLoginRequired('/checkout')} 
               cartItems={cartItems}
               updateQuantity={updateQuantity}
@@ -451,7 +452,7 @@ function App() {
           <Route path="/checkout" element={
             user ? (
               <Checkout 
-                onBack={() => navigate('/cart')} 
+                onBack={() => goBack('/cart')} 
                 cartItems={cartItems}
                 onOrderComplete={handleOrderComplete}
                 user={user}
@@ -479,14 +480,14 @@ function App() {
           <Route path="/login" element={
             <Login 
               onLogin={handleLogin} 
-              onBack={() => navigate('/')} 
+              onBack={() => goBack('/')} 
               onSignUp={() => navigate('/signup')} 
             />
           } />
           <Route path="/signup" element={
             <SignUp 
               onSignUp={handleSignUp} 
-              onBack={() => navigate('/')} 
+              onBack={() => goBack('/')} 
               onLogin={() => navigate('/login')} 
             />
           } />
@@ -495,7 +496,7 @@ function App() {
           <Route path="/orders" element={
             <OrderHistory 
               user={user} 
-              onBack={() => navigate('/')} 
+              onBack={() => goBack('/')} 
               onViewDetails={(order) => { setSelectedOrder(order); navigate(`/order/${order.id}`); }} 
               onNavigate={setView} 
               onLogout={handleLogout}
@@ -504,7 +505,7 @@ function App() {
           <Route path="/order/:orderId" element={
             <OrderDetail 
               order={selectedOrder} 
-              onBack={() => navigate('/orders')} 
+              onBack={() => goBack('/orders')} 
               onCancelSuccess={(orderId) => {
                 setSelectedOrder(prev => prev && prev.id === orderId ? { ...prev, status: 'cancelled' } : prev);
                 addToast('Đơn hàng đã được hủy thành công', 'success');
@@ -521,7 +522,7 @@ function App() {
             />
           } />
           <Route path="/profile" element={
-            <Profile user={user} onBack={() => navigate('/')} onNavigate={setView} onLogout={handleLogout} />
+            <Profile user={user} onBack={() => goBack('/')} onNavigate={setView} onLogout={handleLogout} />
           } />
           <Route path="/advisor" element={
             <AIAdvisor onNavigate={(target) => navigate(target === 'home' ? '/' : `/${target}`)} advisorState={storefrontAdvisorState} />
@@ -531,11 +532,11 @@ function App() {
           {/* === ADMIN ROUTES === */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="dashboard" element={
-              <AdminDashboard onBack={() => navigate('/')} />
+              <AdminDashboard onBack={() => goBack('/')} />
             } />
             <Route path="products" element={
               <AdminProductList 
-                onBack={() => navigate('/')} 
+                onBack={() => goBack('/admin/dashboard')} 
                 onAddProduct={() => { setEditingProduct(null); navigate('/admin/add-product'); }} 
                 onEditProduct={(product) => { setEditingProduct(product); navigate('/admin/add-product'); }}
                 onPreviewProduct={(product) => navigate(`/product/${product.slug || product.id}`)}
@@ -544,7 +545,7 @@ function App() {
             <Route path="add-product" element={
               isAdmin ? (
                 <AdminAddProduct 
-                  onBack={() => navigate('/admin/products')} 
+                  onBack={() => goBack('/admin/products')} 
                   editData={editingProduct}
                   onSave={() => { setEditingProduct(null); navigate('/admin/products'); }} 
                 />
@@ -552,14 +553,14 @@ function App() {
             } />
             <Route path="orders" element={
               <AdminOrderManagement
-                onBack={() => navigate('/')}
+                onBack={() => goBack('/admin/dashboard')}
                 onViewOrderDetail={(order) => { setSelectedOrder(order); navigate('/admin/order-detail'); }}
               />
             } />
             <Route path="order-detail" element={
               <OrderDetail
                 order={selectedOrder}
-                onBack={() => navigate('/admin/orders')}
+                onBack={() => goBack('/admin/orders')}
                 isAdmin={true}
                 onCancelSuccess={(orderId) => {
                   setSelectedOrder(prev => prev && prev.id === orderId ? { ...prev, status: 'cancelled' } : prev);
@@ -568,16 +569,16 @@ function App() {
               />
             } />
             <Route path="ai-assistant" element={<AdminAIAssistant />} />
-            <Route path="affiliates" element={isAdmin ? <AdminAffiliateManagement onBack={() => navigate('/admin/dashboard')} /> : <Navigate to="/" />} />
+            <Route path="affiliates" element={isAdmin ? <AdminAffiliateManagement onBack={() => goBack('/admin/dashboard')} /> : <Navigate to="/" />} />
             <Route path="customers" element={
-              <AdminCustomerManagement onBack={() => navigate('/')} />
+              <AdminCustomerManagement onBack={() => goBack('/admin/dashboard')} />
             } />
 
             <Route path="coupons" element={
-              <AdminCouponManagement onBack={() => navigate('/admin/dashboard')} />
+              <AdminCouponManagement onBack={() => goBack('/admin/dashboard')} />
             } />
             <Route path="settings" element={
-              isAdmin ? <AdminSettings onBack={() => navigate('/admin/dashboard')} /> : <Navigate to="/" />
+              isAdmin ? <AdminSettings onBack={() => goBack('/admin/dashboard')} /> : <Navigate to="/" />
             } />
           </Route>
 

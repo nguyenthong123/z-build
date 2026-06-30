@@ -165,16 +165,13 @@ export const calculateConstructionMaterials = async ({ projectType, area, tileLa
       }
 
       let theoreticalQty = 0;
-      let extraInfo = '';
       if (req.isPanel) {
         const panelArea = extractAreaFromSpecs(bestMatch?.specs || bestMatch?.name) || req.defaultArea;
         // Nếu có variant (vd: 60x60), mỗi tấm tạo ra 1/multiplier tấm nhỏ
         const multiplier = variant ? variant.panelMultiplier : 1;
         const effectiveArea = panelArea * multiplier; // Diện tích thực mỗi tấm sau khi cắt
         theoreticalQty = (area * (req.multiplier || 1)) / effectiveArea;
-        if (multiplier < 1) {
-          extraInfo = ` (cắt ${Math.round(1/multiplier)} tấm nhỏ/tấm lớn)`;
-        }
+        
       } else {
         theoreticalQty = area * req.norm;
       }

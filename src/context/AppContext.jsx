@@ -58,7 +58,7 @@ export const AppProvider = ({ children }) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem(cartKey, JSON.stringify(cartItems));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [cartItems, cartKey]);
 
   // Sync compare count, reload on user change
@@ -80,7 +80,7 @@ export const AppProvider = ({ children }) => {
       window.removeEventListener('compareListUpdated', handle);
       window.removeEventListener('storage', handle);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [compareKey]);
 
   useEffect(() => {

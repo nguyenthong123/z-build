@@ -7,7 +7,7 @@ import './Checkout.css';
 const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState({});
-  const [step] = useState(1);
+
   const [formData, setFormData] = useState({
     email: '',
     firstName: '',

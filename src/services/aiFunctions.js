@@ -1508,7 +1508,7 @@ async function getM2Quotation({ projectType, area = 1, keyword = '' }) {
       return 2.9768; // Default: 1220x2440
     };
 
-    const formatNumber = (n) => new Intl.NumberFormat('vi-VN').format(n || 0);
+
 
     const parsePrice = (price) => {
       if (typeof price === 'number') return price;

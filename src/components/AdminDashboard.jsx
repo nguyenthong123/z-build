@@ -6,23 +6,7 @@ import './AdminDashboard.css';
 import AdminHeader from './AdminHeader';
 
 const AdminDashboard = ({ onBack }) => {
-  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      if (currentScrollY > lastScrollY && currentScrollY > 50) {
-        setIsHeaderVisible(false); // Scrolling down
-      } else {
-        setIsHeaderVisible(true); // Scrolling up
-      }
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
 
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
