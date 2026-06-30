@@ -578,11 +578,9 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
           <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#e2e8f0' }}></div>
         </div>
       </div>
-
-      <div className="container">
-        <div className="checkout-layout">
-          {/* Form Side */}
-          {paymentStep === 1 ? (
+      <div className="checkout-layout">
+        {/* Form Side */}
+        {paymentStep === 1 ? (
           <div className="checkout-form-section">
             {/* Desktop-only logo + breadcrumbs */}
             <Link to="/" className="checkout-logo desktop-only" style={{ textDecoration: 'none', display: 'inline-flex' }}>
@@ -836,7 +834,6 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
             </div>
           </div>
         </div>
-      </div>
 
       {/* Mobile Sticky CTA */}
       <div className="mobile-checkout-cta">
