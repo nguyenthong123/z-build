@@ -487,6 +487,10 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
           cartItems: itemsToBuy, // Use items with real prices
           formData,
           total: newTotal,
+          shippingCost,           // 🔧 Fix: thêm phí vận chuyển
+          tax: newTax,            // 🔧 Fix: thêm thuế
+          shippingMethod: formData.shippingMethod,  // 🔧 Fix: thêm phương thức ship
+          paymentMethod: formData.paymentMethod,    // 🔧 Fix: thêm phương thức thanh toán
           shippingAddress
         };
       }); // End transaction
