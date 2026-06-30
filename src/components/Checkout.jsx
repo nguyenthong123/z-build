@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, getDocs, doc, query, where, serverTimestamp, getDoc, runTransaction, setDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, query, where, serverTimestamp, getDoc, runTransaction, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import './Checkout.css';
 
@@ -25,7 +25,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
     cardCvv: ''
   });
 
-  const [paymentStep] = useState(1); // 1: Form, 2: QR Code
+  const [paymentStep, setPaymentStep] = useState(1); // 1: Form, 2: QR Code
   const [generatedOrder, setGeneratedOrder] = useState(null);
   const [orderNumber] = useState(() => 'ZB' + Date.now().toString(36).toUpperCase() + Math.floor(Math.random() * 1000));
 
@@ -40,14 +40,14 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
 
   // Timeout for App Script polling (10 minutes)
   useEffect(() => {
-    if (formData.paymentMethod !== 'bank-transfer' || !orderNumber) return;
+    if (paymentStep !== 2 || !orderNumber) return;
     const timer = setTimeout(() => setPollingTimeout(true), 600000);
     return () => clearTimeout(timer);
-  }, [formData.paymentMethod, orderNumber]);
+  }, [paymentStep, orderNumber]);
 
   // Auto-checkout polling from App Script URL
   useEffect(() => {
-    if (formData.paymentMethod !== 'bank-transfer' || !orderNumber || pollingTimeout) return;
+    if (paymentStep !== 2 || !orderNumber || pollingTimeout || !generatedOrder) return;
 
     const checkPayment = async () => {
       if (document.visibilityState === 'hidden') return;
@@ -62,6 +62,20 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
           if (hasPaid && !autoCheckoutTriggered) {
             setBankTransactionInfo(hasPaid);
             setAutoCheckoutTriggered(true);
+            
+            // Tự động cập nhật Database thành 'paid'
+            if (generatedOrder && generatedOrder.id) {
+              try {
+                await updateDoc(doc(db, 'orders', generatedOrder.id), {
+                  status: 'paid',
+                  bankTransaction: hasPaid,
+                  updatedAt: serverTimestamp()
+                });
+              } catch (err) {
+                console.error('Error updating order status:', err);
+              }
+            }
+            onOrderComplete({ ...generatedOrder, status: 'paid', bankTransaction: hasPaid });
           }
         }
       } catch (err) {
@@ -74,14 +88,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
     const intervalId = setInterval(checkPayment, 10000);
 
     return () => clearInterval(intervalId);
-  }, [formData.paymentMethod, orderNumber, autoCheckoutTriggered, pollingTimeout]);
-
-  useEffect(() => {
-    if (autoCheckoutTriggered && !isSubmitting && paymentStep === 1) {
-      handlePlaceOrder();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoCheckoutTriggered]);
+  }, [paymentStep, orderNumber, autoCheckoutTriggered, pollingTimeout, generatedOrder, onOrderComplete]);
 
   // Shop's Bank Info (Configurable)
   const [shopBankInfo, setShopBankInfo] = useState({
@@ -464,6 +471,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
         transaction.set(orderRef, orderDocData);
 
         finalOrderData = {
+          id: orderRef.id,
           orderNumber,
           cartItems: itemsToBuy, // Use items with real prices
           formData,
@@ -585,7 +593,9 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
 
       if (formData.paymentMethod === 'bank-transfer') {
         setGeneratedOrder(finalOrderData);
-        onOrderComplete(finalOrderData);
+        setPaymentStep(2);
+        // Scroll to top to see QR
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         onOrderComplete(finalOrderData);
       }
@@ -618,6 +628,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
       <div className="container">
         <div className="checkout-layout">
           {/* Form Side */}
+          {paymentStep === 1 ? (
           <div className="checkout-form-section">
             {/* Desktop-only logo + breadcrumbs */}
             <Link to="/" className="checkout-logo desktop-only" style={{ textDecoration: 'none', display: 'inline-flex' }}>
@@ -749,30 +760,6 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
                   </div>
                 </label>
               </div>
-
-              {formData.paymentMethod === 'bank-transfer' && (
-                <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '16px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                  <div style={{ fontWeight: 700, marginBottom: '4px', fontSize: '0.95rem' }}>
-                    Tổng cần chuyển: <span style={{ color: '#E11D48', fontSize: '1.2rem' }}>{Number(total).toLocaleString('vi-VN')}₫</span>
-                  </div>
-                  <p style={{ margin: '0 0 12px', color: '#64748B', fontSize: '0.8rem' }}>Nội dung chuyển khoản: <strong>{orderNumber}</strong></p>
-                  {shopBankInfo?.bankCode && shopBankInfo?.accountNumber && (
-                    <img 
-                      src={`https://img.vietqr.io/image/${shopBankInfo.bankCode}-${shopBankInfo.accountNumber}-compact2.png?amount=${total}&addInfo=${orderNumber}&accountName=${encodeURIComponent(shopBankInfo.accountName || '')}`}
-                      alt="VietQR" style={{ width: '180px', height: '180px', objectFit: 'contain', margin: '0 auto' }}
-                    />
-                  )}
-                  <div style={{ background: '#fff', borderRadius: '10px', padding: '12px', marginTop: '12px', fontSize: '0.8rem', textAlign: 'left', border: '1px solid #f1f5f9' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}><span style={{ color: '#94a3b8' }}>Ngân hàng</span><strong>{shopBankInfo?.bankName}</strong></div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}><span style={{ color: '#94a3b8' }}>Số TK</span><strong>{shopBankInfo?.accountNumber}</strong></div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#94a3b8' }}>Chủ TK</span><strong>{shopBankInfo?.accountName}</strong></div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '10px', color: '#10b981', fontSize: '0.8rem' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    Hệ thống tự động xác nhận sau khi chuyển khoản
-                  </div>
-                </div>
-              )}
             </section>
 
             {/* Desktop form footer */}
@@ -786,6 +773,48 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
               </button>
             </div>
           </div>
+          ) : (
+          <div className="checkout-form-section">
+             {/* Payment Step 2 UI */}
+             <div style={{ background: '#fff', borderRadius: '16px', padding: '30px 20px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                <h3 style={{ fontSize: '1.2rem', marginBottom: '8px' }}>Thanh toán bằng mã QR</h3>
+                <p style={{ color: '#64748B', marginBottom: '20px' }}>Đơn hàng <strong>#{orderNumber}</strong> đã được tạo. Vui lòng quét mã để thanh toán.</p>
+                <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '16px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontWeight: 700, marginBottom: '4px', fontSize: '0.95rem' }}>
+                    Tổng cần chuyển: <span style={{ color: '#E11D48', fontSize: '1.2rem' }}>{Number(total).toLocaleString('vi-VN')}₫</span>
+                  </div>
+                  <p style={{ margin: '0 0 12px', color: '#64748B', fontSize: '0.8rem' }}>Nội dung chuyển khoản: <strong style={{ color: '#1A2130' }}>{orderNumber}</strong></p>
+                  {shopBankInfo?.bankCode && shopBankInfo?.accountNumber && (
+                    <img 
+                      src={`https://img.vietqr.io/image/${shopBankInfo.bankCode}-${shopBankInfo.accountNumber}-compact2.png?amount=${total}&addInfo=${orderNumber}&accountName=${encodeURIComponent(shopBankInfo.accountName || '')}`}
+                      alt="VietQR" style={{ width: '220px', height: '220px', objectFit: 'contain', margin: '0 auto' }}
+                    />
+                  )}
+                  <div style={{ background: '#fff', borderRadius: '10px', padding: '12px', marginTop: '12px', fontSize: '0.8rem', textAlign: 'left', border: '1px solid #f1f5f9' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}><span style={{ color: '#94a3b8' }}>Ngân hàng</span><strong>{shopBankInfo?.bankName}</strong></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}><span style={{ color: '#94a3b8' }}>Số TK</span><strong>{shopBankInfo?.accountNumber}</strong></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#94a3b8' }}>Chủ TK</span><strong>{shopBankInfo?.accountName}</strong></div>
+                  </div>
+                  
+                  {pollingTimeout ? (
+                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '15px', color: '#e74c3c', fontSize: '0.9rem', fontWeight: 600 }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        Hết thời gian chờ tự động xác nhận
+                     </div>
+                  ) : (
+                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '15px', color: '#10b981', fontSize: '0.9rem', fontWeight: 600 }}>
+                        <div style={{ width: '18px', height: '18px', border: '3px solid #10B981', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                        Đang chờ nhận tiền...
+                     </div>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '24px' }} className="desktop-only">
+                  <button className="btn-return" onClick={() => window.location.reload()} style={{ flex: 1, padding: '12px' }}>Hủy đơn hàng</button>
+                  <button className="btn-primary-action" onClick={() => onOrderComplete(generatedOrder)} style={{ flex: 1, padding: '12px' }}>Tôi đã chuyển xong</button>
+                </div>
+             </div>
+          </div>
+          )}
 
           {/* ========== ORDER SUMMARY ========== */}
           <div className="checkout-summary-section">
@@ -862,10 +891,10 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
           THANH TOÁN BẢO MẬT • SSL 256-BIT
         </div>
         
-        {(formData.paymentMethod === 'bank-transfer' && paymentStep === 1 && !pollingTimeout) ? (
-          <div className="waiting-payment" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', color: '#10B981', fontWeight: '500', background: '#ECFDF5', padding: '14px', borderRadius: '12px', border: '1px solid #A7F3D0' }}>
-            <div style={{ width: '18px', height: '18px', border: '3px solid #10B981', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-            Hệ thống đang chờ nhận tiền...
+        {paymentStep === 2 ? (
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="btn-return" onClick={() => window.location.reload()} style={{ flex: 1, padding: '12px', background: '#f1f5f9', border: 'none', borderRadius: '12px', fontWeight: 600 }}>Hủy</button>
+            <button className="btn-place-order" onClick={() => onOrderComplete(generatedOrder)} style={{ flex: 2 }}>Tôi đã chuyển xong</button>
           </div>
         ) : (
           <>
@@ -873,14 +902,14 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
               <span style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 500 }}>Tổng thanh toán</span>
               <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#E11D48' }}>{Number(total).toLocaleString('vi-VN')}₫</span>
             </div>
-            <button className="btn-place-order" onClick={paymentStep === 1 ? handlePlaceOrder : () => onOrderComplete(generatedOrder)} disabled={isSubmitting}>
+            <button className="btn-place-order" onClick={handlePlaceOrder} disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <div style={{ width: '18px', height: '18px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
                   Đang xử lý...
                 </>
               ) : (
-                (paymentStep === 1 ? (formData.paymentMethod === 'bank-transfer' ? 'Tôi đã thanh toán xong' : 'Xác nhận đơn hàng') : 'Tiếp tục mua sắm')
+                'Xác nhận đơn hàng'
               )}
               {!isSubmitting && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>}
             </button>
