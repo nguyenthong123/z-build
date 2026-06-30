@@ -316,7 +316,7 @@ const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
                   style={{ fontSize: '12px', border: 'none', outline: 'none', background: 'transparent', flex: 1 }}
                 />
               </div>
-              <button className="home-icon-btn" onClick={onBack} title="Về trang chủ" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0 10px', height: '32px', display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '12px', whiteSpace: 'nowrap' }}>
+              <button className="home-icon-btn" onClick={() => window.location.href = '/'} title="Về trang chủ" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0 10px', height: '32px', display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '12px', whiteSpace: 'nowrap' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
               </button>
               <button className="export-btn" onClick={exportToCSV} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0 10px', height: '32px', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }}>

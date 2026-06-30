@@ -213,7 +213,7 @@ const AdminSettings = ({ onBack }) => {
              
              <div className="header-actions-group">
                 <div className="btn-group">
-                  <button className="home-icon-btn desktop-only" onClick={onBack} title="Về trang chủ">
+                  <button className="home-icon-btn desktop-only" onClick={() => window.location.href = '/'} title="Về trang chủ">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                   </button>
                   <button className="primary-add-btn" onClick={handleSave} disabled={isSaving || isLoading}>
