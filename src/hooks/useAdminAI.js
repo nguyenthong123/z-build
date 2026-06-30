@@ -328,6 +328,7 @@ export const useAdminAI = () => {
 6. specs là QUY CÁCH (vd: "10x20cm, dày 2mm"), KHÔNG phải mô tả dài
 7. packaging là ĐÓNG GÓI (vd: "Thùng 10 tấm", "Bao 25kg")
 8. QUAN TRỌNG: Khi viết mã HTML vào tham số "description", KHÔNG sử dụng dấu nháy kép (") bên trong HTML để tránh lỗi JSON. Hãy sử dụng dấu nháy đơn (') hoặc không dùng dấu nháy cho các thuộc tính HTML.
+9. CROSS-CHECK (KIỂM TRA CHÉO): Sau khi gọi update_product để sửa hoặc viết bài cho sản phẩm, BẮT BUỘC bạn phải gọi tiếp get_product_detail để kiểm tra xem nội dung (description) đã thực sự được lưu đúng như bạn viết chưa. Nếu get_product_detail trả về description rỗng hoặc chưa đúng, bạn phải báo cho admin biết là lỗi lưu chưa thành công, tuyệt đối không báo cáo sai sự thật.
 
 📸 KHI ADMIN GỬI ẢNH KÈM TEXT:
 Ví dụ: [3 ảnh] "Tạo SP Sơn Dulux màu trắng, giá 450k, danh mục Sơn"
