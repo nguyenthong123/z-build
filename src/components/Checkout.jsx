@@ -442,9 +442,16 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
         };
 
         // 3. Writes
-        // Disable client-side stock and coupon updates to prevent Firestore Permission Denied errors.
-        // Stock management should ideally be handled by a secure backend or webhook (like Dunvex).
+        // Cập nhật tồn kho và mã giảm giá (Firestore Rules đã được cấu hình allow update if hasOnly(['stock']) và ['usedCount'])
+        itemsToBuy.forEach(item => {
+          if (item.newStock !== undefined) {
+            transaction.update(item.ref, { stock: item.newStock });
+          }
+        });
         
+        if (appliedCoupon && couponSnap && couponSnap.exists()) {
+          transaction.update(couponSnap.ref, { usedCount: (couponSnap.data().usedCount || 0) + 1 });
+        }
         const orderDocData = {
           orderNumber,
           userId: user?.uid || 'guest',
