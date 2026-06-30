@@ -43,6 +43,11 @@ const OrderHistory = ({ user, onBack, onViewDetails, onNavigate, onLogout }) => 
             shippingAddress: data.shippingAddress || {},
             paymentMethod: data.paymentMethod || 'N/A',
             shippingMethod: data.shippingMethod || 'standard',
+            shippingCost: data.shippingCost || 0,
+            tax: data.tax || 0,
+            discount: data.discount || 0,
+            coupon: data.coupon || null,
+            bankTransaction: data.bankTransaction || null,
             createdAt: data.createdAt,
             returnReason: data.returnReason || ''
           };
