@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     define: {
       'process.env': JSON.stringify({
-        NEXT_PUBLIC_ADMIN_EMAILS: env.NEXT_PUBLIC_ADMIN_EMAILS || env.VITE_ADMIN_EMAILS || 'nbt1024@gmail.com,jarvis-test@z-build.com'
+        NEXT_PUBLIC_ADMIN_EMAILS: env.NEXT_PUBLIC_ADMIN_EMAILS || env.VITE_ADMIN_EMAILS || 'nbt1024@gmail.com'
       }),
       'process.env.NEXT_PUBLIC_FIREBASE_API_KEY': JSON.stringify(env.NEXT_PUBLIC_FIREBASE_API_KEY || env.VITE_FIREBASE_API_KEY || ''),
       'process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN': JSON.stringify(env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || env.VITE_FIREBASE_AUTH_DOMAIN || ''),
@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
       'process.env.NEXT_PUBLIC_FIREBASE_APP_ID': JSON.stringify(env.NEXT_PUBLIC_FIREBASE_APP_ID || env.VITE_FIREBASE_APP_ID || ''),
       'process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID': JSON.stringify(env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || env.VITE_FIREBASE_MEASUREMENT_ID || ''),
       'process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY': JSON.stringify(env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || env.VITE_FIREBASE_VAPID_KEY || 'REPLACE_ME'),
-      'process.env.NEXT_PUBLIC_ADMIN_EMAILS': JSON.stringify(env.NEXT_PUBLIC_ADMIN_EMAILS || env.VITE_ADMIN_EMAILS || 'nbt1024@gmail.com,jarvis-test@z-build.com'),
+      'process.env.NEXT_PUBLIC_ADMIN_EMAILS': JSON.stringify(env.NEXT_PUBLIC_ADMIN_EMAILS || env.VITE_ADMIN_EMAILS || 'nbt1024@gmail.com'),
       'process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY': JSON.stringify(env.NEXT_PUBLIC_DEEPSEEK_API_KEY || env.VITE_DEEPSEEK_API_KEY || env.VITE_GEMINI_API_KEY || ''),
       'process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME': JSON.stringify(env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || env.VITE_CLOUDINARY_CLOUD_NAME || ''),
       'process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY': JSON.stringify(env.NEXT_PUBLIC_CLOUDINARY_API_KEY || env.VITE_CLOUDINARY_API_KEY || ''),

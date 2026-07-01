@@ -129,8 +129,8 @@ Dưới đây là sơ đồ chi tiết về tiến độ dự án Zbuild. Bạn 
 
 #### 2.1 AI Tích hợp sâu vào mua sắm (AI-Powered Shopping)
 - [ ] **AI Product Q&A**: Nút "Hỏi AI về sản phẩm này" trên trang ProductDetail → mở AI Advisor với context sản phẩm.
-- [ ] **AI Compare Products**: So sánh 2+ sản phẩm bằng AI (bảng so sánh tự động).
-- [ ] **AI Price Estimator**: Ước tính giá dựa trên khối lượng/diện tích công trình.
+- [x] ~~**AI Compare Products**: So sánh 2+ sản phẩm bằng AI~~ *(ĐÃ GỠ BỎ — không tích hợp AI vào ProductCompare)*.
+- [x] ~~**AI Price Estimator**: Ước tính giá dựa trên khối lượng/diện tích~~ *(ĐÃ GỠ BỎ — không cần thiết)*.
 - [ ] **AI-Powered Search**: Tìm kiếm bằng ngôn ngữ tự nhiên (ví dụ: "tấm chống ẩm cho phòng tắm").
 - [ ] **Smart Recommendation**: AI gợi ý sản phẩm liên quan dựa trên lịch sử xem/mua.
 
@@ -306,5 +306,5 @@ Dưới đây là sơ đồ chi tiết về tiến độ dự án Zbuild. Bạn 
 2. **Dynamic OG Tags**: Đã triển khai hybrid SSR với Cloud Functions, cần test kỹ với Facebook/Zalo Crawler.
 
 ---
-*Cập nhật lần cuối: 13/06/2026 — Hoàn thành Nâng cấp AI Admin Assistant*
+*Cập nhật lần cuối: 01/07/2026 — Gỡ bỏ AI Compare + AI Price Estimator, xóa bridge comparePrompt khỏi AIAdvisor*
 

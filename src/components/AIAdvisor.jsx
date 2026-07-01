@@ -71,18 +71,6 @@ const AIAdvisor = ({ onNavigate, advisorState }) => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  // Handle comparePrompt from ProductCompare navigation
-  useEffect(() => {
-    const prompt = sessionStorage.getItem('comparePrompt');
-    if (prompt && !messages?.length) {
-      sessionStorage.removeItem('comparePrompt');
-      // Pre-fill input and auto-send
-      setInput('');
-      setTimeout(() => handleSend(prompt), 600);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const isMobile = windowWidth < 768;
 
   return (
