@@ -30,7 +30,7 @@ const ProductGrid = ({ onProductClick, onAddToCart: propOnAddToCart }) => {
           name: doc.data().title,
           price: doc.data().discountPrice || doc.data().basePrice,
           oldPrice: doc.data().basePrice,
-          img: doc.data().image ? doc.data().image.replace('/upload/', '/upload/f_auto,q_auto,w_500,c_fill/') : 'https://placehold.co/400x400.png?text=ZBUILD'
+          img: doc.data().image ? doc.data().image.replace('/upload/', '/upload/f_auto,q_auto,w_500,c_fill/') : (doc.data().extraImages?.[0] ? doc.data().extraImages[0].replace('/upload/', '/upload/f_auto,q_auto,w_500,c_fill/') : 'https://placehold.co/400x400.png?text=ZBUILD')
         })).filter(p => p.status === 'active' || (p.status !== 'Draft' && p.status !== 'Inactive'));
         
         // Sort products by createdAt desc

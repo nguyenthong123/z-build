@@ -156,10 +156,14 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
     return url;
   };
 
-  const images = React.useMemo(() => [
-    getOptimizedUrl(product?.image, 1000) || 'https://placehold.co/800',
-    ...(product?.extraImages || []).filter(img => img).map(img => getOptimizedUrl(img, 1000))
-  ], [product]);
+  const images = React.useMemo(() => {
+    const optimizedMain = getOptimizedUrl(product?.image, 1000);
+    const optimizedExtras = (product?.extraImages || []).filter(img => img).map(img => getOptimizedUrl(img, 1000));
+    if (!optimizedMain && optimizedExtras.length > 0) {
+      return optimizedExtras;
+    }
+    return [ optimizedMain || 'https://placehold.co/800', ...optimizedExtras ];
+  }, [product]);
 
   const videos = React.useMemo(() => [
     product?.videoUrl,

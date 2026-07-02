@@ -237,7 +237,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
           const stockVal = Number(dunvexProd.stock) || 0;
 
           // Map đầy đủ các field từ Dunvex (hỗ trợ nhiều tên field khác nhau)
-          const dunvexSpecs = dunvexProd.specs || dunvexProd.spec || '';
+          const dunvexSpecs = dunvexProd.specs || dunvexProd.spec || dunvexProd.quyCach || dunvexProd.specification || dunvexProd.attributes || dunvexProd.size || '';
           const dunvexUnit = dunvexProd.unit || '';
           const dunvexWeight = dunvexProd.weight || dunvexProd.netWeight || '';
           const dunvexPackaging = dunvexProd.packaging || dunvexProd.packing || '';
@@ -675,7 +675,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                           </td>
                           <td>
                             <div className="product-cell">
-                              <img src={product.image ? product.image.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/') : 'https://placehold.co/100'} alt="" />
+                              <img src={product.image ? product.image.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/') : (product.extraImages?.[0] ? product.extraImages[0].replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/') : 'https://placehold.co/100')} alt="" />
                               <div className="info">
                                 <strong>{product.name}</strong>
                                 <span>{product.sku}</span>
@@ -773,7 +773,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                       )}
                     </div>
                     <div className="card-header">
-                      <img src={product.image ? product.image.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/') : 'https://placehold.co/100'} alt="" />
+                      <img src={product.image ? product.image.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/') : (product.extraImages?.[0] ? product.extraImages[0].replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/') : 'https://placehold.co/100')} alt="" />
                       <div className="card-title-info" style={{ paddingRight: '36px' }}>
                         <strong>{product.name}</strong>
                         <span className="card-extra">{product.sku} • {product.category}</span>
