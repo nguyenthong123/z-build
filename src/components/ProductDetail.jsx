@@ -461,7 +461,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
                       {product.status === 'Phân phối' && !hasRealDiscount ? 'Chính hãng:' : ''}
                     </span>
                     <span className="current-price">
-                      {displayPrice.toLocaleString('vi-VN')}₫
+                      {displayPrice.toLocaleString('vi-VN')}₫ {product.unit ? `/ ${product.unit}` : ''}
                     </span>
                   </div>
                   {hasRealDiscount && (
@@ -701,7 +701,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
                   {p.pricingType === 'subscription' 
                     ? `Từ ${Number(p.monthlyPrice || 0).toLocaleString('vi-VN')}₫`
                     : Number(p.discountPrice || p.basePrice || 0) > 0 
-                      ? `${Number(p.discountPrice || p.basePrice).toLocaleString('vi-VN')}₫`
+                      ? `${Number(p.discountPrice || p.basePrice).toLocaleString('vi-VN')}₫ ${p.unit ? `/ ${p.unit}` : ''}`
                       : 'Liên hệ'}
                 </span>
               </div>

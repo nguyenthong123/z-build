@@ -237,7 +237,8 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
           const stockVal = Number(dunvexProd.stock) || 0;
 
           // Map đầy đủ các field từ Dunvex (hỗ trợ nhiều tên field khác nhau)
-          const dunvexSpecs = dunvexProd.specs || dunvexProd.spec || dunvexProd.unit || '';
+          const dunvexSpecs = dunvexProd.specs || dunvexProd.spec || '';
+          const dunvexUnit = dunvexProd.unit || '';
           const dunvexWeight = dunvexProd.weight || dunvexProd.netWeight || '';
           const dunvexPackaging = dunvexProd.packaging || dunvexProd.packing || '';
           const dunvexImage = dunvexProd.image || dunvexProd.imageUrl || dunvexProd.thumbnail || '';
@@ -263,6 +264,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
               stock: stockVal,
               trackInventory: true,
               specs: dunvexSpecs,
+              unit: dunvexUnit,
               weight: dunvexWeight,
               packaging: dunvexPackaging,
               updatedAt: serverTimestamp()
@@ -284,6 +286,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
               stock: stockVal,
               trackInventory: true,
               specs: dunvexSpecs,
+              unit: dunvexUnit,
               weight: dunvexWeight,
               packaging: dunvexPackaging,
               image: dunvexImage,

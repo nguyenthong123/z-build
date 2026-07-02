@@ -35,6 +35,7 @@ export const useProductForm = (editData, onSave) => {
     monthlyPrice: '',
     yearlyPrice: '',
     specs: '',
+    unit: '',
   });
 
   const [imageFile, setImageFile] = useState(null);
@@ -52,14 +53,16 @@ export const useProductForm = (editData, onSave) => {
         shortDescription: editData.shortDescription || '',
         description: editData.description || '',
         status: editData.status || 'Active',
-        category: editData.category || '',
+        category: editData.category || 'Electronics',
         basePrice: editData.basePrice || '',
         discountPrice: editData.discountPrice || '',
-        stock: editData.stock || '',
+        stock: editData.stock !== undefined ? editData.stock : '',
         trackInventory: editData.trackInventory !== undefined ? editData.trackInventory : true,
         isTrending: editData.isTrending || false,
         weight: editData.weight || '',
         packaging: editData.packaging || '',
+        specs: editData.specs || '',
+        unit: editData.unit || '',
         variants: editData.variants || [],
         extraImages: editData.extraImages || [],
         videoUrl: editData.videoUrl || '',
@@ -70,7 +73,6 @@ export const useProductForm = (editData, onSave) => {
         pricingType: editData.pricingType || 'one-time',
         monthlyPrice: editData.monthlyPrice || '',
         yearlyPrice: editData.yearlyPrice || '',
-        specs: editData.specs || '',
       });
       if (editData.image) setImagePreview(editData.image);
       if (editData.extraImages) {

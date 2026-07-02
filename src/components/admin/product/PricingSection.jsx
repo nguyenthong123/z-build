@@ -8,6 +8,7 @@ const PricingSection = ({
   monthlyPrice, 
   yearlyPrice, 
   specs,
+  unit,
   onChange, 
   setProduct 
 }) => {
@@ -44,6 +45,18 @@ const PricingSection = ({
         <small style={{ color: '#666', fontSize: '11px', marginTop: '4px', display: 'block' }}>
           * Kích thước, màu sắc, chất liệu. AI dùng để tính toán vật tư.
         </small>
+      </div>
+
+      <div className="form-group" style={{ marginTop: '10px' }}>
+        <label>Đơn vị tính <span style={{color:'#f59e0b',fontSize:'11px'}}>← AI: unit</span></label>
+        <input 
+          type="text" 
+          name="unit" 
+          placeholder="VD: cái, tấm, cuộn, lít..." 
+          value={unit} 
+          onChange={onChange} 
+          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #ddd' }}
+        />
       </div>
 
       {category === 'Phần mềm & Dịch vụ' && (

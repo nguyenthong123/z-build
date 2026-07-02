@@ -121,6 +121,7 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
                 monthlyPrice={product.monthlyPrice}
                 yearlyPrice={product.yearlyPrice}
                 specs={product.specs}
+                unit={product.unit}
                 onChange={handleChange}
                 setProduct={setProduct}
               />
