@@ -5,7 +5,7 @@ import './AdminDashboard.css';
 
 import AdminHeader from './AdminHeader';
 
-const AdminDashboard = ({ onBack }) => {
+const AdminDashboard = () => {
 
 
   const [orders, setOrders] = useState([]);

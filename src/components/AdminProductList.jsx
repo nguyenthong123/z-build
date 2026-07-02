@@ -252,7 +252,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
           }
 
           if (productRef) {
-            // Update existing: Cập nhật giá, tồn kho và ghi đè lại danh mục gốc từ Dunvex
+            // Update existing: Cập nhật giá, tồn kho, quy cách và ghi đè lại danh mục gốc từ Dunvex
             const updateData = {
               dunvexId: dunvexId,
               category: exactCategory,
@@ -262,6 +262,9 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
               priceBuy: priceBuyVal,
               stock: stockVal,
               trackInventory: true,
+              specs: dunvexSpecs,
+              weight: dunvexWeight,
+              packaging: dunvexPackaging,
               updatedAt: serverTimestamp()
             };
             await updateDoc(productRef, updateData);

@@ -33,7 +33,7 @@ const formatCurrencyToWords = (num) => {
   return `${num.toLocaleString('vi-VN')} đ`;
 };
 
-const AdminSettings = ({ onBack }) => {
+const AdminSettings = () => {
   const [bankInfo, setBankInfo] = useState({
     bankCode: '',
     bankName: '',

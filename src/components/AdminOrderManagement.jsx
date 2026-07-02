@@ -5,7 +5,7 @@ import './AdminOrderManagement.css';
 
 import AdminHeader from './AdminHeader';
 
-const AdminOrderManagement = ({ onBack, onViewOrderDetail }) => {
+const AdminOrderManagement = ({ onViewOrderDetail }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
