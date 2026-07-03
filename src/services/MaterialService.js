@@ -110,6 +110,16 @@ const NORMS = {
       { "keyword": "vít", "searchTerms": ["vít tự khoan", "vít", "đinh"], "unit": "con", "norm": 5, "label": "Vít gắn ke" },
       { "keyword": "phào chỉ", "searchTerms": ["phào", "chỉ", "len chân tường", "nẹp"], "unit": "thanh", "norm": 0.2, "label": "Phào chỉ / Nẹp viền trang trí" }
     ]
+  },
+  "Sơn sắt": {
+    "name": "Hệ Sơn Sắt / Kim Loại",
+    "wastage": 0.05,
+    "required": [
+      { "keyword": "sơn chống rỉ", "searchTerms": ["sơn lót sắt", "chống rỉ", "sơn mạ kẽm"], "unit": "kg", "norm": 0.15, "label": "Sơn lót chống rỉ (Định mức ~6-7m2/kg)" },
+      { "keyword": "sơn sắt phủ", "searchTerms": ["sơn sắt", "sơn dầu", "sơn kim loại", "sơn phủ sắt"], "unit": "kg", "norm": 0.15, "label": "Sơn phủ màu kim loại" },
+      { "keyword": "dung môi pha sơn", "searchTerms": ["dung môi", "xăng thơm", "thinner"], "unit": "lít", "norm": 0.03, "label": "Dung môi / Xăng pha sơn (Tỷ lệ 10-20%)" },
+      { "keyword": "cọ sơn", "searchTerms": ["cọ", "chổi sơn", "rulo lăn sơn sắt"], "unit": "cái", "norm": 0.05, "label": "Cọ quét / Rulo nhỏ" }
+    ]
   }
 };
 
@@ -145,6 +155,12 @@ export const getConsultationFramework = async ({ projectType }) => {
     return {
       success: true,
       instruction: "MẬT LỆNH CHO AI: Khách đang quan tâm SÀN NHẸ. BẮT BUỘC hỏi khách: 1. Diện tích sàn? 2. Có cần chịu tải trọng nặng không (để tư vấn độ dày tấm)? Không tự tính toán nếu chưa có diện tích."
+    };
+  }
+  if (pt.includes('sơn sắt') || pt.includes('sơn kim loại') || pt.includes('sơn cổng')) {
+    return {
+      success: true,
+      instruction: "MẬT LỆNH CHO AI: Khách đang quan tâm SƠN SẮT / KIM LOẠI. BẮT BUỘC hỏi khách: 1. Ước tính tổng diện tích bề mặt sắt cần sơn (m2)? 2. Sắt mới hay sắt cũ cần dặm lại? Khi khách trả lời đủ diện tích, gọi calculate_construction_materials với projectType='Sơn sắt'."
     };
   }
   if (pt.includes('sơn')) {

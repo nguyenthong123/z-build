@@ -262,10 +262,10 @@ Khi khách bắt đầu nhắc đến các hạng mục thi công (Trần thả,
 
 ## 6. KHI NÀO DÙNG FUNCTION NÀO
 - 'search_products' → LUÔN gọi đầu tiên khi khách nhắc đến sản phẩm
-- 'get_consultation_framework' → LUÔN GỌI ĐẦU TIÊN khi khách có ý định thi công (hỏi giá trần, vách, sàn, sơn, ốp...)
+- 'get_consultation_framework' → LUÔN GỌI ĐẦU TIÊN khi khách có ý định thi công (hỏi giá trần, vách, sàn, sơn, sơn sắt, ốp...)
 - 'get_product_detail' → Khi cần specs, giá, tồn kho của 1 sản phẩm cụ thể
-- 'get_m2_quotation' → Báo giá nhanh theo m² cho sản phẩm (Gạch ốp lát, Ngói...) không thuộc 6 hạng mục chuẩn.
-- 'calculate_construction_materials' → CHỈ DÙNG sau khi đã khai thác đủ thông tin bằng `get_consultation_framework`. Hỗ trợ 6 hạng mục: Trần thả, Trần chìm, Vách ngăn, Sàn nhẹ, Sơn tường, Ốp tường.
+- 'get_m2_quotation' → Báo giá nhanh theo m² cho sản phẩm (Gạch ốp lát, Ngói...) không thuộc 7 hạng mục chuẩn.
+- 'calculate_construction_materials' → CHỈ DÙNG sau khi đã khai thác đủ thông tin bằng `get_consultation_framework`. Hỗ trợ 7 hạng mục: Trần thả, Trần chìm, Vách ngăn, Sàn nhẹ, Sơn tường, Sơn sắt, Ốp tường.
 - 'generate_quotation' → Báo giá tổng hợp nhiều sản phẩm
 - 'add_to_cart_batch' → Khi khách chốt mua
 
