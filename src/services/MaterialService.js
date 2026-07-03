@@ -100,6 +100,10 @@ const parsePrice = (priceStr) => {
 };
 
 export const calculateConstructionMaterials = async ({ projectType, area, tileLayout }) => {
+  if (projectType?.toLowerCase() === 'trần') {
+    return { error: 'LỖI: projectType không được là "Trần". Bạn HÃY HỎI LẠI khách hàng xem họ muốn làm "Trần thả" hay "Trần chìm" để có bảng vật tư chính xác nhất.' };
+  }
+
   const system = NORMS[projectType];
   if (!system) return { error: `Không tìm thấy loại công trình "${projectType}". Các loại hợp lệ: Trần thả, Trần chìm, Vách ngăn, Sàn nhẹ.` };
 
@@ -170,7 +174,21 @@ export const calculateConstructionMaterials = async ({ projectType, area, tileLa
         theoreticalQty = (area * (req.multiplier || 1)) / effectiveArea;
         
       } else {
-        theoreticalQty = area * req.norm;
+        if (projectType === "Trần thả" && req.label.includes("0.61m")) {
+          // Nếu hệ trần 60x120 (panelMultiplier === 1), KHÔNG DÙNG thanh phụ 0.6m
+          if (variant && variant.panelMultiplier === 1) {
+            theoreticalQty = 0;
+          } else {
+            theoreticalQty = area * req.norm;
+          }
+        } else {
+          theoreticalQty = area * req.norm;
+        }
+      }
+
+      // Bỏ qua vật tư nếu số lượng lý thuyết = 0 (ví dụ thanh phụ 0.6m của hệ 60x120)
+      if (theoreticalQty === 0 && !req.isPanel) {
+        return; // Dùng 'return' trong forEach giống như 'continue'
       }
 
       const qtyWithWastage = theoreticalQty * (1 + system.wastage);

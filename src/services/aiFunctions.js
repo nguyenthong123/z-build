@@ -332,7 +332,7 @@ export const STOREFRONT_AI_FUNCTIONS = [
       parameters: {
         type: "object",
         properties: {
-          projectType: { type: "string", description: "Loại hạng mục: Trần thả, Trần chìm, Vách ngăn, Sàn nhẹ" },
+          projectType: { type: "string", description: "Loại hạng mục: BẮT BUỘC là 1 trong 4 loại: 'Trần thả', 'Trần chìm', 'Vách ngăn', 'Sàn nhẹ'. Nếu khách chỉ nói 'Trần', BẠN PHẢI HỎI LẠI khách là trần gì, KHÔNG ĐƯỢC truyền tham số 'Trần'." },
           area: { type: "number", description: "Diện tích cần thi công (m2)" },
           tileLayout: { type: "string", description: "CHỈ CHO TRẦN THẢ: '60x60' (hộp vuông, cắt đôi tấm 605x1210) hoặc '60x120' (nguyên tấm). LUÔN HỎI KHÁCH TRƯỚC. Mặc định: 60x120." }
         },
