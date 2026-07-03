@@ -112,7 +112,7 @@ const AIAdvisor = ({ onNavigate, advisorState }) => {
           </div>
         </header>
 
-        <div className="scroll-area" style={{ padding: isMobile ? '0 15px' : '0 40px', maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', paddingBottom: '200px' }}>
+        <div className="scroll-area" style={{ padding: isMobile ? '0 15px 250px' : '0 40px 250px', maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column' }}>
           {messages.length === 0 ? (
             <AdvisorWelcome 
               userName={userName} 
