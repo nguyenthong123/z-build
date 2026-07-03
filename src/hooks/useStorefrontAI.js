@@ -159,7 +159,7 @@ export const useStorefrontAI = (productContext) => {
     }
     const apiMessages = [{ role: "system", content: systemPrompt }, ...history, { role: "user", content: currentUserContent }];
 
-    // Gemini with Function Calling
+    // DeepSeek with Function Calling
     try {
       let res = await fetch("https://api.deepseek.com/v1/chat/completions", {
         method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${aiApiKey}` },
@@ -190,12 +190,12 @@ export const useStorefrontAI = (productContext) => {
         return responseMsg?.content || "Bot không phản hồi.";
       } else {
         const errorData = await res.json();
-        console.error("Gemini Error:", errorData);
+        console.error("DeepSeek API Error:", errorData);
         return `⚠️ Lỗi từ API: ${errorData.error?.message || "Không xác định"}`;
       }
     } catch (err) { 
-      console.warn("Gemini network error", err); 
-      return "⚠️ Lỗi mạng: Không thể kết nối tới Google AI.";
+      console.warn("DeepSeek network error", err); 
+      return "⚠️ Lỗi mạng: Không thể kết nối tới máy chủ AI (DeepSeek).";
     }
   }, [messages]);
 
