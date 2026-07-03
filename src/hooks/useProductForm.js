@@ -73,6 +73,7 @@ export const useProductForm = (editData, onSave) => {
         pricingType: editData.pricingType || 'one-time',
         monthlyPrice: editData.monthlyPrice || '',
         yearlyPrice: editData.yearlyPrice || '',
+        image: editData.image || '',
       });
       if (editData.image) setImagePreview(editData.image);
       if (editData.extraImages) {
