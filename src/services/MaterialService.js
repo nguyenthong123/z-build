@@ -130,65 +130,9 @@ const parsePrice = (priceStr) => {
   return parseInt(clean) || 0;
 };
 
-export const getConsultationFramework = async ({ projectType }) => {
-  const pt = projectType?.toLowerCase() || '';
-  
-  if (pt.includes('thả')) {
-    return { 
-      success: true, 
-      instruction: "MẬT LỆNH CHO AI: Khách đang quan tâm TRẦN THẢ. Bạn BẮT BUỘC phải hỏi khách 2 thông tin này trước khi tính vật tư: 1. Diện tích cần thi công là bao nhiêu m2? 2. Khách muốn dùng hệ thả 60x60 (cắt đôi tấm) hay 60x120 (nguyên tấm)? 3. Khách ưu tiên tấm thạch cao hay tấm nhựa ánh kim? Khi khách trả lời đủ, hãy dùng calculate_construction_materials với tileLayout tương ứng."
-    };
-  }
-  if (pt.includes('chìm')) {
-    return {
-      success: true,
-      instruction: "MẬT LỆNH CHO AI: Khách đang quan tâm TRẦN CHÌM. BẮT BUỘC hỏi khách: Diện tích trần bao nhiêu m2? Khi có đủ diện tích, dùng calculate_construction_materials. KHÔNG HỎI về thương hiệu hay loại khung xương vì cửa hàng chỉ bán hàng chuẩn Gyproc."
-    };
-  }
-  if (pt.includes('vách') || pt.includes('ngăn')) {
-    return {
-      success: true,
-      instruction: "MẬT LỆNH CHO AI: Khách đang quan tâm VÁCH NGĂN. BẮT BUỘC hỏi khách: 1. Diện tích vách bao nhiêu m2? 2. Có yêu cầu cách âm hay chống cháy không? Khách chưa trả lời thì không tính toán bừa."
-    };
-  }
-  if (pt.includes('sàn')) {
-    return {
-      success: true,
-      instruction: "MẬT LỆNH CHO AI: Khách đang quan tâm SÀN NHẸ. BẮT BUỘC hỏi khách: 1. Diện tích sàn? 2. Có cần chịu tải trọng nặng không (để tư vấn độ dày tấm)? Không tự tính toán nếu chưa có diện tích."
-    };
-  }
-  if (pt.includes('sơn sắt') || pt.includes('sơn kim loại') || pt.includes('sơn cổng')) {
-    return {
-      success: true,
-      instruction: "MẬT LỆNH CHO AI: Khách đang quan tâm SƠN SẮT / KIM LOẠI. BẮT BUỘC hỏi khách: 1. Ước tính tổng diện tích bề mặt sắt cần sơn (m2)? 2. Sắt mới hay sắt cũ cần dặm lại? Khi khách trả lời đủ diện tích, gọi calculate_construction_materials với projectType='Sơn sắt'."
-    };
-  }
-  if (pt.includes('sơn')) {
-    return {
-      success: true,
-      instruction: "MẬT LỆNH CHO AI: Khách đang quan tâm SƠN TƯỜNG. BẮT BUỘC hỏi khách: 1. Diện tích mặt tường cần sơn? 2. Sơn nội thất hay ngoại thất? 3. Có dùng bột bả không?"
-    };
-  }
-  if (pt.includes('ốp')) {
-    return {
-      success: true,
-      instruction: "MẬT LỆNH CHO AI: Khách đang quan tâm ỐP TƯỜNG. BẮT BUỘC hỏi khách: 1. Diện tích tường cần ốp? 2. Dùng Tấm Nano phẳng hay Tấm Lam sóng? Khi khách trả lời đủ, gọi calculate_construction_materials."
-    };
-  }
-
-  return {
-    success: true,
-    instruction: "MẬT LỆNH CHO AI: Không rõ khách muốn làm hạng mục gì. BẠN PHẢI HỎI KHÁCH: 'Anh/chị muốn thi công hạng mục gì (Trần, Vách, Sàn, Sơn hay Ốp tường) và diện tích khoảng bao nhiêu ạ?'"
-  };
-};
-
-export const calculateConstructionMaterials = async ({ projectType, area, tileLayout }) => {
-  if (projectType?.toLowerCase() === 'trần') {
-    return { error: 'LỖI: projectType không được là "Trần". Bạn HÃY HỎI LẠI khách hàng xem họ muốn làm "Trần thả" hay "Trần chìm" để có bảng vật tư chính xác nhất.' };
-  }
-
+export const calculateConstructionMaterials = async ({ projectType, area, tileLayout, customerPreferences }) => {
   const system = NORMS[projectType];
-  if (!system) return { error: `Không tìm thấy loại công trình "${projectType}". Các loại hợp lệ: Trần thả, Trần chìm, Vách ngăn, Sàn nhẹ.` };
+  if (!system) return { error: `Không tìm thấy loại công trình "${projectType}". Các loại hợp lệ: Trần thả, Trần chìm, Vách ngăn, Sàn nhẹ, Sơn tường, Ốp tường, Sơn sắt.` };
 
   // Xác định kiểu thả (chỉ áp dụng cho Trần thả)
   let variant = null;
@@ -241,9 +185,31 @@ export const calculateConstructionMaterials = async ({ projectType, area, tileLa
             const isInactive = r.item.status && r.item.status.toString().toLowerCase().includes("inactive");
             return !isInactive;
           });
-          if (targetResults.length > 0 && targetResults[0].score < highestScore) {
-             highestScore = targetResults[0].score;
-             bestMatch = targetResults[0].item;
+          
+          if (targetResults.length > 0) {
+             // Boost score for items matching customerPreferences
+             if (customerPreferences) {
+               targetResults.forEach(r => {
+                 const prefLower = customerPreferences.toLowerCase();
+                 const nameLower = r.item.name.toLowerCase();
+                 // If the item name contains any key word from preferences, improve score (lower is better in Fuse)
+                 const prefWords = prefLower.split(/[\s,]+/);
+                 let matches = 0;
+                 prefWords.forEach(w => {
+                   if (w.length > 2 && nameLower.includes(w)) matches++;
+                 });
+                 if (matches > 0) {
+                   r.score = r.score / (1 + (matches * 0.8)); // drastically improve score
+                 }
+               });
+               // Re-sort after boosting
+               targetResults.sort((a, b) => a.score - b.score);
+             }
+
+             if (targetResults[0].score < highestScore) {
+               highestScore = targetResults[0].score;
+               bestMatch = targetResults[0].item;
+             }
           }
         }
       }

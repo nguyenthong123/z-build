@@ -14,7 +14,7 @@
 
 import { db } from '../firebase';
 import { collection, getDocs, query, orderBy, where, doc, getDoc, addDoc, updateDoc, deleteDoc, limit, serverTimestamp } from 'firebase/firestore';
-import { calculateConstructionMaterials, getConsultationFramework } from './MaterialService';
+import { calculateConstructionMaterials } from './MaterialService';
 import Fuse from 'fuse.js';
 
 // ============ FUNCTION DEFINITIONS (cho DeepSeek/OpenAI tools format) ============
@@ -327,17 +327,6 @@ export const STOREFRONT_AI_FUNCTIONS = [
   {
     type: "function",
     function: {
-      name: "get_consultation_framework",
-      description: "Lấy khung câu hỏi (SOP) BẮT BUỘC để hỏi khách hàng trước khi tính toán vật tư hoặc tư vấn giải pháp. Dùng khi khách bắt đầu hỏi về thi công Trần, Vách, Sàn, Sơn, hoặc Ốp tường.",
-      parameters: {
-        type: "object",
-        properties: {
-          projectType: { type: "string", description: "Hạng mục: Trần thả, Trần chìm, Vách ngăn, Sàn nhẹ, Sơn tường, Sơn sắt, Ốp tường" }
-        },
-        required: ["projectType"]
-      }
-    }
-  },
   {
     type: "function",
     function: {
@@ -1593,7 +1582,7 @@ export async function executeFunction(name, args) {
     case 'add_to_cart_batch': return await addToCartBatch(parsedArgs);
     case 'get_store_stats': return await getStoreStats(parsedArgs);
     case 'calculate_construction_materials': return await calculateConstructionMaterials(parsedArgs);
-    case 'get_consultation_framework': return await getConsultationFramework(parsedArgs);
+
     case 'get_m2_quotation': return await getM2Quotation(parsedArgs);
     case 'create_order': return await createOrder(parsedArgs);
     case 'create_product': return await createProduct(parsedArgs);
