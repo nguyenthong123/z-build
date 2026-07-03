@@ -61,11 +61,11 @@ const NORMS = {
     "name": "Hệ trần chìm (Thạch cao)",
     "wastage": 0.08,
     "required": [
-      { "keyword": "khung trần chìm", "searchTerms": ["xương chìm", "khung chìm", "basi", "tika"], "unit": "thanh", "norm": 1.9, "label": "Khung xương trần chìm" },
-      { "keyword": "thanh viền tường", "searchTerms": ["viền tường", "thanh v"], "unit": "thanh", "norm": 0.4, "label": "Thanh viền V" },
-      { "keyword": "tấm thạch cao", "searchTerms": ["tấm thạch cao", "gyproc", "yoshino", "boral"], "unit": "tấm", "isPanel": true, "defaultArea": 2.9768, "label": "Tấm thạch cao" },
+      { "keyword": "khung chìm", "searchTerms": ["xương chìm", "khung chìm", "u chìm"], "unit": "thanh", "norm": 0.8, "label": "Khung xương trần chìm (U chính & U phụ)" },
+      { "keyword": "v góc chìm", "searchTerms": ["v chìm", "viền tường", "v góc"], "unit": "thanh", "norm": 0.2, "label": "Thanh viền V góc" },
+      { "keyword": "tấm thạch cao", "searchTerms": ["tấm thạch cao", "gyproc"], "unit": "tấm", "isPanel": true, "defaultArea": 2.9768, "label": "Tấm thạch cao" },
       { "keyword": "vít thạch cao", "searchTerms": ["vít thạch cao", "vít đen"], "unit": "con", "norm": 20, "label": "Vít chuyên dụng" },
-      { "keyword": "bột xử lý mối nối", "searchTerms": ["bột xử lý", "gyp-filler", "bột trét"], "unit": "kg", "norm": 0.5, "label": "Bột xử lý mối nối" }
+      { "keyword": "bột xử lý mối nối", "searchTerms": ["bột xử lý", "gyp-filler", "bột trét"], "unit": "kg", "norm": 0.15, "label": "Bột xử lý mối nối" }
     ]
   },
   "Vách ngăn": {
@@ -142,7 +142,7 @@ export const getConsultationFramework = async ({ projectType }) => {
   if (pt.includes('chìm')) {
     return {
       success: true,
-      instruction: "MẬT LỆNH CHO AI: Khách đang quan tâm TRẦN CHÌM. BẮT BUỘC hỏi khách: 1. Diện tích trần bao nhiêu m2? 2. Có ưu tiên thương hiệu thạch cao nào không (Gyproc, Vĩnh Tường, Boral...)? 3. Khung xương thường hay khung xương cao cấp? Khi có đủ thông tin, dùng calculate_construction_materials."
+      instruction: "MẬT LỆNH CHO AI: Khách đang quan tâm TRẦN CHÌM. BẮT BUỘC hỏi khách: Diện tích trần bao nhiêu m2? Khi có đủ diện tích, dùng calculate_construction_materials. KHÔNG HỎI về thương hiệu hay loại khung xương vì cửa hàng chỉ bán hàng chuẩn Gyproc."
     };
   }
   if (pt.includes('vách') || pt.includes('ngăn')) {
