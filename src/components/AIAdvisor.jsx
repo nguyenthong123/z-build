@@ -74,7 +74,7 @@ const AIAdvisor = ({ onNavigate, advisorState }) => {
   const isMobile = windowWidth < 768;
 
   return (
-    <div id="ai-advisor-root" className={`ai-advisor-dashboard ${isMobile ? 'mobile' : ''} ${isSidebarHidden ? 'sidebar-hidden' : ''}`} style={{ width: '100%', height: '100vh', display: 'flex', background: '#F8FAFC', paddingBottom: isMobile ? '65px' : '0' }}>
+    <div id="ai-advisor-root" className={`ai-advisor-dashboard ${isMobile ? 'mobile' : ''} ${isSidebarHidden ? 'sidebar-hidden' : ''}`} style={{ width: '100%', height: '100dvh', display: 'flex', background: '#F8FAFC' }}>
       {!isMobile && (
         <AdvisorSidebar 
           activeTab={activeTab} 
@@ -86,16 +86,23 @@ const AIAdvisor = ({ onNavigate, advisorState }) => {
 
       <main className="advisor-main-content">
         <header className="content-top-bar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flex: 1 }}>
             {!isMobile && (
               <button onClick={() => setIsSidebarHidden(!isSidebarHidden)} style={{ background: '#F1F5F9', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A2130" strokeWidth="2.5"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
               </button>
             )}
-            <div className="search-box" style={{ background: '#F1F5F9', padding: '8px 16px', borderRadius: '100px', display: 'flex', gap: '10px', width: '300px' }}>
-               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-               <input type="text" placeholder="Tìm kiếm dữ liệu..." style={{ background: 'transparent', border: 'none', outline: 'none', width: '100%' }} />
-            </div>
+            {!isMobile ? (
+              <div className="search-box" style={{ background: '#F1F5F9', padding: '8px 16px', borderRadius: '100px', display: 'flex', gap: '10px', width: '300px' }}>
+                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                 <input type="text" placeholder="Tìm kiếm dữ liệu..." style={{ background: 'transparent', border: 'none', outline: 'none', width: '100%' }} />
+              </div>
+            ) : (
+              <div style={{ fontWeight: '800', fontSize: '1.2rem', color: '#1A2130', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '32px', height: '32px', background: '#DAA520', color: 'white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>AI</span>
+                Z-BUILD
+              </div>
+            )}
           </div>
           <div className="top-bar-right" style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
             <button onClick={() => onNavigate && onNavigate('home')} style={{ background: 'white', border: '1px solid #E2E8F0', padding: '8px 12px', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
@@ -164,9 +171,9 @@ const AIAdvisor = ({ onNavigate, advisorState }) => {
               <button 
                 onClick={onSendClick}
                 disabled={isTyping || (!input.trim() && !selectedImage)}
-                style={{ background: (isTyping || (!input.trim() && !selectedImage)) ? '#CBD5E1' : '#DAA520', color: 'white', border: 'none', width: '46px', height: '46px', borderRadius: '50%', fontWeight: 'bold', cursor: (isTyping || (!input.trim() && !selectedImage)) ? 'not-allowed' : 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: (isTyping || (!input.trim() && !selectedImage)) ? 'none' : '0 5px 15px rgba(218,165,32,0.4)', flexShrink: 0 }}
+                style={{ background: (isTyping || (!input.trim() && !selectedImage)) ? '#CBD5E1' : '#DAA520', color: 'white', border: 'none', width: '40px', height: '40px', borderRadius: '50%', fontWeight: 'bold', cursor: (isTyping || (!input.trim() && !selectedImage)) ? 'not-allowed' : 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: (isTyping || (!input.trim() && !selectedImage)) ? 'none' : '0 5px 15px rgba(218,165,32,0.4)', flexShrink: 0 }}
               >
-                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
               </button>
            </div>
            
