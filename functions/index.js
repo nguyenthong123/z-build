@@ -251,7 +251,7 @@ app.get("/sitemap.xml", async (req, res) => {
 exports.server = functions.https.onRequest(app);
 
 // Cron Job: Tự động học sản phẩm vào 2:00 sáng mỗi ngày
-exports.autoLearnProducts = functions.pubsub.schedule('0 2 * * *').timeZone('Asia/Ho_Chi_Minh').onRun(async (context) => {
+exports.autoLearnProducts = functions.pubsub.schedule('0 2 * * *').timeZone('Asia/Ho_Chi_Minh').onRun(async () => {
   const db = admin.firestore();
   
   try {
