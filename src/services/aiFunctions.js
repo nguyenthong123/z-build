@@ -324,9 +324,7 @@ export const STOREFRONT_AI_FUNCTIONS = [
       }
     }
   },
-  {
-    type: "function",
-    function: {
+
   {
     type: "function",
     function: {
