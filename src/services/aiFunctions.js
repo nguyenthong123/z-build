@@ -602,6 +602,7 @@ async function searchProducts({ keyword = '', category = '', max_results = 5 }) 
       in_stock: 'Có thể cung cấp',
       image: p.image || null,
       specs: p.specs || 'N/A',
+      unit: p.unit || 'N/A',
       packaging: p.packaging || 'N/A',
       description: (p.description || '').substring(0, 500)
     }));
@@ -621,7 +622,7 @@ async function getProductDetail({ product_name = '', product_id = '' }) {
           buy_price: p.priceBuy ? formatCurrency(p.priceBuy) : 'N/A',
           category: p.category || 'Chung', stock: p.stock ?? 'Không theo dõi',
           description: p.description || '', image: p.image || null,
-          specs: p.specs || null, packaging: p.packaging || null
+          specs: p.specs || null, packaging: p.packaging || null, unit: p.unit || null
         };
       }
     }
@@ -637,7 +638,7 @@ async function getProductDetail({ product_name = '', product_id = '' }) {
           buy_price: found.priceBuy ? formatCurrency(found.priceBuy) : 'N/A',
           category: found.category || 'Chung', stock: found.stock ?? 'Không theo dõi',
           description: found.description || '', image: found.image || null,
-          specs: found.specs || null, packaging: found.packaging || null
+          specs: found.specs || null, packaging: found.packaging || null, unit: found.unit || null
         };
       }
     }
