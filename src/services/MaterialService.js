@@ -148,9 +148,6 @@ export const calculateConstructionMaterials = async ({ projectType, area, tileLa
             // Bỏ qua sản phẩm bán theo m2 (tấm ốp trang trí, sàn gỗ...)
             const isPerM2 = (item.pricing_type === 'per_m2' || item.sell_by === 'm2' || item.unit === 'm2');
             if (isPerM2) return false;
-            // Bỏ qua sản phẩm có tag "trang trí" hoặc "hoàn thiện" — không phải vật tư thô
-            const category = (item.category || '').toLowerCase();
-            if (category.includes('trang trí') || category.includes('hoàn thiện')) return false;
             return true;
           });
           const targetResults = materialResults.length > 0 ? materialResults : results.filter(r => {

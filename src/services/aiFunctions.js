@@ -600,7 +600,9 @@ async function searchProducts({ keyword = '', category = '', max_results = 5 }) 
       category: p.category || 'Chung',
       in_stock: p.stock !== undefined ? (p.stock > 0 ? `Còn ${p.stock}` : 'Hết hàng') : 'Không theo dõi',
       image: p.image || null,
-      description: (p.description || '').substring(0, 200)
+      specs: p.specs || 'N/A',
+      packaging: p.packaging || 'N/A',
+      description: (p.description || '').substring(0, 500)
     }));
   } catch (err) {
     return { error: 'Lỗi truy vấn sản phẩm: ' + err.message };
@@ -618,7 +620,7 @@ async function getProductDetail({ product_name = '', product_id = '' }) {
           buy_price: p.priceBuy ? formatCurrency(p.priceBuy) : 'N/A',
           category: p.category || 'Chung', stock: p.stock ?? 'Không theo dõi',
           description: p.description || '', image: p.image || null,
-          specs: p.specs || null
+          specs: p.specs || null, packaging: p.packaging || null
         };
       }
     }
@@ -634,7 +636,7 @@ async function getProductDetail({ product_name = '', product_id = '' }) {
           buy_price: found.priceBuy ? formatCurrency(found.priceBuy) : 'N/A',
           category: found.category || 'Chung', stock: found.stock ?? 'Không theo dõi',
           description: found.description || '', image: found.image || null,
-          specs: found.specs || null
+          specs: found.specs || null, packaging: found.packaging || null
         };
       }
     }
