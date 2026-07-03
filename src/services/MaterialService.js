@@ -89,6 +89,27 @@ const NORMS = {
       { "keyword": "sơn sắt", "searchTerms": ["sơn sắt", "sơn chống rỉ", "sơn mạ kẽm"], "unit": "kg", "norm": 0.07, "label": "Sơn chống rỉ (khung sắt)" },
       { "keyword": "keo silicon", "searchTerms": ["keo silicon", "apollo", "silicone"], "unit": "chai", "norm": 0.1, "label": "Keo xử lý mối nối" }
     ]
+  },
+  "Sơn tường": {
+    "name": "Hệ Sơn Tường (Lót & Phủ)",
+    "wastage": 0.05,
+    "required": [
+      { "keyword": "bột bả", "searchTerms": ["bột bả", "bột trét", "mastic", "jotun", "dulux"], "unit": "bao", "norm": 0.025, "label": "Bột bả tường (Bao 40kg, định mức ~1.2kg/m2)" },
+      { "keyword": "sơn lót", "searchTerms": ["sơn lót", "kháng kiềm", "primer"], "unit": "thùng", "norm": 0.006, "label": "Sơn lót kháng kiềm (Thùng 18L, ~150m2/thùng)" },
+      { "keyword": "sơn phủ", "searchTerms": ["sơn phủ", "sơn nội thất", "sơn ngoại thất", "sơn bóng"], "unit": "thùng", "norm": 0.012, "label": "Sơn phủ (Thùng 18L, ~80m2/thùng/2 lớp)" },
+      { "keyword": "con lăn", "searchTerms": ["con lăn", "rulo", "cọ sơn"], "unit": "cái", "norm": 0.02, "label": "Rulo/Con lăn sơn" }
+    ]
+  },
+  "Ốp tường": {
+    "name": "Hệ Ốp Tường Nhựa (Lam sóng / Nano)",
+    "wastage": 0.05,
+    "required": [
+      { "keyword": "tấm ốp tường", "searchTerms": ["tấm nano", "lam sóng", "nhựa giả gỗ", "pvc vân đá"], "unit": "tấm", "isPanel": true, "defaultArea": 1.2, "label": "Tấm ốp tường (Nano / Lam sóng)" },
+      { "keyword": "keo dán", "searchTerms": ["keo titebond", "silicone", "keo dán tấm ốp", "keo dán gỗ"], "unit": "chai", "norm": 0.15, "label": "Keo dán chuyên dụng (Titebond/Silicone)" },
+      { "keyword": "ke bát", "searchTerms": ["ke bát", "ke inox", "ngàm inox", "con ke"], "unit": "cái", "norm": 3, "label": "Ke/Ngàm Inox (giữ tấm)" },
+      { "keyword": "vít", "searchTerms": ["vít tự khoan", "vít", "đinh"], "unit": "con", "norm": 5, "label": "Vít gắn ke" },
+      { "keyword": "phào chỉ", "searchTerms": ["phào", "chỉ", "len chân tường", "nẹp"], "unit": "thanh", "norm": 0.2, "label": "Phào chỉ / Nẹp viền trang trí" }
+    ]
   }
 };
 
@@ -97,6 +118,52 @@ const parsePrice = (priceStr) => {
   if (typeof priceStr === 'number') return priceStr;
   const clean = priceStr.toString().replace(/[^\d]/g, '');
   return parseInt(clean) || 0;
+};
+
+export const getConsultationFramework = async ({ projectType }) => {
+  const pt = projectType?.toLowerCase() || '';
+  
+  if (pt.includes('thả')) {
+    return { 
+      success: true, 
+      instruction: "MẬT LỆNH CHO AI: Khách đang quan tâm TRẦN THẢ. Bạn BẮT BUỘC phải hỏi khách 2 thông tin này trước khi tính vật tư: 1. Diện tích cần thi công là bao nhiêu m2? 2. Khách muốn dùng hệ thả 60x60 (cắt đôi tấm) hay 60x120 (nguyên tấm)? 3. Khách ưu tiên tấm thạch cao hay tấm nhựa ánh kim? Khi khách trả lời đủ, hãy dùng calculate_construction_materials với tileLayout tương ứng."
+    };
+  }
+  if (pt.includes('chìm')) {
+    return {
+      success: true,
+      instruction: "MẬT LỆNH CHO AI: Khách đang quan tâm TRẦN CHÌM. BẮT BUỘC hỏi khách: 1. Diện tích trần bao nhiêu m2? 2. Có ưu tiên thương hiệu thạch cao nào không (Gyproc, Vĩnh Tường, Boral...)? 3. Khung xương thường hay khung xương cao cấp? Khi có đủ thông tin, dùng calculate_construction_materials."
+    };
+  }
+  if (pt.includes('vách') || pt.includes('ngăn')) {
+    return {
+      success: true,
+      instruction: "MẬT LỆNH CHO AI: Khách đang quan tâm VÁCH NGĂN. BẮT BUỘC hỏi khách: 1. Diện tích vách bao nhiêu m2? 2. Có yêu cầu cách âm hay chống cháy không? Khách chưa trả lời thì không tính toán bừa."
+    };
+  }
+  if (pt.includes('sàn')) {
+    return {
+      success: true,
+      instruction: "MẬT LỆNH CHO AI: Khách đang quan tâm SÀN NHẸ. BẮT BUỘC hỏi khách: 1. Diện tích sàn? 2. Có cần chịu tải trọng nặng không (để tư vấn độ dày tấm)? Không tự tính toán nếu chưa có diện tích."
+    };
+  }
+  if (pt.includes('sơn')) {
+    return {
+      success: true,
+      instruction: "MẬT LỆNH CHO AI: Khách đang quan tâm SƠN TƯỜNG. BẮT BUỘC hỏi khách: 1. Diện tích mặt tường cần sơn? 2. Sơn nội thất hay ngoại thất? 3. Có dùng bột bả không?"
+    };
+  }
+  if (pt.includes('ốp')) {
+    return {
+      success: true,
+      instruction: "MẬT LỆNH CHO AI: Khách đang quan tâm ỐP TƯỜNG. BẮT BUỘC hỏi khách: 1. Diện tích tường cần ốp? 2. Dùng Tấm Nano phẳng hay Tấm Lam sóng? Khi khách trả lời đủ, gọi calculate_construction_materials."
+    };
+  }
+
+  return {
+    success: true,
+    instruction: "MẬT LỆNH CHO AI: Không rõ khách muốn làm hạng mục gì. BẠN PHẢI HỎI KHÁCH: 'Anh/chị muốn thi công hạng mục gì (Trần, Vách, Sàn, Sơn hay Ốp tường) và diện tích khoảng bao nhiêu ạ?'"
+  };
 };
 
 export const calculateConstructionMaterials = async ({ projectType, area, tileLayout }) => {
@@ -211,10 +278,11 @@ export const calculateConstructionMaterials = async ({ projectType, area, tileLa
         specs: bestMatch ? (bestMatch.specs || "-") : "-",
         quantity: quantity,
         unit: req.unit,
-        price: formatCurrency(unitPrice),
-        total: formatCurrency(lineTotal),
+        price: unitPrice > 0 ? formatCurrency(unitPrice) : "Liên hệ báo giá",
+        total: unitPrice > 0 ? formatCurrency(lineTotal) : "Liên hệ báo giá",
         weight: lineWeight > 0 ? `${Math.round(lineWeight * 100)/100} kg` : "-",
-        status: bestMatch ? (bestMatch.stock > 0 || bestMatch.stock === undefined ? "Sẵn hàng" : "Hết hàng") : "Chưa có trên hệ thống",
+        status: bestMatch ? "Có thể cung cấp" : "Chưa có trên hệ thống",
+        note: req.note || ''
       });
 
       totalAmount += lineTotal;

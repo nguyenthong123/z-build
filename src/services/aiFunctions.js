@@ -327,12 +327,26 @@ export const STOREFRONT_AI_FUNCTIONS = [
   {
     type: "function",
     function: {
+      name: "get_consultation_framework",
+      description: "Lấy khung câu hỏi (SOP) BẮT BUỘC để hỏi khách hàng trước khi tính toán vật tư hoặc tư vấn giải pháp. Dùng khi khách bắt đầu hỏi về thi công Trần, Vách, Sàn, Sơn, hoặc Ốp tường.",
+      parameters: {
+        type: "object",
+        properties: {
+          projectType: { type: "string", description: "Hạng mục: Trần thả, Trần chìm, Vách ngăn, Sàn nhẹ, Sơn tường, Ốp tường" }
+        },
+        required: ["projectType"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
       name: "calculate_construction_materials",
       description: "Tính toán số lượng vật tư cần thiết cho các hạng mục thi công. CHỈ DÙNG KHI KHÁCH MUỐN BẢNG VẬT TƯ CHI TIẾT. QUAN TRỌNG: Với trần thả, PHẢI hỏi khách muốn thả kiểu 60x60 (hộp vuông, cắt đôi tấm) hay 60x120 (nguyên tấm) TRƯỚC KHI gọi function này.",
       parameters: {
         type: "object",
         properties: {
-          projectType: { type: "string", description: "Loại hạng mục: BẮT BUỘC là 1 trong 4 loại: 'Trần thả', 'Trần chìm', 'Vách ngăn', 'Sàn nhẹ'. Nếu khách chỉ nói 'Trần', BẠN PHẢI HỎI LẠI khách là trần gì, KHÔNG ĐƯỢC truyền tham số 'Trần'." },
+          projectType: { type: "string", description: "Loại hạng mục: BẮT BUỘC là 1 trong 6 loại: 'Trần thả', 'Trần chìm', 'Vách ngăn', 'Sàn nhẹ', 'Sơn tường', 'Ốp tường'. Nếu khách chỉ nói 'Trần', BẠN PHẢI gọi get_consultation_framework trước." },
           area: { type: "number", description: "Diện tích cần thi công (m2)" },
           tileLayout: { type: "string", description: "CHỈ CHO TRẦN THẢ: '60x60' (hộp vuông, cắt đôi tấm 605x1210) hoặc '60x120' (nguyên tấm). LUÔN HỎI KHÁCH TRƯỚC. Mặc định: 60x120." }
         },
@@ -598,7 +612,7 @@ async function searchProducts({ keyword = '', category = '', max_results = 5 }) 
       price: formatCurrency(p.price),
       price_raw: p.price,
       category: p.category || 'Chung',
-      in_stock: p.stock !== undefined ? (p.stock > 0 ? `Còn ${p.stock}` : 'Hết hàng') : 'Không theo dõi',
+      in_stock: 'Có thể cung cấp',
       image: p.image || null,
       specs: p.specs || 'N/A',
       packaging: p.packaging || 'N/A',
@@ -1579,6 +1593,7 @@ export async function executeFunction(name, args) {
     case 'add_to_cart_batch': return await addToCartBatch(parsedArgs);
     case 'get_store_stats': return await getStoreStats(parsedArgs);
     case 'calculate_construction_materials': return await calculateConstructionMaterials(parsedArgs);
+    case 'get_consultation_framework': return await getConsultationFramework(parsedArgs);
     case 'get_m2_quotation': return await getM2Quotation(parsedArgs);
     case 'create_order': return await createOrder(parsedArgs);
     case 'create_product': return await createProduct(parsedArgs);
