@@ -33,6 +33,13 @@ googleProvider.setCustomParameters({
 });
 
 // Initialize Cloud Messaging and get a reference to the service
-const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
+let messaging = null;
+try {
+  if (typeof window !== 'undefined') {
+    messaging = getMessaging(app);
+  }
+} catch (error) {
+  console.warn('Firebase Messaging is not supported in this browser environment', error);
+}
 
 export { auth, db, googleProvider, messaging };
