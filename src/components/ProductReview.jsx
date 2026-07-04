@@ -5,7 +5,7 @@ import './ProductReview.css';
 import { useToast } from '../context/ToastContext';
 import AIReviewSummary from './AIReviewSummary';
 
-const ProductReview = ({ productId, isLoggedIn, onLoginRequired }) => {
+const ProductReview = ({ productId, isLoggedIn, onLoginRequired, onReviewsLoaded }) => {
   const [reviews, setReviews] = useState([]);
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
@@ -169,6 +169,15 @@ const ProductReview = ({ productId, isLoggedIn, onLoginRequired }) => {
   const averageRating = reviews.length > 0 
     ? (reviews.reduce((acc, curr) => acc + (Number(curr.rating) || 0), 0) / reviews.length).toFixed(1)
     : 0;
+
+  useEffect(() => {
+    if (onReviewsLoaded && !loading) {
+      onReviewsLoaded({
+        average: Number(averageRating),
+        count: reviews.length
+      });
+    }
+  }, [averageRating, reviews.length, loading, onReviewsLoaded]);
 
   const renderStars = (count, isInteractive = false) => {
     const starCount = Math.round(Number(count)) || 0;

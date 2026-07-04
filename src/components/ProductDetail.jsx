@@ -18,6 +18,7 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0);
   const [visibleThumbs, setVisibleThumbs] = useState(4);
+  const [reviewStats, setReviewStats] = useState({ average: 0, count: 0 });
 
   const renderSpecs = (specs) => {
     if (!specs) return null;
@@ -430,9 +431,21 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
             <div className="info-header">
               <span className="bestseller-badge">SẢN PHẨM MỚI</span>
               <h1 className="product-title">{product.title}</h1>
-              <div className="rating-row">
-                <div className="stars">⭐⭐⭐⭐⭐</div>
-                <span className="review-count">(Chưa có đánh giá)</span>
+              <div className="rating-row" style={{ cursor: 'pointer' }} onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}>
+                <div className="stars">
+                  {reviewStats.count > 0 ? (
+                    <div style={{ display: 'flex', color: '#FFB800', gap: '2px', alignItems: 'center' }}>
+                      {Array.from({ length: 5 }, (_, i) => (
+                        <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill={i < Math.round(reviewStats.average) ? "currentColor" : "none"} stroke={i < Math.round(reviewStats.average) ? "currentColor" : "#d1d1d1"} strokeWidth="2">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                      ))}
+                    </div>
+                  ) : '⭐⭐⭐⭐⭐'}
+                </div>
+                <span className="review-count" style={{ color: '#666', fontSize: '0.9rem' }}>
+                  {reviewStats.count > 0 ? `${reviewStats.average} (${reviewStats.count} đánh giá)` : '(Chưa có đánh giá)'}
+                </span>
               </div>
             </div>
 
@@ -680,7 +693,12 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
         )}
 
         {/* Reviews Section */}
-        <ProductReview productId={product.id} isLoggedIn={isLoggedIn} onLoginRequired={onLoginRequired} />
+        <ProductReview 
+          productId={product.id} 
+          isLoggedIn={isLoggedIn} 
+          onLoginRequired={onLoginRequired} 
+          onReviewsLoaded={setReviewStats} 
+        />
 
         {/* Related Products */}
         <div className="related-section">
@@ -689,8 +707,8 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
             {relatedProducts.length > 0 ? relatedProducts.map((p, i) => (
               <div key={i} className="related-card" onClick={() => handleRelatedClick(p)}>
                 <div className="related-img">
-                  {p.images?.[0] ? (
-                    <img src={getOptimizedUrl(p.images[0], 400)} alt={p.title} loading="lazy" />
+                  {p.image ? (
+                    <img src={getOptimizedUrl(p.image, 400)} alt={p.title} loading="lazy" />
                   ) : (
                     <div className="related-img-placeholder">
                       <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
