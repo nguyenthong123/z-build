@@ -175,11 +175,12 @@ export const AppProvider = ({ children }) => {
       const existingItem = prev.find(item => item.id === product.id);
       if (existingItem) {
         return prev.map(item => 
-          item.id === product.id ? { ...item, quantity: item.quantity + quantity, weight: item.weight || parseFloat(product.weight) || 0 } : item
+          item.id === product.id ? { ...item, quantity: item.quantity + quantity, weight: item.weight || parseFloat(product.weight) || 0, dunvexId: product.dunvexId || item.dunvexId } : item
         );
       }
       return [...prev, {
         id: product.id,
+        dunvexId: product.dunvexId,
         name: product.title || product.name,
         price: product.discountPrice || product.basePrice || product.price,
         quantity: quantity,

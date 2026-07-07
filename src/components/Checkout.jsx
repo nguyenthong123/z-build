@@ -562,7 +562,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
           const webhookUrl = `${base}/api/order-webhook`;
 
           const webhookItems = finalOrderData.cartItems.map(item => ({
-            productId: item.id,
+            productId: item.dunvexId || item.id,
             productName: item.name,
             qty: Number(item.quantity) || 1,
             price: Number(item.price) || 0
