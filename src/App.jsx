@@ -456,6 +456,7 @@ function App() {
                 cartItems={cartItems}
                 onOrderComplete={handleOrderComplete}
                 user={user}
+                isAdmin={isAdmin}
               />
             ) : <Navigate to="/login" replace />
           } />

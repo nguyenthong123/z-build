@@ -3,6 +3,7 @@ import { auth, db } from '../firebase';
 import { updateProfile, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '../context/ToastContext';
+import { syncCustomerToDunvex } from '../utils/dunvexSync';
 import './Profile.css';
 import AccountSidebar from './AccountSidebar';
 
@@ -103,6 +104,13 @@ const Profile = ({ user, onBack, onNavigate, onLogout }) => {
           createdAt: new Date()
         });
       }
+
+      // 3. Sync to Dunvex
+      syncCustomerToDunvex({
+        name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone
+      });
 
       addToast("Cập nhật thông tin thành công!", "success");
     } catch (error) {

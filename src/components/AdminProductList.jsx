@@ -294,7 +294,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
               description: dunvexProd.note || '',
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
-              status: 'Active',
+              status: 'Draft',
             };
             const newDocRef = await addDoc(collection(db, "products"), newProductData);
             createdCount++;

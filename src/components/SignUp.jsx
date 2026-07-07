@@ -3,6 +3,7 @@ import { createUserWithEmailAndPassword, signInWithPopup, updateProfile } from '
 import { auth, googleProvider } from '../firebase';
 import './SignUp.css';
 import { useToast } from '../context/ToastContext';
+import { syncCustomerToDunvex } from '../utils/dunvexSync';
 
 const SignUp = ({ onSignUp, onBack, onLogin }) => {
   const [name, setName] = useState('');
@@ -22,6 +23,12 @@ const SignUp = ({ onSignUp, onBack, onLogin }) => {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, { displayName: name });
         
+        // Sync to Dunvex
+        syncCustomerToDunvex({
+          name: name,
+          email: userCredential.user.email
+        });
+
         onSignUp({ 
           uid: userCredential.user.uid,
           email: userCredential.user.email,
@@ -39,6 +46,13 @@ const SignUp = ({ onSignUp, onBack, onLogin }) => {
     setError('');
     try {
       const userCredential = await signInWithPopup(auth, googleProvider);
+      
+      // Sync to Dunvex
+      syncCustomerToDunvex({
+        name: userCredential.user.displayName || 'Google User',
+        email: userCredential.user.email
+      });
+
       onSignUp({
         uid: userCredential.user.uid,
         email: userCredential.user.email,

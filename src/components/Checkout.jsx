@@ -4,7 +4,7 @@ import { collection, getDocs, doc, query, where, serverTimestamp, getDoc, runTra
 import { db } from '../firebase';
 import './Checkout.css';
 
-const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
+const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isSubmittingRef = useRef(false); // ⚡ Ref chặn double-click (sync, không bị stale closure)
   const [formErrors, setFormErrors] = useState({});
@@ -29,6 +29,65 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
   const [paymentStep, setPaymentStep] = useState(1); // 1: Form, 2: QR Code
   const [generatedOrder, setGeneratedOrder] = useState(null);
   const [orderNumber] = useState(() => 'ZB' + Date.now().toString(36).toUpperCase() + Math.floor(Math.random() * 1000));
+
+  // Admin: danh sách khách hàng để đặt hàng thay
+  const [customerList, setCustomerList] = useState([]);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [selectedCustomerForOrder, setSelectedCustomerForOrder] = useState(null);
+  const customerDropdownRef = React.useRef(null);
+
+  // Load customer list for admin
+  useEffect(() => {
+    if (!isAdmin) return;
+    const loadCustomers = async () => {
+      try {
+        const snap = await getDocs(collection(db, 'customers'));
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.name);
+        list.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi'));
+        setCustomerList(list);
+      } catch (e) { console.error('Load customers error', e); }
+    };
+    loadCustomers();
+  }, [isAdmin]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (customerDropdownRef.current && !customerDropdownRef.current.contains(e.target)) {
+        setShowCustomerDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const handleSelectCustomer = (c) => {
+    setSelectedCustomerForOrder(c);
+    setCustomerSearch(c.name || '');
+    setShowCustomerDropdown(false);
+    // Auto-fill form with customer data
+    const nameParts = (c.name || '').trim().split(' ');
+    const lastName = nameParts.pop() || '';
+    const firstName = nameParts.join(' ') || c.name || '';
+    setFormData(prev => ({
+      ...prev,
+      email: c.email || prev.email,
+      phone: c.phone || prev.phone,
+      firstName,
+      lastName,
+      address: c.address || prev.address,
+    }));
+  };
+
+  const filteredCustomers = customerList.filter(c => {
+    const q = customerSearch.toLowerCase();
+    return (
+      (c.name || '').toLowerCase().includes(q) ||
+      (c.phone || '').includes(q) ||
+      (c.email || '').toLowerCase().includes(q)
+    );
+  }).slice(0, 30);
 
   // Coupon state
   const [couponCode, setCouponCode] = useState('');
@@ -517,6 +576,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
             customerAddress: `${formData.address}, ${formData.city}`.trim(),
             items: webhookItems,
             shippingFee: Number(shippingCost) || 0,
+            orderDate: new Date().toISOString(),
             note: `Đơn đặt từ web storefront, Mã đơn: ${orderNumber}`
           };
 
@@ -611,6 +671,65 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user }) => {
                 Trở về trang chủ
               </Link>
             </div>
+
+            {/* ========== ADMIN: CHỌN KHÁCH HÀNG ========== */}
+            {isAdmin && (
+              <section className="form-block" style={{ marginBottom: '30px' }}>
+                <div className="block-header">
+                  <span className="block-step" style={{ background: '#1a1a2e', color: '#FFB800' }}>★</span>
+                  <h3>Chọn khách hàng (Admin)</h3>
+                </div>
+                <div ref={customerDropdownRef} style={{ position: 'relative' }} className="input-group">
+                  <div style={{ position: 'relative' }}>
+                    <svg style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', zIndex: 1 }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    <input
+                      type="text"
+                      placeholder="Tìm tên, SĐT, email khách hàng..."
+                      value={customerSearch}
+                      onChange={e => { setCustomerSearch(e.target.value); setShowCustomerDropdown(true); setSelectedCustomerForOrder(null); }}
+                      onFocus={() => setShowCustomerDropdown(true)}
+                      style={{ paddingLeft: '42px', boxSizing: 'border-box' }}
+                    />
+                    {selectedCustomerForOrder && (
+                      <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: '#4CAF50', color: '#fff', borderRadius: '20px', fontSize: '0.72rem', padding: '2px 8px', fontWeight: 600 }}>✓ Đã chọn</span>
+                    )}
+                  </div>
+                  {showCustomerDropdown && filteredCustomers.length > 0 && (
+                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1.5px solid #e5e7eb', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 1000, maxHeight: '260px', overflowY: 'auto', marginTop: '4px' }}>
+                      {filteredCustomers.map((c, i) => (
+                        <div
+                          key={c.id || i}
+                          onClick={() => handleSelectCustomer(c)}
+                          style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '10px', transition: 'background 0.15s' }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                          onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+                        >
+                          <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: '#FFB30022', color: '#E65100', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1rem', flexShrink: 0 }}>
+                            {(c.name || '?').charAt(0).toUpperCase()}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 600, fontSize: '0.92rem', color: '#1a1a2e', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</div>
+                            <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                              {c.phone && <span>{c.phone}</span>}
+                              {c.phone && c.email && <span style={{ margin: '0 4px' }}>·</span>}
+                              {c.email && <span>{c.email}</span>}
+                            </div>
+                          </div>
+                          {c.type && (
+                            <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '10px', background: '#E3F2FD', color: '#1565C0', fontWeight: 500, flexShrink: 0 }}>{c.type}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {showCustomerDropdown && customerSearch && filteredCustomers.length === 0 && (
+                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1.5px solid #e5e7eb', borderRadius: '12px', padding: '14px', textAlign: 'center', color: '#94a3b8', fontSize: '0.9rem', zIndex: 1000, marginTop: '4px' }}>
+                      Không tìm thấy khách hàng
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
 
             {/* ========== SECTION 1: CONTACT INFO ========== */}
             <section className="form-block" id="info-section">

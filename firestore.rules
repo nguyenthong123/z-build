@@ -105,9 +105,18 @@ service cloud.firestore {
       allow read, write, create: if request.auth != null && request.auth.uid == docId;
     }
     
-    // Cart items: Authenticated users can CRUD their own (doc ID = user UID)
     match /cart_items/{docId} {
       allow read, write, create: if request.auth != null && request.auth.uid == docId;
+    }
+    
+    // Customers synced from Dunvex
+    match /customers/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Admin Settings
+    match /adminSettings/{docId} {
+      allow read, write: if isAdmin();
     }
     
     // Default rule: block everything else

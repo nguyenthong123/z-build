@@ -1,26 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import './AdminCustomerManagement.css';
 
-const TIERS = [
-  { key: 'platinum', label: 'Platinum', minSpent: 50000000, color: '#9C27B0', icon: '💎' },
-  { key: 'gold', label: 'Gold', minSpent: 20000000, color: '#FFB800', icon: '🥇' },
-  { key: 'silver', label: 'Silver', minSpent: 5000000, color: '#90A4AE', icon: '🥈' },
-  { key: 'bronze', label: 'Bronze', minSpent: 0, color: '#CD7F32', icon: '🥉' }
-];
+// Màu sắc theo loại khách hàng
+const TYPE_COLORS = {
+  'Admin':       { color: '#E53935', bg: '#E5393518' },
+  'Thầu Thợ':   { color: '#1565C0', bg: '#1565C018' },
+  'Chủ nhà':    { color: '#2E7D32', bg: '#2E7D3218' },
+  'Cửa Hàng':   { color: '#F57F17', bg: '#F57F1718' },
+  'Khách web':  { color: '#6A1B9A', bg: '#6A1B9A18' },
+  'Khách hàng': { color: '#6A1B9A', bg: '#6A1B9A18' },
+  'default':    { color: '#546E7A', bg: '#546E7A18' },
+};
+
+const getTypeStyle = (type) => TYPE_COLORS[type] || TYPE_COLORS['default'];
 
 const AdminCustomerManagement = ({ onBack }) => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [tierFilter, setTierFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [stats, setStats] = useState({ total: 0, platinum: 0, gold: 0, silver: 0, bronze: 0 });
+  const [adminEmails, setAdminEmails] = useState([]);
+  const [stats, setStats] = useState({ total: 0 });
 
-  useEffect(() => { fetchCustomers(); }, []);
+  useEffect(() => { loadAdminEmailsThenFetch(); }, []);
 
-  const fetchCustomers = async () => {
+  const loadAdminEmailsThenFetch = async () => {
+    try {
+      const adminSnap = await getDoc(doc(db, 'settings', 'admins'));
+      const emails = adminSnap.exists() ? (adminSnap.data().emails || []) : [];
+      setAdminEmails(emails);
+      fetchCustomers(emails);
+    } catch {
+      fetchCustomers([]);
+    }
+  };
+
+  const fetchCustomers = async (admins = adminEmails) => {
     setLoading(true);
     try {
       const ordersSnap = await getDocs(query(collection(db, 'orders'), orderBy('createdAt', 'desc')));
@@ -30,7 +49,19 @@ const AdminCustomerManagement = ({ onBack }) => {
         createdAt: d.data().createdAt?.toDate ? d.data().createdAt.toDate() : new Date()
       }));
 
-      // Aggregate by email
+      // Fetch synced customers from 'customers' collection
+      const syncedSnap = await getDocs(collection(db, 'customers'));
+      const syncedCustomers = syncedSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Helper: determine customer type
+      const resolveType = (email, dunvexType) => {
+        if (email && admins.some(a => a.toLowerCase().trim() === email.toLowerCase().trim())) return 'Admin';
+        if (dunvexType) return dunvexType;
+        if (email && email !== 'unknown') return 'Khách hàng';
+        return 'Khách vãng lai';
+      };
+
+      // Aggregate by email from orders
       const customerMap = {};
       ordersData.forEach(o => {
         const email = o.userEmail || 'unknown';
@@ -43,42 +74,130 @@ const AdminCustomerManagement = ({ onBack }) => {
             totalSpent: 0,
             firstOrder: o.createdAt,
             lastOrder: o.createdAt,
-            address: o.shippingAddress
+            address: o.shippingAddress,
+            dunvexType: ''
           };
         }
         customerMap[email].orders.push(o);
-        if (o.status !== 'cancelled') {
-          customerMap[email].totalSpent += (o.total || 0);
-        }
+        if (o.status !== 'cancelled') customerMap[email].totalSpent += (o.total || 0);
         if (o.createdAt < customerMap[email].firstOrder) customerMap[email].firstOrder = o.createdAt;
         if (o.createdAt > customerMap[email].lastOrder) customerMap[email].lastOrder = o.createdAt;
-        // Update name/phone if better
         if (!customerMap[email].name || customerMap[email].name === 'Khách vãng lai') {
           const name = o.userName || `${o.shippingAddress?.firstName || ''} ${o.shippingAddress?.lastName || ''}`.trim();
           if (name) customerMap[email].name = name;
         }
-        if (!customerMap[email].phone && o.shippingAddress?.phone) {
-          customerMap[email].phone = o.shippingAddress.phone;
+        if (!customerMap[email].phone && o.shippingAddress?.phone) customerMap[email].phone = o.shippingAddress.phone;
+      });
+
+      // Merge with synced customers from Dunvex
+      syncedCustomers.forEach(sc => {
+        const email = sc.email || `dunvex_${sc.id}`;
+        if (!customerMap[email]) {
+          customerMap[email] = {
+            email: sc.email || '',
+            name: sc.name || 'Khách hàng từ Dunvex',
+            phone: sc.phone || '',
+            orders: [],
+            totalSpent: 0,
+            firstOrder: null,
+            lastOrder: null,
+            address: { street: sc.address || '' },
+            dunvexType: sc.type || ''
+          };
+        } else {
+          if (!customerMap[email].dunvexType) customerMap[email].dunvexType = sc.type || '';
+          if (!customerMap[email].name || customerMap[email].name === 'Khách vãng lai') customerMap[email].name = sc.name;
+          if (!customerMap[email].phone) customerMap[email].phone = sc.phone;
         }
       });
 
-      // Assign tiers
-      const customerList = Object.values(customerMap).map(c => {
-        const tier = TIERS.find(t => c.totalSpent >= t.minSpent) || TIERS[TIERS.length - 1];
-        return { ...c, tier: tier.key, tierLabel: tier.label, tierColor: tier.color, tierIcon: tier.icon, orderCount: c.orders.length };
-      });
+      // Build final list with type
+      const customerList = Object.values(customerMap).map(c => ({
+        ...c,
+        customerType: resolveType(c.email, c.dunvexType),
+        orderCount: c.orders.length
+      }));
 
       customerList.sort((a, b) => b.totalSpent - a.totalSpent);
       setCustomers(customerList);
-
-      // Stats
-      const s = { total: customerList.length, platinum: 0, gold: 0, silver: 0, bronze: 0 };
-      customerList.forEach(c => { if (s[c.tier] !== undefined) s[c.tier]++; });
-      setStats(s);
+      setStats({ total: customerList.length });
     } catch (err) {
       console.error('Error fetching customers:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSyncFromDunvex = async () => {
+    if (!window.confirm("Bắt đầu đồng bộ khách hàng từ phần mềm Dunvex? Quá trình này có thể mất vài phút.")) return;
+    
+    setSyncing(true);
+    try {
+      const docRef = doc(db, "storeSettings", "main");
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists() || !docSnap.data().openClawConfig) {
+        alert("Chưa cấu hình API Endpoint và API Key của Dunvex trong Admin Settings!");
+        setSyncing(false);
+        return;
+      }
+
+      const config = docSnap.data().openClawConfig;
+      if (!config.apiUrl || !config.botApiKey || !config.ownerId) {
+        alert("Vui lòng cấu hình đầy đủ API Endpoint, API Key và Owner ID của Dunvex trong Admin Settings!");
+        setSyncing(false);
+        return;
+      }
+
+      let base = config.apiUrl.replace(/\/api\/products\/?$/, '');
+      base = base.replace(/\/+$/, '');
+      const customersUrl = `${base}/api/customers`;
+
+      const response = await fetch(customersUrl, {
+        method: 'GET',
+        headers: {
+          'x-api-key': config.botApiKey,
+          'x-owner-id': config.ownerId
+        }
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Lỗi kết nối API: ${response.status} ${errText}`);
+      }
+
+      const data = await response.json();
+      if (!data.success || !Array.isArray(data.customers)) {
+        throw new Error("Dữ liệu API trả về không hợp lệ");
+      }
+
+      let syncedCount = 0;
+      for (const c of data.customers) {
+        if (!c.name && !c.phone && !c.email) continue;
+        
+        // Use email as ID if available, else phone, else dunvexId
+        const docId = c.email ? c.email.replace(/[^a-zA-Z0-9]/g, '_') : (c.phone || c.id);
+        
+        await setDoc(doc(db, 'customers', docId), {
+          dunvexId: c.id,
+          name: c.name || '',
+          email: c.email || '',
+          phone: c.phone || '',
+          address: c.address || '',
+          type: c.type || '',
+          status: c.status || '',
+          syncedAt: new Date()
+        }, { merge: true });
+        
+        syncedCount++;
+      }
+
+      alert(`Đồng bộ thành công ${syncedCount} khách hàng từ Dunvex.`);
+      fetchCustomers();
+    } catch (err) {
+      console.error('Error syncing customers:', err);
+      alert("Đồng bộ thất bại: " + err.message);
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -121,9 +240,12 @@ const AdminCustomerManagement = ({ onBack }) => {
       c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (c.phone || '').includes(searchQuery);
-    const matchTier = tierFilter === 'all' || c.tier === tierFilter;
-    return matchSearch && matchTier;
+    const matchType = typeFilter === 'all' || c.customerType === typeFilter;
+    return matchSearch && matchType;
   });
+
+  // Unique types for filter buttons
+  const allTypes = [...new Set(customers.map(c => c.customerType))].filter(Boolean);
 
   return (
     <div className="admin-product-page">
@@ -142,6 +264,13 @@ const AdminCustomerManagement = ({ onBack }) => {
                 <input type="text" placeholder="Tìm khách hàng..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
               </div>
               <div className="btn-group">
+                <button 
+                  className={`admin-btn primary ${syncing ? 'loading' : ''}`}
+                  onClick={handleSyncFromDunvex}
+                  disabled={syncing}
+                >
+                  {syncing ? 'Đang đồng bộ...' : '🔄 Đồng bộ từ Dunvex'}
+                </button>
                 <button className="home-icon-btn desktop-only" onClick={onBack} title="Về trang chủ">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 </button>
@@ -150,20 +279,26 @@ const AdminCustomerManagement = ({ onBack }) => {
           </div>
         </header>
 
-        {/* Tier Stats */}
+        {/* Type Stats */}
         <div className="acm-tier-stats">
-          <div className="acm-tier-card total">
+          <div className="acm-tier-card total" onClick={() => setTypeFilter('all')} style={{ cursor: 'pointer', outline: typeFilter === 'all' ? '2px solid #1a73e8' : 'none', outlineOffset: '2px' }}>
             <span className="acm-tier-icon">👥</span>
             <span className="acm-tier-value">{stats.total}</span>
-            <span className="acm-tier-label">Tổng khách hàng</span>
+            <span className="acm-tier-label">Tất cả</span>
           </div>
-          {TIERS.map(t => (
-            <div className="acm-tier-card" key={t.key} style={{ borderColor: t.color }} onClick={() => setTierFilter(tierFilter === t.key ? 'all' : t.key)}>
-              <span className="acm-tier-icon">{t.icon}</span>
-              <span className="acm-tier-value" style={{ color: t.color }}>{stats[t.key]}</span>
-              <span className="acm-tier-label">{t.label}</span>
-            </div>
-          ))}
+          {allTypes.map(type => {
+            const style = getTypeStyle(type);
+            const count = customers.filter(c => c.customerType === type).length;
+            return (
+              <div className="acm-tier-card" key={type}
+                style={{ borderTop: `4px solid ${style.color}`, cursor: 'pointer', outline: typeFilter === type ? `2px solid ${style.color}` : 'none', outlineOffset: '2px' }}
+                onClick={() => setTypeFilter(typeFilter === type ? 'all' : type)}
+              >
+                <span className="acm-tier-value" style={{ color: style.color }}>{count}</span>
+                <span className="acm-tier-label">{type}</span>
+              </div>
+            );
+          })}
         </div>
 
         <div className="admin-content-body">
@@ -184,7 +319,7 @@ const AdminCustomerManagement = ({ onBack }) => {
                     <tr>
                       <th>Khách hàng</th>
                       <th>Liên hệ</th>
-                      <th>Hạng</th>
+                      <th>Loại</th>
                       <th>Đơn hàng</th>
                       <th>Tổng chi tiêu</th>
                       <th>Đơn gần nhất</th>
@@ -192,74 +327,82 @@ const AdminCustomerManagement = ({ onBack }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredCustomers.map((c, i) => (
-                      <tr key={i} className={selectedCustomer?.email === c.email ? 'selected' : ''}>
-                        <td>
-                          <div className="acm-customer-cell">
-                            <div className="acm-avatar" style={{ background: c.tierColor + '22', color: c.tierColor }}>
-                              {c.name.charAt(0).toUpperCase()}
+                    {filteredCustomers.map((c, i) => {
+                      const typeStyle = getTypeStyle(c.customerType);
+                      return (
+                        <tr key={i} className={selectedCustomer?.email === c.email ? 'selected' : ''}>
+                          <td>
+                            <div className="acm-customer-cell">
+                              <div className="acm-avatar" style={{ background: typeStyle.bg, color: typeStyle.color }}>
+                                {c.name.charAt(0).toUpperCase()}
+                              </div>
+                              <strong>{c.name}</strong>
                             </div>
-                            <strong>{c.name}</strong>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="acm-contact">
-                            <span>{c.email}</span>
-                            {c.phone && <span className="acm-phone">{c.phone}</span>}
-                          </div>
-                        </td>
-                        <td>
-                          <span className="acm-tier-badge" style={{ background: c.tierColor + '18', color: c.tierColor, borderColor: c.tierColor }}>
-                            {c.tierIcon} {c.tierLabel}
-                          </span>
-                        </td>
-                        <td className="acm-order-count">{c.orderCount}</td>
-                        <td className="price-text">{formatCurrency(c.totalSpent)}</td>
-                        <td className="acm-date">{formatDate(c.lastOrder)}</td>
-                        <td className="text-right">
-                          <button className="acm-detail-btn" onClick={() => setSelectedCustomer(selectedCustomer?.email === c.email ? null : c)}>
-                            {selectedCustomer?.email === c.email ? 'Đóng' : 'Xem'}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td>
+                            <div className="acm-contact">
+                              <span>{c.email}</span>
+                              {c.phone && <span className="acm-phone">{c.phone}</span>}
+                            </div>
+                          </td>
+                          <td>
+                            <span className="acm-tier-badge" style={{ background: typeStyle.bg, color: typeStyle.color, borderColor: typeStyle.color }}>
+                              {c.customerType}
+                            </span>
+                          </td>
+                          <td className="acm-order-count">{c.orderCount}</td>
+                          <td className="price-text">{formatCurrency(c.totalSpent)}</td>
+                          <td className="acm-date">{formatDate(c.lastOrder)}</td>
+                          <td className="text-right">
+                            <button className="acm-detail-btn" onClick={() => setSelectedCustomer(selectedCustomer?.email === c.email ? null : c)}>
+                              {selectedCustomer?.email === c.email ? 'Đóng' : 'Xem'}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
 
               {/* Mobile Cards */}
               <div className="mobile-only acm-mobile-list">
-                {filteredCustomers.map((c, i) => (
-                  <div className="acm-mobile-card" key={i} onClick={() => setSelectedCustomer(selectedCustomer?.email === c.email ? null : c)}>
-                    <div className="acm-mc-top">
-                      <div className="acm-mc-info">
-                        <div className="acm-avatar-sm" style={{ background: c.tierColor + '22', color: c.tierColor }}>
-                          {c.name.charAt(0).toUpperCase()}
+                {filteredCustomers.map((c, i) => {
+                  const typeStyle = getTypeStyle(c.customerType);
+                  return (
+                    <div className="acm-mobile-card" key={i} onClick={() => setSelectedCustomer(selectedCustomer?.email === c.email ? null : c)}>
+                      <div className="acm-mc-top">
+                        <div className="acm-mc-info">
+                          <div className="acm-avatar-sm" style={{ background: typeStyle.bg, color: typeStyle.color }}>
+                            {c.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <strong>{c.name}</strong>
+                            <span className="acm-mc-email">{c.email}</span>
+                          </div>
                         </div>
-                        <div>
-                          <strong>{c.name}</strong>
-                          <span className="acm-mc-email">{c.email}</span>
-                        </div>
+                        <span className="acm-tier-badge" style={{ background: typeStyle.bg, color: typeStyle.color, borderColor: typeStyle.color }}>
+                          {c.customerType}
+                        </span>
                       </div>
-                      <span className="acm-tier-badge" style={{ background: c.tierColor + '18', color: c.tierColor, borderColor: c.tierColor }}>
-                        {c.tierIcon} {c.tierLabel}
-                      </span>
+                      <div className="acm-mc-bottom">
+                        <span>{c.orderCount} đơn hàng</span>
+                        <span className="acm-mc-spent">{formatCurrency(c.totalSpent)}</span>
+                      </div>
                     </div>
-                    <div className="acm-mc-bottom">
-                      <span>{c.orderCount} đơn hàng</span>
-                      <span className="acm-mc-spent">{formatCurrency(c.totalSpent)}</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}
 
           {/* Customer Detail Panel */}
-          {selectedCustomer && (
+          {selectedCustomer && (() => {
+            const typeStyle = getTypeStyle(selectedCustomer.customerType);
+            return (
             <div className="acm-detail-panel">
               <div className="acm-detail-header">
-                <div className="acm-detail-avatar" style={{ background: selectedCustomer.tierColor + '22', color: selectedCustomer.tierColor }}>
+                <div className="acm-detail-avatar" style={{ background: typeStyle.bg, color: typeStyle.color }}>
                   {selectedCustomer.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="acm-detail-info">
@@ -267,8 +410,8 @@ const AdminCustomerManagement = ({ onBack }) => {
                   <span>{selectedCustomer.email}</span>
                   {selectedCustomer.phone && <span>📱 {selectedCustomer.phone}</span>}
                 </div>
-                <span className="acm-tier-badge lg" style={{ background: selectedCustomer.tierColor + '18', color: selectedCustomer.tierColor, borderColor: selectedCustomer.tierColor }}>
-                  {selectedCustomer.tierIcon} {selectedCustomer.tierLabel}
+                <span className="acm-tier-badge lg" style={{ background: typeStyle.bg, color: typeStyle.color, borderColor: typeStyle.color }}>
+                  {selectedCustomer.customerType}
                 </span>
                 <button className="acm-close-btn" onClick={() => setSelectedCustomer(null)}>✕</button>
               </div>
@@ -310,7 +453,8 @@ const AdminCustomerManagement = ({ onBack }) => {
                 ))}
               </div>
             </div>
-          )}
+            );
+          })()}
         </div>
       </div>
     </div>
