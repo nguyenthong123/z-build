@@ -3,32 +3,6 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
-  "hosting": {
-    "public": "dist",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "/product/**",
-        "function": "server"
-      },
-      {
-        "source": "/products.json",
-        "function": "server"
-      },
-      {
-        "source": "/sitemap.xml",
-        "function": "server"
-      },
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
-  },
   "functions": [
     {
       "source": "functions",
