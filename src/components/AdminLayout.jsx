@@ -24,7 +24,18 @@ export default function AdminLayout() {
   }, [loading, isAdmin, navigate]);
 
   if (loading) return <div className="admin-loading">Đang tải cấu hình quản trị...</div>;
-  if (!isAdmin) return null;
+  if (!isAdmin) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f0f1a' }}>
+      <div style={{ textAlign: 'center', color: '#fff', padding: 40 }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
+        <h2 style={{ marginBottom: 8 }}>Quyền truy cập bị từ chối</h2>
+        <p style={{ color: '#999', marginBottom: 24 }}>Tài khoản của bạn không có quyền quản trị.<br/>Vui lòng đăng nhập bằng email admin.</p>
+        <button onClick={() => { localStorage.clear(); window.location.href = '/login'; }} style={{ background: '#D4AF37', color: '#000', border: 'none', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+          Đăng nhập lại
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <AdminAIProvider>
