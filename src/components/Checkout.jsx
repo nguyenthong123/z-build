@@ -468,6 +468,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
             ref: productRefs[i],
             newStock: newStock,
             id: cartItems[i].id,
+            dunvexId: pData.dunvexId || cartItems[i].dunvexId || null,
             name: pData.title,
             price: realPrice,
             quantity: buyQty,
@@ -520,8 +521,8 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
           userId: user?.uid || 'guest',
           userEmail: user?.email || formData.email,
           userName: user?.name || `${formData.firstName} ${formData.lastName}`,
-          items: itemsToBuy.map(({ id, name, price, quantity, image, variant, weight }) => ({
-            id, name, price, quantity, image, variant, weight: weight || 0
+          items: itemsToBuy.map(({ id, dunvexId, name, price, quantity, image, variant, weight }) => ({
+            id, dunvexId, name, price, quantity, image, variant, weight: weight || 0
           })),
           shippingAddress,
           bankTransaction: bankTransactionInfo || null,
