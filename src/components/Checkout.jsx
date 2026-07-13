@@ -20,6 +20,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
     country: 'Vietnam',
     phone: '',
     shippingMethod: 'standard',
+    customShippingFee: '',
     paymentMethod: 'bank-transfer', // Default to bank transfer for easy setup
     cardNumber: '',
     cardExpiry: '',
@@ -284,6 +285,8 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
       // If user hasn't located yet, show 0 or some base fallback
       shippingCost = 0; 
     }
+  } else if (formData.shippingMethod === 'custom') {
+    shippingCost = Number(formData.customShippingFee) || 0;
   }
 
   const handleGetLocation = () => {
@@ -805,7 +808,24 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
                   </div>
                   <span className="price">{distanceKm !== null ? `${shippingCost.toLocaleString('vi-VN')}₫` : '—'}</span>
                 </label>
+                <label className={`method-option ${formData.shippingMethod === 'custom' ? 'active' : ''}`}>
+                  <input type="radio" name="shippingMethod" value="custom" checked={formData.shippingMethod === 'custom'} onChange={handleInputChange} />
+                  <span className="method-icon">🏗️</span>
+                  <div className="method-info">
+                    <span className="name">Nhập tiền vận chuyển</span>
+                    <span className="desc">Tự nhập phí vận chuyển</span>
+                  </div>
+                  <span className="price">{formData.customShippingFee ? `${Number(formData.customShippingFee).toLocaleString('vi-VN')}₫` : '—'}</span>
+                </label>
               </div>
+              {formData.shippingMethod === 'custom' && (
+                <div style={{ marginTop: '12px', padding: '14px', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                     <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e293b' }}>Nhập số tiền vận chuyển (VNĐ):</label>
+                     <input type="number" name="customShippingFee" value={formData.customShippingFee} onChange={handleInputChange} placeholder="VD: 500000" style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }} min="0" />
+                   </div>
+                </div>
+              )}
               {formData.shippingMethod === 'express' && (
                 <div style={{ marginTop: '12px', padding: '14px', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
                   <button type="button" onClick={(e) => { e.preventDefault(); handleGetLocation(); }} disabled={isLocating} className="btn-secondary" style={{ margin: 0, width: '100%' }}>
