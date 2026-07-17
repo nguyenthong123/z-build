@@ -397,6 +397,7 @@ function App() {
       'admin-ai-knowledge': '/admin/ai-knowledge',
       'admin-ai-assistant': '/admin/ai-assistant',
       'admin-coupons': '/admin/coupons',
+      'admin-customers': '/admin/customers',
       'admin-settings': '/admin/settings',
     };
     navigate(viewToRoute[viewName] || '/');
