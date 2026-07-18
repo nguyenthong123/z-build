@@ -940,6 +940,9 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
                     </div>
                     <div className="item-meta">
                       <span className="name">{item.name}</span>
+                      {item.variant && (
+                        <span className="variant-note">📏 {item.variant}</span>
+                      )}
                       <span className="variant">{Number(item.price).toLocaleString('vi-VN')}₫</span>
                     </div>
                     <span className="price">{Number(item.price * item.quantity).toLocaleString('vi-VN')}₫</span>
