@@ -17,6 +17,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
         
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -26,9 +29,9 @@ jobs:
       - name: Generate SEO files
         env:
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
-          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_API_KEY: *** secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
           VITE_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          VITE_FIREBASE_API_KEY: *** secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
         run: node scripts/generate-seo-files.cjs
         
       - name: Commit and push if changed
@@ -40,5 +43,5 @@ jobs:
             echo "No changes to SEO files"
           else
             git commit -m "chore: auto-update sitemap & products feed"
-            git push
+            git push origin main
           fi
