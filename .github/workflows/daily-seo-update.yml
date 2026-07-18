@@ -12,6 +12,8 @@ on:
 jobs:
   update-seo:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Cần quyền ghi để push sitemap mới
     steps:
       - name: Checkout
         uses: actions/checkout@v4
