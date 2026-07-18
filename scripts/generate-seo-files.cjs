@@ -33,13 +33,13 @@ if (fs.existsSync(envPath)) {
 }
 
 // ─── CONFIG ──────────────────────────────────────────────────
-const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 
+const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || 
+                   process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 
                    process.env.VITE_FIREBASE_PROJECT_ID || 
-                   'z-build-dunvex';
                    
-const API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 
+const API_KEY = process.env.FIREBASE_API_KEY || 
+                process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 
                 process.env.VITE_FIREBASE_API_KEY ||
-                'AIzaSyDFDyDOZlplNltgcYA3VydZT0WA4ogOIMo';
 
 const SITE_URL = 'https://zbuild.click';
 const OUTPUT_DIR = path.join(__dirname, '..', 'public');
