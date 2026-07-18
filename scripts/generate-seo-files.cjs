@@ -93,7 +93,7 @@ function injectIntoIndexHTML(prods) {
 
   const snippet = '<!-- Bot-readable product catalog (hidden from users) -->\n' +
     '<noscript>\n' +
-    '<section style="display:none" aria-hidden="true">\n' +
+    '<section >\n' +
     '<h1>Danh sách sản phẩm Zbuild - Vật liệu xây dựng</h1>\n' +
     '<p>Zbuild cung cấp ' + prods.length + ' sản phẩm vật liệu xây dựng: DURAflex, tấm PVC, tấm xi măng sợi, trần thả, gạch ốp lát và nhiều hơn nữa.</p>\n' +
     items + '\n' +
