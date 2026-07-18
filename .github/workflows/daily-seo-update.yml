@@ -1,0 +1,42 @@
+name: Daily SEO Update
+
+# Tự động cập nhật sitemap.xml + products.json mỗi ngày
+# Khi có sản phẩm mới được thêm qua Admin, Google sẽ thấy trong vòng 24h
+
+on:
+  schedule:
+    # Chạy lúc 2:00 AM GMT+7 (19:00 UTC) mỗi ngày
+    - cron: '0 19 * * *'
+  workflow_dispatch:  # Cho phép chạy thủ công từ GitHub UI
+
+jobs:
+  update-seo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Generate SEO files
+        env:
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+        run: node scripts/generate-seo-files.cjs
+        
+      - name: Commit and push if changed
+        run: |
+          git config user.name "SEO Bot"
+          git config user.email "seobot@zbuild.click"
+          git add public/sitemap.xml public/products.json
+          if git diff --staged --quiet; then
+            echo "No changes to SEO files"
+          else
+            git commit -m "chore: auto-update sitemap & products feed"
+            git push
+          fi
