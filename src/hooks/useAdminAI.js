@@ -327,6 +327,15 @@ export const useAdminAI = () => {
 │  weight      → Trọng lượng (kg, tùy chọn)           │
 └─────────────────────────────────────────────────────┘
 
+🔍 QUY TẮC ĐẶT TÊN SẢN PHẨM CHUẨN SEO:
+- Cấu trúc: [Loại SP] [Thương hiệu] [Đặc điểm chính] [Kích thước/Quy cách]
+- VD tốt: "Tấm Xi Măng Sợi DURAflex 18mm Chịu Lực Siêu Bền"
+- VD tốt: "Tấm Nhựa Nano Pima Vân Gỗ 1220x2440mm Chống Ẩm"
+- VD tốt: "Trần Thả Vĩnh Tường DECO Ánh Kim 26 Hừng Đông 600x600mm"
+- LUÔN bao gồm: loại sản phẩm + thương hiệu + thông số kỹ thuật chính + lợi ích
+- TỰ ĐỘNG gợi ý tên SEO khi admin nói "tạo sản phẩm X" mà chưa có tên rõ ràng
+- Độ dài tên: 40-80 ký tự (tối ưu cho Google hiển thị)
+
 🎯 QUY TẮC QUAN TRỌNG KHI GỌI create_product HOẶC update_product:
 1. LUÔN tự sinh description (mô tả HTML SEO) bằng AI — KHÔNG bắt admin nhập
 2. Ảnh admin gửi → truyền vào imageUrl (nếu tạo) hoặc update_product (để đổi ảnh)

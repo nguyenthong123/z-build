@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "prebuild": "node scripts/generate-seo-files.cjs",
+    "generate-seo": "node scripts/generate-seo-files.cjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
