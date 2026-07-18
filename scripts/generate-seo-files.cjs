@@ -92,13 +92,13 @@ function injectIntoIndexHTML(prods) {
   }).join('\n');
 
   const snippet = '<!-- Bot-readable product catalog (hidden from users) -->\n' +
-    '<noscript>\n' +
+    '<div data-seo="catalog" style="display:none">\n' +
     '<section >\n' +
     '<h1>Danh sách sản phẩm Zbuild - Vật liệu xây dựng</h1>\n' +
     '<p>Zbuild cung cấp ' + prods.length + ' sản phẩm vật liệu xây dựng: DURAflex, tấm PVC, tấm xi măng sợi, trần thả, gạch ốp lát và nhiều hơn nữa.</p>\n' +
     items + '\n' +
     '</section>\n' +
-    '</noscript>';
+    '</div>';
 
   html = html.replace('<!-- SEO_PRODUCTS -->', snippet);
   fs.writeFileSync(idxPath, html);
