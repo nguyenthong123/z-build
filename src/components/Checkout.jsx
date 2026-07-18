@@ -569,8 +569,21 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
             productId: item.productId || item.dunvexId || item.id,
             productName: item.name,
             qty: Number(item.quantity) || 1,
-            price: Number(item.price) || 0
+            price: Number(item.price) || 0,
+            variant: item.variant || '',
+            note: item.variant ? `K.thước: ${item.variant}` : ''
           }));
+
+          // Tổng hợp ghi chú kích thước từ tất cả sản phẩm
+          const variantNotes = finalOrderData.cartItems
+            .filter(item => item.variant)
+            .map(item => `${item.name}: ${item.variant}`)
+            .join(' | ');
+
+          const orderNote = [
+            `Đơn đặt từ web storefront, Mã đơn: ${orderNumber}`,
+            variantNotes ? `📏 Ghi chú kích thước: ${variantNotes}` : '',
+          ].filter(Boolean).join('\n');
 
           const webhookBody = {
             ownerId: openClawConfig.ownerId,
@@ -581,7 +594,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
             items: webhookItems,
             shippingFee: Number(shippingCost) || 0,
             orderDate: new Date().toISOString(),
-            note: `Đơn đặt từ web storefront, Mã đơn: ${orderNumber}`
+            note: orderNote
           };
 
           fetch(webhookUrl, {
