@@ -72,6 +72,40 @@ function genProductsJSON(prods) {
   console.log('Generated products.json with ' + feed.length + ' products');
 }
 
+
+function injectIntoIndexHTML(prods) {
+  const idxPath = path.join(__dirname, '..', 'index.html');
+  let html = fs.readFileSync(idxPath, 'utf8');
+
+  // Build product listing HTML (hidden from users, visible to bots)
+  const items = prods.map(p => {
+    const price = Number(p.discountPrice || p.price || 0);
+    const priceStr = price > 0 ? new Intl.NumberFormat('vi-VN').format(price) + ' VND' : 'Liên hệ';
+    const url = p.slug ? SITE_URL + '/product/' + p.slug : SITE_URL;
+    const desc = (p.description || p.shortDescription || '').replace(/<[^>]+>/g, '').substring(0, 200);
+    return '    <div>\n' +
+      '      <h2><a href="' + url + '">' + p.title.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</a></h2>\n' +
+      '      <p>' + desc.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>\n' +
+      '      <span>' + priceStr + '</span> | <span>' + (p.category || '') + '</span>\n' +
+      (p.specs ? '      <small>Quy cách: ' + p.specs.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</small>\n' : '') +
+      '    </div>';
+  }).join('\n');
+
+  const snippet = '<!-- Bot-readable product catalog (hidden from users) -->\n' +
+    '<noscript>\n' +
+    '<section style="display:none" aria-hidden="true">\n' +
+    '<h1>Danh sách sản phẩm Zbuild - Vật liệu xây dựng</h1>\n' +
+    '<p>Zbuild cung cấp ' + prods.length + ' sản phẩm vật liệu xây dựng: DURAflex, tấm PVC, tấm xi măng sợi, trần thả, gạch ốp lát và nhiều hơn nữa.</p>\n' +
+    items + '\n' +
+    '</section>\n' +
+    '</noscript>';
+
+  html = html.replace('<!-- SEO_PRODUCTS -->', snippet);
+  fs.writeFileSync(idxPath, html);
+  console.log('Injected ' + prods.length + ' products into index.html for bots');
+}
+
+
 (async () => {
   console.log('Fetching products from Firestore...');
   try {
@@ -79,6 +113,7 @@ function genProductsJSON(prods) {
     if (!fs.existsSync(OUT)) fs.mkdirSync(OUT, { recursive: true });
     genSitemap(prods);
     genProductsJSON(prods);
+    injectIntoIndexHTML(prods);
     const cats = [...new Set(prods.map(p => p.category).filter(Boolean))];
     console.log('Products: ' + prods.length + ' | Categories: ' + cats.length + ' | URLs: ' + (prods.length + cats.length + 4));
     console.log('Done!');
