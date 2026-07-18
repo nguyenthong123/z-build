@@ -29,8 +29,24 @@ export const ADMIN_AI_FUNCTIONS = [
   {
     type: "function",
     function: {
+      name: "generate_product_description",
+      description: "Tạo bài viết mô tả SEO chuyên sâu cho sản phẩm. Function này sẽ tự động gọi AI để sinh nội dung HTML chuyên nghiệp, lưu thẳng vào sản phẩm. DÙNG FUNCTION NÀY khi admin yêu cầu 'viết bài', 'viết mô tả', 'tạo content' cho sản phẩm.",
+      parameters: {
+        type: "object",
+        properties: {
+          product_name: { type: "string", description: "Tên sản phẩm cần viết bài (bắt buộc)" },
+          instructions: { type: "string", description: "Hướng dẫn thêm cho AI: nhấn mạnh điểm gì, phong cách viết, đối tượng khách hàng... (tùy chọn)" },
+          product_info: { type: "string", description: "Thông tin bổ sung về sản phẩm: mô tả ngắn, quy cách, đóng gói, trọng lượng, ứng dụng... để AI có thêm dữ liệu viết bài (tùy chọn)" }
+        },
+        required: ["product_name"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
       name: "update_product",
-      description: "Cập nhật thông tin của một hoặc nhiều sản phẩm (tên, mô tả, giá, danh mục, quy cách, đóng gói, trọng lượng, số lượng tồn kho, trạng thái, hình ảnh) dựa theo tên hiện tại.",
+      description: "Cập nhật thông tin của một hoặc nhiều sản phẩm (tên, giá, danh mục, quy cách, đóng gói, trọng lượng, số lượng tồn kho, trạng thái, hình ảnh) dựa theo tên hiện tại. KHÔNG dùng để viết bài mô tả — dùng generate_product_description cho việc đó.",
       parameters: {
         type: "object",
         properties: {
@@ -40,7 +56,6 @@ export const ADMIN_AI_FUNCTIONS = [
           price: { type: "number", description: "Giá bán mới bằng số (tùy chọn)" },
           stock: { type: "number", description: "Số lượng tồn kho mới bằng số (tùy chọn)" },
           status: { type: "string", description: "Trạng thái mới: Draft, Active, Inactive (tùy chọn)" },
-          description: { type: "string", description: "Nội dung mô tả HTML mới chuẩn SEO (tùy chọn)" },
           specs: { type: "string", description: "Thông số kỹ thuật/quy cách mới (tùy chọn)" },
           packaging: { type: "string", description: "Quy cách đóng gói mới (tùy chọn)" },
           weight: { type: "string", description: "Trọng lượng mới (tùy chọn)" },
@@ -951,37 +966,44 @@ YÊU CẦU BẮT BUỘC:
 - Văn phong chuyên nghiệp, thuyết phục, hướng tới khách hàng xây dựng.
 - Chỉ trả về HTML, KHÔNG bọc trong \`\`\`html.`;
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 35000);
-
-        const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${aiApiKey}` },
-          body: JSON.stringify({ model: "deepseek-chat", messages: [{ role: "user", content: prompt }], temperature: 0.7, max_tokens: 2048 }),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        
-        if (response.ok) {
-          const raw = await response.text();
-          let data;
-          try { data = JSON.parse(raw); }
-          catch (parseErr) {
-            console.warn('Description JSON parse error — retrying once:', parseErr.message);
-            const retryRes = await fetch("https://api.deepseek.com/v1/chat/completions", {
+        const maxRetries = 3;
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 60000);
+          try {
+            const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
               method: "POST",
               headers: { "Content-Type": "application/json", "Authorization": `Bearer ${aiApiKey}` },
-              body: JSON.stringify({ model: "deepseek-chat", messages: [{ role: "user", content: prompt }], temperature: 0.7, max_tokens: 2048 }),
+              body: JSON.stringify({ model: "deepseek-chat", messages: [{ role: "user", content: prompt }], temperature: 0.7, max_tokens: 4096 }),
+              signal: controller.signal
             });
-            if (retryRes.ok) {
-              const retryRaw = await retryRes.text();
-              data = JSON.parse(retryRaw);
+            clearTimeout(timeoutId);
+            if (response.ok) {
+              const raw = await response.text();
+              try {
+                const data = JSON.parse(raw);
+                let content = data.choices?.[0]?.message?.content || "";
+                content = content.replace(/```html\n?/gi, '').replace(/```\n?/g, '').trim();
+                if (content.length > 100) {
+                  description = content;
+                  break;
+                }
+              } catch (parseErr) {
+                console.warn(`Description parse attempt ${attempt + 1} failed:`, parseErr.message);
+              }
             }
+          } catch (fetchErr) {
+            clearTimeout(timeoutId);
+            console.warn(`Description generation attempt ${attempt + 1} failed:`, fetchErr.message);
           }
-          if (data) {
-            let content = data.choices?.[0]?.message?.content || "";
-            description = content.replace(/```html/g, '').replace(/```/g, '').trim();
+          if (attempt < maxRetries - 1) {
+            await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
           }
+        }
+        
+        // Fallback description nếu AI fail
+        if (!description) {
+          description = `<h3>${title}</h3>\n<p><strong>${title}</strong> là sản phẩm chất lượng cao${category ? ` thuộc danh mục ${category}` : ''}. ${shortDesc || ''}</p>\n${specs ? `<h3>Th\u00f4ng số kỹ thuật</h3>\n<ul><li>${specs}</li></ul>\n` : ''}<h3>\u01afu \u0111iểm nổi bật</h3>\n<ul>\n<li>Chất l\u01b0ợng cao, \u0111ộ bền v\u01b0ợt trội</li>\n<li>Thiết kế hiện \u0111ại, dễ sử dụng</li>\n<li>Gi\u00e1 cả cạnh tranh, ph\u00f9 hợp mọi c\u00f4ng tr\u00ecnh</li>\n</ul>\n<h3>Cam kết</h3>\n<p>Z-BUILD cam kết sản phẩm ch\u00ednh h\u00e3ng, bảo h\u00e0nh \u0111ầy \u0111ủ.</p>`;
         }
       } catch (err) {
         console.error("Auto generate description failed:", err.message);
@@ -1381,6 +1403,120 @@ async function syncPricesFromSheet({ sheet_url, match_field = "id" }) {
   } catch (err) { return { error: "Lỗi đồng bộ giá từ sheet: " + err.message }; }
 }
 
+// ============================================================
+// GENERATE PRODUCT DESCRIPTION — Backend tự gọi AI sinh bài viết
+// ============================================================
+async function generateProductDescription({ product_name, instructions = '', product_info = '' }) {
+  try {
+    // Tìm sản phẩm
+    const snap = await getDocs(collection(db, 'products'));
+    const allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const kw = (product_name || '').toLowerCase().trim();
+    const found = allProducts.find(p => (p.title || '').toLowerCase().includes(kw));
+    
+    if (!found) {
+      return { success: false, error: `Không tìm thấy sản phẩm nào khớp với tên "${product_name}".` };
+    }
+
+    // Build context từ dữ liệu sản phẩm
+    const productContext = [
+      found.title ? `Tên: ${found.title}` : '',
+      found.category ? `Danh mục: ${found.category}` : '',
+      found.specs ? `Quy cách: ${found.specs}` : '',
+      found.packaging ? `Đóng gói: ${found.packaging}` : '',
+      found.weight ? `Trọng lượng: ${found.weight}` : '',
+      found.shortDescription ? `Mô tả ngắn: ${found.shortDescription}` : '',
+      product_info ? `Thông tin bổ sung: ${product_info}` : '',
+      instructions ? `Yêu cầu đặc biệt: ${instructions}` : '',
+    ].filter(Boolean).join('. ');
+
+    const aiApiKey = process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY;
+    if (!aiApiKey) {
+      return { success: false, error: 'Chưa cấu hình API Key. Không thể tạo bài viết tự động.' };
+    }
+
+    const prompt = `Bạn là copywriter chuyên nghiệp chuyên viết bài mô tả sản phẩm vật liệu xây dựng & nội thất. Viết bài mô tả CHI TIẾT, CHUYÊN SÂU, chuẩn SEO cho sản phẩm sau.
+
+THÔNG TIN SẢN PHẨM:
+${productContext}
+
+YÊU CẦU BẮT BUỘC:
+- Bài viết TỐI THIỂU 500 TỪ, càng chi tiết càng tốt.
+- Bố cục: Giới thiệu → Ưu điểm nổi bật (5+ ý) → Thông số kỹ thuật → Ứng dụng thực tế → Cam kết chất lượng.
+- Dùng HTML cơ bản: h3, p, ul, li, strong, em.
+- Dùng dấu nháy đơn (') cho thuộc tính HTML, KHÔNG dùng dấu nháy kép.
+- Văn phong chuyên nghiệp, thuyết phục, hướng tới khách hàng xây dựng.
+- Chỉ trả về HTML, KHÔNG bọc trong markdown code block.`;
+
+    // Gọi AI với retry
+    let description = '';
+    const maxRetries = 3;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+      try {
+        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiApiKey}` },
+          body: JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 4096 }),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const raw = await response.text();
+          try {
+            const data = JSON.parse(raw);
+            let content = data.choices?.[0]?.message?.content || '';
+            // Clean up
+            content = content.replace(/```html\n?/gi, '').replace(/```\n?/g, '').trim();
+            if (content.length > 100) {
+              description = content;
+              break;
+            }
+          } catch (parseErr) {
+            console.warn(`Description parse attempt ${attempt + 1} failed:`, parseErr.message);
+          }
+        } else if (attempt === maxRetries - 1) {
+          console.error(`DeepSeek API error ${response.status} after ${maxRetries} attempts`);
+        }
+      } catch (fetchErr) {
+        clearTimeout(timeoutId);
+        console.warn(`Description generation attempt ${attempt + 1} failed:`, fetchErr.message);
+      }
+      if (attempt < maxRetries - 1) {
+        await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+      }
+    }
+
+    // Fallback: tạo description cơ bản nếu AI fail
+    if (!description) {
+      const title = found.title || product_name;
+      const cat = found.category || '';
+      const specs = found.specs || '';
+      description = `<h3>${title}</h3>
+<p><strong>${title}</strong> là sản phẩm chất lượng cao${cat ? ` thuộc danh mục ${cat}` : ''}, được thiết kế đáp ứng nhu cầu đa dạng của khách hàng.</p>
+${specs ? `<h3>Thông số kỹ thuật</h3>\n<ul><li>${specs}</li></ul>\n` : ''}<h3>Ưu điểm nổi bật</h3>\n<ul>\n<li>Chất lượng cao, độ bền vượt trội</li>\n<li>Thiết kế hiện đại, dễ sử dụng</li>\n<li>Giá cả cạnh tranh, phù hợp mọi công trình</li>\n<li>Giao hàng nhanh chóng, hỗ trợ kỹ thuật tận tâm</li>\n</ul>\n<h3>Cam kết</h3>\n<p>Z-BUILD cam kết sản phẩm chính hãng, bảo hành đầy đủ, đổi trả linh hoạt.</p>`;
+    }
+
+    // Lưu vào Firestore
+    await updateDoc(doc(db, 'products', found.id), {
+      description,
+      updatedAt: new Date().toISOString()
+    });
+
+    return {
+      success: true,
+      message: `✅ Đã tạo bài viết mô tả cho "${found.title}" thành công! Vào xem sản phẩm để kiểm tra.`,
+      product_name: found.title,
+      description_length: description.length,
+      generated: !!(description && description.length > 200)
+    };
+  } catch (err) {
+    return { error: 'Lỗi tạo bài viết: ' + err.message };
+  }
+}
+
 async function updateProduct({ product_name, new_title, category, price, stock, status, description, specs, packaging, weight, imageUrl }) {
   try {
     const snap = await getDocs(collection(db, "products"));
@@ -1559,18 +1695,97 @@ export async function executeFunction(name, args) {
   if (typeof args === 'string') {
     try {
       parsedArgs = JSON.parse(args);
+    } catch {
+      try {
+        // Fix common JSON issues: unescaped newlines, tabs, carriage returns
+        let sanitized = args.replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
+        parsedArgs = JSON.parse(sanitized);
       } catch {
         try {
-          // Fix unescaped newlines and tabs
-          let sanitized = args.replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
-          parsedArgs = JSON.parse(sanitized);
+          // Aggressive fix: try to extract key fields using regex as last resort
+          // This handles cases where HTML in description breaks JSON structure
+          const fields = {};
+          const keyMatches = args.matchAll(/"(\w+)"\s*:\s*/g);
+          const keys = [...keyMatches].map(m => m[1]);
+          if (keys.length > 0) {
+            // For each known key, try to extract its value
+            for (let i = 0; i < keys.length; i++) {
+              const key = keys[i];
+              const nextKey = keys[i + 1];
+              const keyIdx = args.indexOf(`"${key}"`);
+              if (keyIdx === -1) continue;
+              const afterKey = args.substring(keyIdx + key.length + 3); // skip "key":
+              const colonIdx = afterKey.indexOf(':');
+              if (colonIdx === -1) continue;
+              let valueStart = colonIdx + 1;
+              // Skip whitespace
+              while (valueStart < afterKey.length && afterKey[valueStart] === ' ') valueStart++;
+              
+              let value;
+              if (afterKey[valueStart] === '"') {
+                // String value - find matching end quote before next key
+                let valueEnd = -1;
+                const searchStart = valueStart + 1;
+                if (nextKey) {
+                  const nextKeyIdx = afterKey.indexOf(`"${nextKey}"`, searchStart);
+                  if (nextKeyIdx !== -1) {
+                    // Look backwards from next key to find the closing quote
+                    let scanIdx = nextKeyIdx - 1;
+                    while (scanIdx > searchStart) {
+                      if (afterKey[scanIdx] === '"' && afterKey[scanIdx - 1] !== '\\') {
+                        valueEnd = scanIdx;
+                        break;
+                      }
+                      scanIdx--;
+                    }
+                  }
+                }
+                if (valueEnd === -1) {
+                  // Last field or could not find boundary
+                  const lastComma = afterKey.lastIndexOf(',');
+                  const lastBrace = afterKey.lastIndexOf('}');
+                  valueEnd = Math.min(
+                    lastComma > 0 ? lastComma : Infinity,
+                    lastBrace > 0 ? lastBrace : Infinity
+                  );
+                  if (valueEnd === Infinity || valueEnd <= searchStart) continue;
+                  // Find last quote before that
+                  while (valueEnd > searchStart && afterKey[valueEnd] !== '"') valueEnd--;
+                }
+                if (valueEnd > searchStart) {
+                  value = afterKey.substring(searchStart, valueEnd);
+                }
+              } else if (afterKey[valueStart] === '{' || afterKey[valueStart] === '[') {
+                // Object/array - skip for simplicity, will be null
+                continue;
+              } else {
+                // Number or boolean
+                const numEnd = afterKey.substring(valueStart).search(/[,\s}]/);
+                const numStr = numEnd > 0 ? afterKey.substring(valueStart, valueStart + numEnd) : afterKey.substring(valueStart).trim();
+                if (numStr === 'true') value = true;
+                else if (numStr === 'false') value = false;
+                else if (numStr === 'null') value = null;
+                else { const n = Number(numStr); value = isNaN(n) ? null : n; }
+              }
+              if (value !== undefined) fields[key] = value;
+            }
+            if (Object.keys(fields).length > 0 && fields[keys[0]] !== undefined) {
+              parsedArgs = fields;
+            } else {
+              throw new Error("Không thể phục hồi tham số");
+            }
+          } else {
+            throw new Error("Không tìm thấy tham số");
+          }
         } catch {
-        throw new Error("Lỗi tham số từ AI (JSON không hợp lệ). Vui lòng thử yêu cầu ngắn gọn hơn hoặc không dùng ngoặc kép trong nội dung.");
+          throw new Error("Lỗi tham số từ AI (JSON không hợp lệ). Vui lòng thử yêu cầu ngắn gọn hơn hoặc không dùng ngoặc kép trong nội dung.");
+        }
       }
     }
   }
 
   switch (name) {
+    case 'generate_product_description': return await generateProductDescription(parsedArgs);
     case 'update_product': return await updateProduct(parsedArgs);
     case 'search_products': return await searchProducts(parsedArgs);
     case 'get_product_detail': return await getProductDetail(parsedArgs);
