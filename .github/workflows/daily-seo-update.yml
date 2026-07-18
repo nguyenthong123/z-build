@@ -31,9 +31,11 @@ jobs:
           git config user.name "SEO Bot"
           git config user.email "bot@zbuild.click"
           git add public/sitemap.xml public/products.json
+          echo "Staged files:"
+          git diff --cached --stat
           if git diff --cached --quiet; then
             echo "No changes to SEO files"
           else
             git commit -m "chore: auto-update sitemap & products feed"
-            git push
+            git push origin main
           fi
