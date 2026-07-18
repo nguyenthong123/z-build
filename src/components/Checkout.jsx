@@ -429,8 +429,8 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
       let finalOrderData = null;
 
       await runTransaction(db, async (transaction) => {
-        // 1. Read all products
-        const productRefs = cartItems.map(item => doc(db, 'products', item.id));
+        // 1. Read all products (dùng productId cho cart mới, fallback id cho cart cũ)
+        const productRefs = cartItems.map(item => doc(db, 'products', item.productId || item.id));
         const productSnaps = await Promise.all(productRefs.map(ref => transaction.get(ref)));
         
         // Read coupon if applied
@@ -566,7 +566,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
           const webhookUrl = `${base}/api/order-webhook`;
 
           const webhookItems = finalOrderData.cartItems.map(item => ({
-            productId: item.dunvexId || item.id,
+            productId: item.productId || item.dunvexId || item.id,
             productName: item.name,
             qty: Number(item.quantity) || 1,
             price: Number(item.price) || 0

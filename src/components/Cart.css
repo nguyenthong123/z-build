@@ -84,6 +84,44 @@
   color: var(--text-muted);
 }
 
+.item-size-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.size-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.size-field {
+  flex: 1;
+  min-width: 120px;
+  max-width: 200px;
+  padding: 6px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  transition: border-color 0.2s;
+  background: #fff;
+}
+
+.size-field:focus {
+  outline: none;
+  border-color: var(--primary, #3b82f6);
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.1);
+}
+
+.size-field::placeholder {
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
 .item-price, .item-total {
   font-weight: 600;
   font-size: 1.1rem;

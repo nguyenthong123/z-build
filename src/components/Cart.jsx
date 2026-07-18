@@ -3,7 +3,7 @@ import { db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import './Cart.css';
 
-const CartItemRow = ({ item, updateQuantity, removeItem }) => {
+const CartItemRow = ({ item, updateQuantity, updateVariant, removeItem }) => {
   const [inputValue, setInputValue] = useState(String(item.quantity).replace('.', ','));
 
   useEffect(() => {
@@ -44,7 +44,20 @@ const CartItemRow = ({ item, updateQuantity, removeItem }) => {
         </div>
         <div className="item-info">
           <h3>{item.name}</h3>
-          <span className="item-variant">{item.variant}</span>
+          <span className="item-variant">{item.variant || item.specs || ''}</span>
+          
+          {/* Ô nhập kích thước / mét dài / mét vuông */}
+          <div className="item-size-input">
+            <span className="size-label">K.thước / Mét:</span>
+            <input
+              type="text"
+              className="size-field"
+              placeholder={item.unit ? `Nhập số ${item.unit}` : 'VD: 2.5m, 3m²...'}
+              value={item.variant || ''}
+              onChange={(e) => updateVariant(item.id, e.target.value)}
+            />
+          </div>
+          
           {/* Mobile Price */}
           <span className="item-price-mobile">{Number(item.price).toLocaleString('vi-VN')}₫</span>
           
@@ -102,7 +115,7 @@ const CartItemRow = ({ item, updateQuantity, removeItem }) => {
   );
 };
 
-const Cart = ({ onBack, onCheckout, cartItems, updateQuantity, removeItem, clearCart }) => {
+const Cart = ({ onBack, onCheckout, cartItems, updateQuantity, updateVariant, removeItem, clearCart }) => {
   const clearAll = () => {
     if(window.confirm('Xóa tất cả sản phẩm khỏi giỏ hàng?')) {
       clearCart();
@@ -178,7 +191,8 @@ const Cart = ({ onBack, onCheckout, cartItems, updateQuantity, removeItem, clear
                 <CartItemRow 
                   key={item.id} 
                   item={item} 
-                  updateQuantity={updateQuantity} 
+                  updateQuantity={updateQuantity}
+                  updateVariant={updateVariant}
                   removeItem={removeItem} 
                 />
               ))}

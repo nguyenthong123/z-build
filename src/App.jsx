@@ -240,6 +240,12 @@ function App() {
     setCartItems(prev => prev.filter(item => item.id !== id));
   };
 
+  const updateVariant = (id, variant) => {
+    setCartItems(prev => prev.map(item =>
+      item.id === id ? { ...item, variant } : item
+    ));
+  };
+
   const { addToast } = useToast();
   const { syncWithUser, wishlistCount } = useWishlist();
 
@@ -256,20 +262,22 @@ function App() {
           items.forEach(item => {
             const product = item.product;
             const quantity = item.quantity;
-            const existingItem = next.find(i => i.id === product.id);
-            if (existingItem) {
-              next = next.map(i => i.id === product.id ? { ...i, quantity: i.quantity + quantity, weight: i.weight || parseFloat(product.weight) || 0 } : i);
-            } else {
-              next.push({
-                id: product.id,
-                name: product.title || product.name,
-                price: product.discountPrice || product.basePrice || product.price,
-                quantity: quantity,
-                image: product.image || product.img,
-                weight: parseFloat(product.weight) || 0,
-                variant: 'Default'
-              });
-            }
+            // AI batch add: cũng tạo dòng riêng cho mỗi lần thêm
+            const cartItemId = `${product.id}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+            next.push({
+              id: cartItemId,
+              productId: product.id,
+              dunvexId: product.dunvexId,
+              name: product.title || product.name,
+              price: product.discountPrice || product.basePrice || product.price,
+              quantity: quantity,
+              image: product.image || product.img,
+              weight: parseFloat(product.weight) || 0,
+              category: product.category || '',
+              specs: product.specs || '',
+              unit: product.unit || '',
+              variant: ''
+            });
           });
           return next;
         });
@@ -281,23 +289,26 @@ function App() {
   }, [addToast]);
 
   const handleAddToCart = (product, quantity = 1) => {
-    setCartItems(prev => {
-      const existingItem = prev.find(item => item.id === product.id);
-      if (existingItem) {
-        return prev.map(item => 
-          item.id === product.id ? { ...item, quantity: item.quantity + quantity, weight: item.weight || parseFloat(product.weight) || 0 } : item
-        );
-      }
-      return [...prev, {
-        id: product.id,
+    // Vật liệu xây dựng bán theo mét dài/mét vuông:
+    // Mỗi lần thêm cùng 1 SP → tạo dòng riêng để nhập kích thước khác nhau
+    const cartItemId = `${product.id}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    setCartItems(prev => [
+      ...prev,
+      {
+        id: cartItemId,
+        productId: product.id,
+        dunvexId: product.dunvexId,
         name: product.title || product.name,
         price: product.discountPrice || product.basePrice || product.price,
         quantity: quantity,
         image: product.image || product.img,
         weight: parseFloat(product.weight) || 0,
-        variant: 'Default'
-      }];
-    });
+        category: product.category || '',
+        specs: product.specs || '',
+        unit: product.unit || '',
+        variant: ''
+      }
+    ]);
     addToast(`Đã thêm ${product.title || product.name} vào giỏ hàng`, 'success');
   };
 
@@ -446,6 +457,7 @@ function App() {
               onCheckout={() => user ? navigate('/checkout') : handleLoginRequired('/checkout')} 
               cartItems={cartItems}
               updateQuantity={updateQuantity}
+              updateVariant={updateVariant}
               removeItem={removeItem}
               clearCart={clearCart}
             />
