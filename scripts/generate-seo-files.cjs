@@ -100,7 +100,8 @@ function injectIntoIndexHTML(prods) {
     '</section>\n' +
     '</div>';
 
-  html = html.replace('<!-- SEO_PRODUCTS -->', snippet);
+  const re = /<!-- SEO_START -->[\s\S]*<!-- SEO_END -->/;
+  html = html.replace(re, '<!-- SEO_START -->\n' + snippet + '\n    <!-- SEO_END -->');
   fs.writeFileSync(idxPath, html);
   console.log('Injected ' + prods.length + ' products into index.html for bots');
 }
