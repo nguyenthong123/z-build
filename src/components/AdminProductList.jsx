@@ -45,7 +45,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
         const config = data.openClawConfig;
         
         // Chỉ tự động nếu có config Dunvex
-        if (!config?.apiUrl || !(config?.apiKey || config?.botApiKey) || !config?.ownerId) return;
+        if (!config?.apiUrl || !(config?.dunvexApiKey || config?.apiKey || config?.botApiKey) || !config?.ownerId) return;
         
         const now = Date.now();
         const oneDayMs = 24 * 60 * 60 * 1000;
@@ -63,7 +63,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
 
             const response = await fetch(productsUrl, {
               method: 'GET',
-              headers: { 'x-api-key': config.apiKey || config.botApiKey, 'x-owner-id': config.ownerId }
+              headers: { 'x-api-key': config.dunvexApiKey || config.apiKey || config.botApiKey, 'x-owner-id': config.ownerId }
             });
 
             if (response.ok) {
@@ -150,7 +150,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
       return null;
     }
     const config = docSnap.data().openClawConfig;
-    if (!config.apiUrl || !(config.apiKey || config.botApiKey) || !config.ownerId) {
+    if (!config.apiUrl || !(config.dunvexApiKey || config.apiKey || config.botApiKey) || !config.ownerId) {
       alert("Vui lòng cấu hình đầy đủ API Endpoint, API Key và Owner ID của Dunvex trong Admin Settings!");
       return null;
     }
@@ -160,7 +160,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
     try {
       const response = await fetch(productsUrl, {
         method: 'GET',
-        headers: { 'x-api-key': config.apiKey || config.botApiKey, 'x-owner-id': config.ownerId }
+        headers: { 'x-api-key': config.dunvexApiKey || config.apiKey || config.botApiKey, 'x-owner-id': config.ownerId }
       });
       if (!response.ok) throw new Error(`Server returned status ${response.status}`);
       const data = await response.json();

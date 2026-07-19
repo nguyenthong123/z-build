@@ -16,7 +16,7 @@ export async function syncCustomerToDunvex({ name, email, phone, address }) {
     }
 
     const config = docSnap.data().openClawConfig;
-    if (!config.apiUrl || (!config.apiKey && !config.botApiKey) || !config.ownerId) {
+    if (!config.apiUrl || (!config.dunvexApiKey && !config.apiKey && !config.botApiKey) || !config.ownerId) {
       console.warn("Dunvex sync skipped: Incomplete config");
       return { success: false, message: "Incomplete config" };
     }
@@ -29,7 +29,7 @@ export async function syncCustomerToDunvex({ name, email, phone, address }) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': config.apiKey || config.botApiKey,
+        'x-api-key': config.dunvexApiKey || config.apiKey || config.botApiKey,
         'x-owner-id': config.ownerId
       },
       body: JSON.stringify({
