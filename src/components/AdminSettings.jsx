@@ -108,7 +108,13 @@ const AdminSettings = () => {
         }
 
         if (docSnap.exists() && docSnap.data().openClawConfig) {
-          setOpenClawConfig(docSnap.data().openClawConfig);
+          const raw = docSnap.data().openClawConfig;
+          setOpenClawConfig({
+            apiUrl: raw.apiUrl || '',
+            apiKey: raw.apiKey || raw.botApiKey || '',
+            webhookSecret: raw.webhookSecret || '',
+            ownerId: raw.ownerId || ''
+          });
         } else {
           setOpenClawConfig({ 
             apiUrl: process.env.NEXT_PUBLIC_OPENCLAW_API_URL || 'http://localhost:8000/chat',

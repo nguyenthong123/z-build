@@ -77,35 +77,48 @@ function injectIntoIndexHTML(prods) {
   const idxPath = path.join(__dirname, '..', 'index.html');
   let html = fs.readFileSync(idxPath, 'utf8');
 
-  // Build product listing HTML (hidden from users, visible to bots)
+  // Build product listing (visible to bots, auto-hidden when React mounts)
   const items = prods.map(p => {
     const price = Number(p.discountPrice || p.price || 0);
     const priceStr = price > 0 ? new Intl.NumberFormat('vi-VN').format(price) + ' VND' : 'Liên hệ';
     const url = p.slug ? SITE_URL + '/product/' + p.slug : SITE_URL;
     const desc = (p.description || p.shortDescription || '').replace(/<[^>]+>/g, '').substring(0, 200);
     return '    <div>\n' +
-      '      <h2><a href="' + url + '">' + p.title.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</a></h2>\n' +
-      '      <p>' + desc.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>\n' +
+      '      <h2><a href="' + url + '">' + esc(p.title) + '</a></h2>\n' +
+      '      <p>' + esc(desc) + '</p>\n' +
       '      <span>' + priceStr + '</span> | <span>' + (p.category || '') + '</span>\n' +
-      (p.specs ? '      <small>Quy cách: ' + p.specs.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</small>\n' : '') +
+      (p.specs ? '      <small>Quy cách: ' + esc(p.specs) + '</small>\n' : '') +
       '    </div>';
   }).join('\n');
 
-  const snippet = '<!-- Bot-readable product catalog (hidden from users) -->\n' +
-    '<div data-seo="catalog" style="display:none">\n' +
-    '<section >\n' +
+  const snippet = '<!-- SEO fallback: hidden when React mounts -->\n' +
+    '<script>\n' +
+    '  (function(){\n' +
+    '    var t=setInterval(function(){\n' +
+    '      if(document.getElementById("root").innerHTML.trim().length>50){\n' +
+    '        var f=document.getElementById("seo-fallback");\n' +
+    '        if(f)f.style.display="none";clearInterval(t);\n' +
+    '      }\n' +
+    '    },100);\n' +
+    '    setTimeout(function(){clearInterval(t)},8000);\n' +
+    '  })();\n' +
+    '</' + 'script>\n' +
+    '<section id="seo-fallback">\n' +
     '<h1>Danh sách sản phẩm Zbuild - Vật liệu xây dựng</h1>\n' +
-    '<p>Zbuild cung cấp ' + prods.length + ' sản phẩm vật liệu xây dựng: DURAflex, tấm PVC, tấm xi măng sợi, trần thả, gạch ốp lát và nhiều hơn nữa.</p>\n' +
+    '<p>Zbuild cung cấp ' + prods.length + ' sản phẩm vật liệu xây dựng: Duraflex, tấm PVC, tấm xi măng sợi, trần thả, gạch ốp lát và nhiều hơn nữa.</p>\n' +
     items + '\n' +
-    '</section>\n' +
-    '</div>';
+    '</section>';
 
   const re = /<!-- SEO_START -->[\s\S]*<!-- SEO_END -->/;
   html = html.replace(re, '<!-- SEO_START -->\n' + snippet + '\n    <!-- SEO_END -->');
+
   fs.writeFileSync(idxPath, html);
   console.log('Injected ' + prods.length + ' products into index.html for bots');
 }
 
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
 (async () => {
   console.log('Fetching products from Firestore...');

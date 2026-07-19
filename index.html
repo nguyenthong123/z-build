@@ -91,11 +91,21 @@
   <body>
     <div id="root"></div>
     <!-- SEO_START -->
-<!-- Bot-readable product catalog (hidden from users) -->
-<div data-seo="catalog" style="display:none">
-<section >
+<!-- SEO fallback: hidden when React mounts -->
+<script>
+  (function(){
+    var t=setInterval(function(){
+      if(document.getElementById("root").innerHTML.trim().length>50){
+        var f=document.getElementById("seo-fallback");
+        if(f)f.style.display="none";clearInterval(t);
+      }
+    },100);
+    setTimeout(function(){clearInterval(t)},8000);
+  })();
+</script>
+<section id="seo-fallback">
 <h1>Danh sách sản phẩm Zbuild - Vật liệu xây dựng</h1>
-<p>Zbuild cung cấp 298 sản phẩm vật liệu xây dựng: DURAflex, tấm PVC, tấm xi măng sợi, trần thả, gạch ốp lát và nhiều hơn nữa.</p>
+<p>Zbuild cung cấp 300 sản phẩm vật liệu xây dựng: Duraflex, tấm PVC, tấm xi măng sợi, trần thả, gạch ốp lát và nhiều hơn nữa.</p>
     <div>
       <h2><a href="https://zbuild.click/product/goc-don-go-tron-cai">GÓC ĐƠN - GỖ TRƠN - (CÁI)</a></h2>
       <p></p>
@@ -121,6 +131,18 @@ Trong lĩnh vực hoàn thiện nội thất và vật liệu xây dựng hiện
 Nẹp Kết Thúc PIMA mã 11 là phụ kiện không thể thiếu trong bộ giải pháp thi công tấm ốp nhựa Nano và Lam sóng PIMA. Với thiết kế tin</p>
       <span>29.283 VND</span> | <span>Nhựa và Phụ kiện tấm nhựa - giá tại kho</span>
       <small>Quy cách: dài 3m</small>
+    </div>
+    <div>
+      <h2><a href="https://zbuild.click/product/phao-co-tran-ps-8-cm-mau-go-do-nhat-luoi-ma-vang">phào cổ trần ps 8 cm  màu gỗ đỏ nhạt lưới mạ vàng</a></h2>
+      <p></p>
+      <span>75.558 VND</span> | <span>phào chỉ ps</span>
+      <small>Quy cách: dài 2m9</small>
+    </div>
+    <div>
+      <h2><a href="https://zbuild.click/product/phao-can-ps-mau-go-nhat-dat-vang">phào cân ps màu gỗ nhạt dát vàng</a></h2>
+      <p></p>
+      <span>27.411 VND</span> | <span>phào chỉ ps</span>
+      <small>Quy cách: dài 2m9</small>
     </div>
     <div>
       <h2><a href="https://zbuild.click/product/luc-giac-trang-dat-vang">LỤC GIÁC TRẮNG DÁT VÀNG</a></h2>
@@ -195,7 +217,7 @@ Trong thi công xây dựng và thiết kế nội ngoại thất hiện đại,
     <div>
       <h2><a href="https://zbuild.click/product/3-song-thap-pima-ma-17-tam">3 SÓNG THẤP PIMA - mã 17 (TẤM)</a></h2>
       <p>Lam&amp;nbsp;3&amp;nbsp;Sóng&amp;nbsp;Thấp&amp;nbsp;PIMA&amp;nbsp;mã&amp;nbsp;17&amp;nbsp;-&amp;nbsp;Điểm&amp;nbsp;nhấn&amp;nbsp;không&amp;nbsp;gian&amp;nbsp;3D&amp;nbsp;hiện&amp;nbsp;đạiLam&amp;nbsp;3&amp;nbsp;Sóng&amp;nbsp;Thấp&amp;nbsp;PIMA&amp;nbsp;mã&amp;nbsp;17&amp;nbsp;là&amp;nbsp</p>
-      <span>90.979 VND</span> | <span>Nhựa và Phụ kiện t��m nhựa - giá tại kho</span>
+      <span>90.979 VND</span> | <span>Nhựa và Phụ kiện tấm nhựa - giá tại kho</span>
       <small>Quy cách: 210x3m</small>
     </div>
     <div>
@@ -203,12 +225,6 @@ Trong thi công xây dựng và thiết kế nội ngoại thất hiện đại,
       <p></p>
       <span>128.836 VND</span> | <span>tôn sắt - klp</span>
       <small>Quy cách: Ø27</small>
-    </div>
-    <div>
-      <h2><a href="https://zbuild.click/product/hoa-goc-trang-tri-do-nho-cai">HOA GÓC TRANG TRÍ ĐỎ NHỎ - (CÁI)</a></h2>
-      <p></p>
-      <span>119.769 VND</span> | <span>Nhựa và Phụ kiện tấm nhựa - giá tại kho</span>
-      <small>Quy cách: dài 3m</small>
     </div>
     <div>
       <h2><a href="https://zbuild.click/product/can-trang-dat-vang">CÂN TRẮNG DÁT VÀNG</a></h2>
@@ -473,9 +489,10 @@ Tấm DURAflex 15.0mm 1220x2440 là sản phẩm tấm xi măng sợi cellulose 
     </div>
     <div>
       <h2><a href="https://zbuild.click/product/thanh-lam-hop-kim-zuno-3-song-thap">thanh lam hợp kim zuno 3 sóng thấp</a></h2>
-      <p></p>
+      <p>Giới Thiệu Sản Phẩm Thanh Lam Hợp Kim Zuno 3 Sóng Thấp
+Trong bối cảnh thị trường vật liệu xây dựng ngày càng đa dạng, việc tìm kiếm một giải pháp ốp trần và vách ngoại thất vừa đảm bảo tính thẩm mỹ ca</p>
       <span>66.000 VND</span> | <span>tấm ốp kim loại</span>
-      <small>Quy cách: cao 8 x rộng 203 mm x dài theo yêu cầu</small>
+      <small>Quy cách: Cao 8mm x Rộng 213mm (hiệu dụng 203mm) x Dài theo yêu cầu | 3 sóng bản lớn, mỗi sóng 61mm, rãnh âm 10mm</small>
     </div>
     <div>
       <h2><a href="https://zbuild.click/product/tam-op-panel-kim-loai-02">tấm ốp panel kim loại 02</a></h2>
@@ -641,7 +658,7 @@ Mang vẻ đẹp quý phái của ngọc lục bảo, tấm trần thả ánh ki
     <div>
       <h2><a href="https://zbuild.click/product/ss-ma-kem-e161-mau-trang-mo-25ml-lon">S.S MẠ KẼM - E161 - MÀU TRẮNG MỜ (2.5ML) (LON)</a></h2>
       <p>Sơn Sắt Mạ Kẽm INDU - Màu Trắng Mờ E161 (2.5ML): Giải Pháp Bảo Vệ Và Trang Trí Kim Loại Toàn Diện
-Trong thi công xây dựng và thiết kế nội ngoại th��t hiện đại, các vật liệu kim loại như sắt mạ kẽm, nh</p>
+Trong thi công xây dựng và thiết kế nội ngoại thất hiện đại, các vật liệu kim loại như sắt mạ kẽm, nhô</p>
       <span>369.983 VND</span> | <span>Sơn sắt- giá tại kho</span>
       <small>Quy cách: lon 2,5ml</small>
     </div>
@@ -653,7 +670,7 @@ Trong thi công xây dựng và thiết kế nội ngoại thất hiện đại,
       <small>Quy cách: lon 800 ml</small>
     </div>
     <div>
-      <h2><a href="https://zbuild.click/product/ss-ma-kem-e363-mau-xingfa-den-25ml-lon">S.S MẠ KẼM-E363-MÀU XINGFA ĐEN (2.5ML) (LON)</a></h2>
+      <h2><a href="https://zbuild.click/product/ss-ma-kem-e363-mau-xingfa-den-25ml-lon">S.S M�� KẼM-E363-MÀU XINGFA ĐEN (2.5ML) (LON)</a></h2>
       <p>Sơn&amp;nbsp;Sắt&amp;nbsp;Mạ&amp;nbsp;Kẽm&amp;nbsp;INDU&amp;nbsp;-&amp;nbsp;Màu&amp;nbsp;Xingfa&amp;nbsp;Đen&amp;nbsp;E363&amp;nbsp;(2.5ML):&amp;nbsp;Giải&amp;nbsp;Pháp&amp;nbsp;Bảo&amp;nbsp;Vệ&amp;nbsp;Và&amp;nbsp;Trang&amp;nbsp;Trí&amp;nbsp;Kim&amp;nbsp;Loại&amp;nbsp;Toàn&amp;nbsp;</p>
       <span>326.450 VND</span> | <span>Sơn sắt- giá tại kho</span>
       <small>Quy cách: lon 2,5ml</small>
@@ -682,6 +699,12 @@ Trong thi công xây dựng và thiết kế nội ngoại thất hiện đại,
       <p></p>
       <span>788.574 VND</span> | <span>tôn sắt - klp</span>
       <small>Quy cách: 100 X 100</small>
+    </div>
+    <div>
+      <h2><a href="https://zbuild.click/product/mam-trong-dong-90-cm-mau-do-dat-vang-tl">mâm trống đồng 90 cm - màu đỏ  dát vàng TL</a></h2>
+      <p></p>
+      <span>835.722 VND</span> | <span>mâm trang trí ps</span>
+      <small>Quy cách: 90 cm</small>
     </div>
     <div>
       <h2><a href="https://zbuild.click/product/pass-treo-ty">Pass treo ty</a></h2>
@@ -786,7 +809,7 @@ Sắc vàng hoàng kim lấp lánh - biểu tượng của sự giàu sang, quy�
     <div>
       <h2><a href="https://zbuild.click/product/sat-hop-sendo-30-x-30-x-1-1-mm">sắt hộp sendo 30 X 30 X 1,1 mm</a></h2>
       <p></p>
-      <span>139.968 VND</span> | <span>tôn s���t - klp</span>
+      <span>139.968 VND</span> | <span>tôn sắt - klp</span>
       <small>Quy cách: 30 X 30</small>
     </div>
     <div>
@@ -1010,7 +1033,7 @@ Trong lĩnh vực hoàn thiện nội thất và xây dựng, việc lựa chọ
     <div>
       <h2><a href="https://zbuild.click/product/len-chan-pima-ma-03-cay">LEN CHÂN PIMA _mã 03 - (CÂY)</a></h2>
       <p>LEN&amp;nbsp;CHÂN&amp;nbsp;TƯỜNG&amp;nbsp;PIMA&amp;nbsp;mã&amp;nbsp;03&amp;nbsp;-&amp;nbsp;Phụ&amp;nbsp;kiện&amp;nbsp;chân&amp;nbsp;tường&amp;nbsp;đồng&amp;nbsp;bộ&amp;nbsp;cho&amp;nbsp;tấm&amp;nbsp;Nano,&amp;nbsp;Lam&amp;nbsp;sóngLen&amp;nbsp;chân&amp;nbsp;tường&amp;nbsp;PIMA&amp;nb</p>
-      <span>77.363 VND</span> | <span>Nh���a và Phụ kiện tấm nhựa - giá tại kho</span>
+      <span>77.363 VND</span> | <span>Nhựa và Phụ kiện tấm nhựa - giá tại kho</span>
       <small>Quy cách: dài 3m</small>
     </div>
     <div>
@@ -1117,7 +1140,7 @@ Trong thi công xây dựng và thiết kế nội ngoại thất hiện đại,
     <div>
       <h2><a href="https://zbuild.click/product/goc-don-go-hoa-day-cai">GÓC ĐƠN - GỖ HOA DÂY - (CÁI)</a></h2>
       <p></p>
-      <span>57.614 VND</span> | <span>Nhựa và Phụ kiện tấm nhựa - giá tại kho</span>
+      <span>57.614 VND</span> | <span>Nhựa và Phụ kiện tấm nhựa - gi�� tại kho</span>
       <small>Quy cách: dài 3m</small>
     </div>
     <div>
@@ -1238,7 +1261,7 @@ Trong thi công xây dựng và thiết kế nội ngoại thất hiện đại,
     <div>
       <h2><a href="https://zbuild.click/product/sat-hop-sendo-16-x-16-x-1-mm">sắt hộp sendo 16 X 16 X 1 mm</a></h2>
       <p></p>
-      <span>78.557 VND</span> | <span>tôn s��t - klp</span>
+      <span>78.557 VND</span> | <span>tôn sắt - klp</span>
       <small>Quy cách: 16 X 16</small>
     </div>
     <div>
@@ -1274,7 +1297,7 @@ Trong thi công xây dựng và thiết kế nội ngoại thất hiện đại,
     <div>
       <h2><a href="https://zbuild.click/product/ss-ma-kem-e860-mau-den-25ml-km">S.S MẠ KẼM-E860-MÀU ĐEN (2.5ML) - km</a></h2>
       <p>SƠN SẮT MẠ KẼM INDU - MÀU ĐEN E860 (2.5ML): GIẢI PHÁP BẢO VỆ VÀ TRANG TRÍ KIM LOẠI TOÀN DIỆN
-Trong thi công xây dựng và thiết kế nội ngoại thất hiện đại, các vật liệu kim loại như sắt mạ kẽm, nh��m, i</p>
+Trong thi công xây dựng và thiết kế nội ngoại thất hiện đại, các vật liệu kim loại như sắt mạ kẽm, nhôm, in</p>
       <span>369.983 VND</span> | <span>Sơn sắt- giá tại kho</span>
       <small>Quy cách: lon 2.5 ml</small>
     </div>
@@ -1394,7 +1417,7 @@ Tấm DURAflex 16.0mm 1220x2440 là dòng sản phẩm tấm xi măng sợi cell
     <div>
       <h2><a href="https://zbuild.click/product/thanh-v-chim-khung-tran-chim">thanh V vĩnh tường chìm khung trần chìm</a></h2>
       <p></p>
-      <span>25.539 VND</span> | <span>Trần và Phụ kiện- giá tại kho</span>
+      <span>25.539 VND</span> | <span>Trần và Phụ kiện- gi�� tại kho</span>
       <small>Quy cách: dài 4m</small>
     </div>
     <div>
@@ -1444,12 +1467,6 @@ Tấm DURAflex 16.0mm 1220x2440 là dòng sản phẩm tấm xi măng sợi cell
       <p></p>
       <span>130.818 VND</span> | <span>tôn sắt - klp</span>
       <small>Quy cách: rộng 1m dài theo yêu cầu</small>
-    </div>
-    <div>
-      <h2><a href="https://zbuild.click/product/phao-can-4-trang-hoa-day-xi-vang-cay">phào can 4 TRẮNG - HOA DÂY XI VÀNG - (cây)</a></h2>
-      <p></p>
-      <span>46.617 VND</span> | <span>Nhựa và Phụ kiện tấm nhựa - giá tại kho</span>
-      <small>Quy cách: dài 2m9</small>
     </div>
     <div>
       <h2><a href="https://zbuild.click/product/phao-cua-pima-ma-03-cay">PHÀO CỬA PIMA _mã 03 - (CÂY)</a></h2>
@@ -1577,7 +1594,7 @@ Nẹp Góc Âm PIMA mã 03 là phụ kiện chuyên dụng dành cho việc xử
       <h2><a href="https://zbuild.click/product/ss-ma-kem-e860-mau-den-25ml-km-1">S.S MẠ KẼM-E860-MÀU ĐEN (2.5ML) -km</a></h2>
       <p>SƠN SẮT MẠ KẼM INDU - MÀU ĐEN E860 (2.5ML): GIẢI PHÁP BẢO VỆ VÀ TRANG TRÍ KIM LOẠI TOÀN DIỆN
 Trong thi công xây dựng và thiết kế nội ngoại thất hiện đại, các vật liệu kim loại như sắt mạ kẽm, nhôm, in</p>
-      <span>326.450 VND</span> | <span>Sơn sắt- giá tại kho</span>
+      <span>326.450 VND</span> | <span>S��n sắt- giá tại kho</span>
       <small>Quy cách: lon 2.5 ml</small>
     </div>
     <div>
@@ -1779,6 +1796,12 @@ Trong thiết kế nội thất hiện đại, trần nhà không chỉ đơn th
       <small>Quy cách: rộng 1m dài theo yêu cầu</small>
     </div>
     <div>
+      <h2><a href="https://zbuild.click/product/mam-trong-dong-90-cm-mau-trang-tl">mâm trống đồng 90 cm - màu trắng TL</a></h2>
+      <p></p>
+      <span>668.178 VND</span> | <span>mâm trang trí ps</span>
+      <small>Quy cách: 90 cm</small>
+    </div>
+    <div>
       <h2><a href="https://zbuild.click/product/sat-v6-day">SẮT V6 Dày</a></h2>
       <p></p>
       <span>569.834 VND</span> | <span>tôn sắt - klp</span>
@@ -1934,7 +1957,6 @@ Trong lĩnh vực thiết kế nội thất và hoàn thiện công trình, vi�
       <small>Quy cách: 30 X 60</small>
     </div>
 </section>
-</div>
     <!-- SEO_END -->
     <script type="module" src="/src/main.jsx"></script>
   </body>

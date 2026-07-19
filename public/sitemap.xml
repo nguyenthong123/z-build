@@ -45,6 +45,18 @@
     <lastmod>2026-07-18</lastmod>
   </url>
   <url>
+    <loc>https://zbuild.click/product/phao-co-tran-ps-8-cm-mau-go-do-nhat-luoi-ma-vang</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <lastmod>2026-07-19</lastmod>
+  </url>
+  <url>
+    <loc>https://zbuild.click/product/phao-can-ps-mau-go-nhat-dat-vang</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <lastmod>2026-07-19</lastmod>
+  </url>
+  <url>
     <loc>https://zbuild.click/product/luc-giac-trang-dat-vang</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
@@ -118,12 +130,6 @@
   </url>
   <url>
     <loc>https://zbuild.click/product/ong-thep-27-do-day-1-2-mm</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-    <lastmod>2026-07-18</lastmod>
-  </url>
-  <url>
-    <loc>https://zbuild.click/product/hoa-goc-trang-tri-do-nho-cai</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
     <lastmod>2026-07-18</lastmod>
@@ -258,7 +264,7 @@
     <loc>https://zbuild.click/product/co-tran-1-k-ro-85cm</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <lastmod>2026-07-18</lastmod>
+    <lastmod>2026-07-19</lastmod>
   </url>
   <url>
     <loc>https://zbuild.click/product/ss-ma-kem-e160-mau-trang-25ml-lon</loc>
@@ -306,7 +312,7 @@
     <loc>https://zbuild.click/product/can-go-nhat-dat-vang</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <lastmod>2026-07-18</lastmod>
+    <lastmod>2026-07-19</lastmod>
   </url>
   <url>
     <loc>https://zbuild.click/product/sat-hop-sendo-40-x-80-x-1-1-mm</loc>
@@ -384,7 +390,7 @@
     <loc>https://zbuild.click/product/thanh-lam-hop-kim-zuno-3-song-thap</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <lastmod>2026-07-18</lastmod>
+    <lastmod>2026-07-19</lastmod>
   </url>
   <url>
     <loc>https://zbuild.click/product/tam-op-panel-kim-loai-02</loc>
@@ -583,6 +589,12 @@
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
     <lastmod>2026-07-18</lastmod>
+  </url>
+  <url>
+    <loc>https://zbuild.click/product/mam-trong-dong-90-cm-mau-do-dat-vang-tl</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <lastmod>2026-07-19</lastmod>
   </url>
   <url>
     <loc>https://zbuild.click/product/pass-treo-ty</loc>
@@ -1335,12 +1347,6 @@
     <lastmod>2026-07-18</lastmod>
   </url>
   <url>
-    <loc>https://zbuild.click/product/phao-can-4-trang-hoa-day-xi-vang-cay</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-    <lastmod>2026-07-18</lastmod>
-  </url>
-  <url>
     <loc>https://zbuild.click/product/phao-cua-pima-ma-03-cay</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
@@ -1404,7 +1410,7 @@
     <loc>https://zbuild.click/product/mam-van-go-dat-vang-90cm</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <lastmod>2026-07-18</lastmod>
+    <lastmod>2026-07-19</lastmod>
   </url>
   <url>
     <loc>https://zbuild.click/product/ss-ma-kem-e262-cam-thach-tuoi-800ml-lon</loc>
@@ -1659,6 +1665,12 @@
     <lastmod>2026-07-18</lastmod>
   </url>
   <url>
+    <loc>https://zbuild.click/product/mam-trong-dong-90-cm-mau-trang-tl</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <lastmod>2026-07-19</lastmod>
+  </url>
+  <url>
     <loc>https://zbuild.click/product/sat-v6-day</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
@@ -1824,6 +1836,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://zbuild.click/category/pho-ch-ps</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://zbuild.click/category/sn-st--gi-ti-kho</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -1849,12 +1866,12 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://zbuild.click/category/nha-v-ph-kin-tm-nha---gi-ti-kho</loc>
+    <loc>https://zbuild.click/category/cha-phn-loi</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://zbuild.click/category/cha-phn-loi</loc>
+    <loc>https://zbuild.click/category/mm-trang-tr-ps</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -1870,6 +1887,21 @@
   </url>
   <url>
     <loc>https://zbuild.click/category/cng-th</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://zbuild.click/category/nha-v-ph-kin-tm-nha---gi-ti-kho</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://zbuild.click/category/trn-v-ph-kin--gi-ti-kho</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://zbuild.click/category/sn-st--gi-ti-kho</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
