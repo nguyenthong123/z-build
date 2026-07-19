@@ -49,7 +49,8 @@ const AdminSettings = () => {
   });
   const [openClawConfig, setOpenClawConfig] = useState({
     apiUrl: '',
-    botApiKey: '',
+    apiKey: '',
+    webhookSecret: '',
     ownerId: ''
   });
   const [adminEmails, setAdminEmails] = useState([]);
@@ -111,7 +112,8 @@ const AdminSettings = () => {
         } else {
           setOpenClawConfig({ 
             apiUrl: process.env.NEXT_PUBLIC_OPENCLAW_API_URL || 'http://localhost:8000/chat',
-            botApiKey: 'bot_zbuild_2026'
+            apiKey: 'zb_' + Array.from(crypto.getRandomValues(new Uint8Array(24))).map(b => b.toString(16).padStart(2, '0')).join(''),
+            webhookSecret: 'wh_' + Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('')
           });
         }
 
@@ -296,62 +298,147 @@ const AdminSettings = () => {
               <div className="settings-section">
                 <div className="settings-section-header">
                   <h3>🤖 Cấu hình OpenClaw Bot</h3>
-                  <p>Thiết lập kết nối với AI Advisor chạy trên Termux hoặc Server riêng.</p>
+                  <p>Thiết lập kết nối API Key & Webhook để Bot AI có thể tạo sản phẩm & nhận đơn hàng.</p>
                 </div>
-                <div className="setting-field" style={{ maxWidth: '100%' }}>
-                  <label>API Endpoint (URL Chat)</label>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <input 
-                      type="text" 
-                      value={openClawConfig.apiUrl} 
-                      onChange={(e) => setOpenClawConfig({ ...openClawConfig, apiUrl: e.target.value })} 
-                      placeholder="http://localhost:8000/chat hoặc ngrok url..."
-                      style={{ flex: 1 }}
-                    />
+
+                {/* ── API Key ── */}
+                <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '16px' }}>🔑</span>
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '2px' }}>API Key</span>
+                    </div>
+                    {!openClawConfig.apiKey && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newKey = 'zb_' + Array.from(crypto.getRandomValues(new Uint8Array(24))).map(b => b.toString(16).padStart(2, '0')).join('');
+                          const newSecret = 'wh_' + Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('');
+                          setOpenClawConfig({ ...openClawConfig, apiKey: newKey, webhookSecret: newSecret });
+                        }}
+                        className="primary-add-btn"
+                        style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 700, borderRadius: '10px' }}
+                      >
+                        ✨ Tạo API Key Mới
+                      </button>
+                    )}
                   </div>
-                  <p className="field-hint" style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
-                    * Lưu ý: Nếu trang web chạy HTTPS, API Endpoint cũng <strong>PHẢI</strong> là HTTPS (sử dụng Ngrok hoặc Cloudflare Tunnel).
-                  </p>
-                </div>
-                
-                <div className="setting-field" style={{ maxWidth: '100%', marginTop: '15px' }}>
-                  <label>Mã bảo mật Bot (API Key)</label>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <input 
-                      type="text" 
-                      value={openClawConfig.botApiKey || ''} 
-                      onChange={(e) => setOpenClawConfig({ ...openClawConfig, botApiKey: e.target.value })} 
-                      placeholder="Nhập hoặc bấm Tạo mã tự động..."
-                      style={{ flex: 1 }}
-                    />
-                    <button 
-                      type="button" 
-                      className="secondary-btn"
-                      onClick={() => {
-                        const randomKey = 'zb_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-                        setOpenClawConfig({ ...openClawConfig, botApiKey: randomKey });
-                      }}
-                      style={{ whiteSpace: 'nowrap', padding: '0 15px' }}
-                    >
-                      🔄 Tạo mã tự động
-                    </button>
-                  </div>
-                  <p className="field-hint" style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
-                    * Khóa này dùng để cấp quyền cho Bot kết nối vào API tạo sản phẩm. Bot cần gửi Header <code>x-api-key</code> trùng khớp với mã này.
+                  {openClawConfig.apiKey ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <code style={{
+                        flex: 1, padding: '10px 14px', background: '#fff', borderRadius: '10px',
+                        fontSize: '13px', fontFamily: 'monospace', color: '#334155',
+                        border: '1px solid #e2e8f0', wordBreak: 'break-all'
+                      }}>{openClawConfig.apiKey}</code>
+                      <button
+                        type="button"
+                        onClick={() => { navigator.clipboard.writeText(openClawConfig.apiKey); alert('Đã copy API Key!'); }}
+                        style={{ padding: '8px 12px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '10px', cursor: 'pointer', fontSize: '14px' }}
+                        title="Copy API Key"
+                      >📋</button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newKey = 'zb_' + Array.from(crypto.getRandomValues(new Uint8Array(24))).map(b => b.toString(16).padStart(2, '0')).join('');
+                          setOpenClawConfig({ ...openClawConfig, apiKey: newKey });
+                        }}
+                        style={{ padding: '8px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', color: '#ef4444' }}
+                        title="Tạo API Key mới (vô hiệu hóa key cũ)"
+                      >🔄</button>
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: '12px', color: '#94a3b8', fontStyle: 'italic' }}>
+                      Chưa có API Key. Nhấn nút trên để tạo.
+                    </p>
+                  )}
+                  <p className="field-hint" style={{ fontSize: '11px', color: '#94a3b8', marginTop: '8px' }}>
+                    Bot cần gửi Header <code style={{ background: '#e2e8f0', padding: '1px 4px', borderRadius: '4px' }}>x-api-key</code> trùng khớp để xác thực.
                   </p>
                 </div>
 
-                <div className="setting-field" style={{ maxWidth: '100%', marginTop: '15px' }}>
-                  <label>Mã cửa hàng (Owner ID)</label>
+                {/* ── Webhook URL ── */}
+                <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '16px' }}>🌐</span>
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '2px' }}>Webhook URL (Nhận đơn từ Dunvex)</span>
+                    </div>
+                    {openClawConfig.apiKey && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newSecret = 'wh_' + Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('');
+                          setOpenClawConfig({ ...openClawConfig, webhookSecret: newSecret });
+                        }}
+                        style={{ padding: '6px 14px', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '10px', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#059669' }}
+                      >
+                        🔄 Tạo Mới
+                      </button>
+                    )}
+                  </div>
+                  {openClawConfig.webhookSecret ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <code style={{
+                        flex: 1, padding: '10px 14px', background: '#fff', borderRadius: '10px',
+                        fontSize: '12px', fontFamily: 'monospace', color: '#334155',
+                        border: '1px solid #e2e8f0', wordBreak: 'break-all'
+                      }}>
+                        {typeof window !== 'undefined' ? `${window.location.origin}/api/order-webhook?token=${openClawConfig.webhookSecret}` : `/api/order-webhook?token=${openClawConfig.webhookSecret}`}
+                      </code>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = `${window.location.origin}/api/order-webhook?token=${openClawConfig.webhookSecret}`;
+                          navigator.clipboard.writeText(url);
+                          alert('Đã copy Webhook URL!');
+                        }}
+                        style={{ padding: '8px 12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', cursor: 'pointer', fontSize: '14px' }}
+                        title="Copy Webhook URL"
+                      >📋</button>
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: '12px', color: '#94a3b8', fontStyle: 'italic' }}>
+                      {openClawConfig.apiKey ? 'Đang tạo Webhook URL...' : 'Vui lòng tạo API Key trước để có Webhook URL.'}
+                    </p>
+                  )}
+                  <p className="field-hint" style={{ fontSize: '11px', color: '#94a3b8', marginTop: '8px' }}>
+                    Dunvex gửi POST request tới URL này khi có đơn hàng mới. Token <code style={{ background: '#e2e8f0', padding: '1px 4px', borderRadius: '4px' }}>?token=</code> xác thực request.
+                  </p>
+                </div>
+
+                {/* ── API Endpoint ── */}
+                <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '16px' }}>🔗</span>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '2px' }}>API Endpoint (Chat AI)</span>
+                  </div>
+                  <input 
+                    type="text" 
+                    value={openClawConfig.apiUrl} 
+                    onChange={(e) => setOpenClawConfig({ ...openClawConfig, apiUrl: e.target.value })} 
+                    placeholder="http://localhost:8000/chat hoặc ngrok url..."
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', background: '#fff' }}
+                  />
+                  <p className="field-hint" style={{ fontSize: '11px', color: '#94a3b8', marginTop: '8px' }}>
+                    * Nếu web chạy HTTPS, Endpoint <strong>PHẢI</strong> là HTTPS (dùng Ngrok hoặc Cloudflare Tunnel).
+                  </p>
+                </div>
+
+                {/* ── Owner ID ── */}
+                <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '16px' }}>🏪</span>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '2px' }}>Mã cửa hàng (Owner ID)</span>
+                  </div>
                   <input 
                     type="text" 
                     value={openClawConfig.ownerId || ''} 
                     onChange={(e) => setOpenClawConfig({ ...openClawConfig, ownerId: e.target.value })} 
-                    placeholder="Nhập mã Owner ID của cửa hàng trên Dunvex..."
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }}
+                    placeholder="Nhập Owner ID trên Dunvex..."
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', background: '#fff' }}
                   />
-                  <p className="field-hint" style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
-                    * Khóa này dùng để định danh cửa hàng khi gửi đơn qua Webhook tới Dunvex.
+                  <p className="field-hint" style={{ fontSize: '11px', color: '#94a3b8', marginTop: '8px' }}>
+                    Dùng để định danh cửa hàng khi đồng bộ dữ liệu với Dunvex.
                   </p>
                 </div>
               </div>

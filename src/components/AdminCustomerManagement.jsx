@@ -142,7 +142,7 @@ const AdminCustomerManagement = ({ onBack }) => {
       }
 
       const config = docSnap.data().openClawConfig;
-      if (!config.apiUrl || !config.botApiKey || !config.ownerId) {
+      if (!config.apiUrl || !(config.apiKey || config.botApiKey) || !config.ownerId) {
         alert("Vui lòng cấu hình đầy đủ API Endpoint, API Key và Owner ID của Dunvex trong Admin Settings!");
         setSyncing(false);
         return;
@@ -155,7 +155,7 @@ const AdminCustomerManagement = ({ onBack }) => {
       const response = await fetch(customersUrl, {
         method: 'GET',
         headers: {
-          'x-api-key': config.botApiKey,
+          'x-api-key': config.apiKey || config.botApiKey,
           'x-owner-id': config.ownerId
         }
       });
