@@ -1856,17 +1856,17 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://zbuild.click/category/pho-ch---hp-n-mm</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://zbuild.click/category/tm-duraflex--gi-ti-kho</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://zbuild.click/category/tm-p-kim-loi</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://zbuild.click/category/nha-v-ph-kin-tm-nha---gi-ti-kho</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -1891,12 +1891,12 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://zbuild.click/category/nha-v-ph-kin-tm-nha---gi-ti-kho</loc>
+    <loc>https://zbuild.click/category/cng-th</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://zbuild.click/category/cng-th</loc>
+    <loc>https://zbuild.click/category/nha-v-ph-kin-tm-nha---gi-ti-kho</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
