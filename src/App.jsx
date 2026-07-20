@@ -42,6 +42,7 @@ const AdminProductDetailsForm = lazy(() => import('./components/AdminProductDeta
 const AdminCouponManagement = lazy(() => import('./components/AdminCouponManagement'));
 const AdminAffiliateManagement = lazy(() => import('./components/AdminAffiliateManagement'));
 const AdminAIAssistant = lazy(() => import('./components/AdminAIAssistant'));
+const AdminBackup = lazy(() => import('./components/AdminBackup'));
 const PrivacyPolicyVN = lazy(() => import('./pages/PrivacyPolicyVN'));
 const TermsOfServiceVN = lazy(() => import('./pages/TermsOfServiceVN'));
 const PrivacyPolicyEN = lazy(() => import('./pages/PrivacyPolicyEN'));
@@ -593,6 +594,9 @@ function App() {
             } />
             <Route path="settings" element={
               isAdmin ? <AdminSettings onBack={() => goBack('/admin/dashboard')} /> : <Navigate to="/" />
+            } />
+            <Route path="backup" element={
+              isAdmin ? <AdminBackup /> : <Navigate to="/" />
             } />
           </Route>
 

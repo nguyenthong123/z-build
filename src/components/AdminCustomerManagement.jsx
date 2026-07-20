@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy, doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { getDunvexBaseUrl } from '../utils/dunvexSync';
 import './AdminCustomerManagement.css';
 
 // Màu sắc theo loại khách hàng
@@ -142,15 +143,17 @@ const AdminCustomerManagement = ({ onBack }) => {
       }
 
       const config = docSnap.data().openClawConfig;
-      if (!config.apiUrl || !(config.dunvexApiKey || config.apiKey || config.botApiKey) || !config.ownerId) {
-        alert("Vui lòng cấu hình đầy đủ API Endpoint, API Key và Owner ID của Dunvex trong Admin Settings!");
+      if (!(config.dunvexWebhookUrl || config.dunvexApiUrl || config.apiUrl) || !(config.dunvexApiKey || config.apiKey || config.botApiKey) || !config.ownerId) {
+        alert("Vui lòng cấu hình đầy đủ Webhook URL, API Key và Owner ID của Dunvex trong Admin Settings!");
         setSyncing(false);
         return;
       }
 
-      let base = config.apiUrl.replace(/\/api\/products\/?$/, '');
-      base = base.replace(/\/+$/, '');
-      const customersUrl = `${base}/api/customers`;
+      const dunvexBase = getDunvexBaseUrl(config);
+      if (!dunvexBase) {
+        throw new Error("Không thể xác định URL của Dunvex. Vui lòng cấu hình Webhook URL trong Cài đặt.");
+      }
+      const customersUrl = `${dunvexBase}/api/customers`;
 
       const response = await fetch(customersUrl, {
         method: 'GET',

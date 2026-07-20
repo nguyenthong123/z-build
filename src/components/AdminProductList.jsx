@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc, startAfter, limit, addDoc, getDoc, setDoc, where, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { slugify } from '../utils/slugify';
+import { getDunvexBaseUrl } from '../utils/dunvexSync';
 
 import './AdminProductList.css';
 
@@ -45,7 +46,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
         const config = data.openClawConfig;
         
         // Chỉ tự động nếu có config Dunvex
-        if (!config?.apiUrl || !(config?.dunvexApiKey || config?.apiKey || config?.botApiKey) || !config?.ownerId) return;
+        if (!(config?.dunvexWebhookUrl || config?.dunvexApiUrl || config?.apiUrl) || !(config?.dunvexApiKey || config?.apiKey || config?.botApiKey) || !config?.ownerId) return;
         
         const now = Date.now();
         const oneDayMs = 24 * 60 * 60 * 1000;
@@ -57,9 +58,9 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
           
           // Chạy sync ngầm (không chặn UI)
           try {
-            let base = config.apiUrl.replace(/\/api\/products\/?$/, '');
-            base = base.replace(/\/+$/, '');
-            const productsUrl = `${base}/api/products`;
+            const dunvexBase = getDunvexBaseUrl(config);
+            if (!dunvexBase) throw new Error('Không thể xác định URL Dunvex');
+            const productsUrl = `${dunvexBase}/api/products`;
 
             const response = await fetch(productsUrl, {
               method: 'GET',
@@ -150,13 +151,13 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
       return null;
     }
     const config = docSnap.data().openClawConfig;
-    if (!config.apiUrl || !(config.dunvexApiKey || config.apiKey || config.botApiKey) || !config.ownerId) {
-      alert("Vui lòng cấu hình đầy đủ API Endpoint, API Key và Owner ID của Dunvex trong Admin Settings!");
+    if (!(config.dunvexWebhookUrl || config.dunvexApiUrl || config.apiUrl) || !(config.dunvexApiKey || config.apiKey || config.botApiKey) || !config.ownerId) {
+      alert("Vui lòng cấu hình đầy đủ Webhook URL, API Key và Owner ID của Dunvex trong Admin Settings!");
       return null;
     }
-    let base = config.apiUrl.replace(/\/api\/products\/?$/, '');
-    base = base.replace(/\/+$/, '');
-    const productsUrl = `${base}/api/products`;
+    const dunvexBase2 = getDunvexBaseUrl(config);
+    if (!dunvexBase2) throw new Error('Không thể xác định URL Dunvex');
+    const productsUrl = `${dunvexBase2}/api/products`;
     try {
       const response = await fetch(productsUrl, {
         method: 'GET',
