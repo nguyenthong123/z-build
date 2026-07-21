@@ -23,7 +23,7 @@
 
 @media (max-width: 767px) {
   .product-detail-page .container {
-    padding: 0;
+    padding: 0 16px;
   }
 }
 
