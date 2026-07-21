@@ -95,13 +95,13 @@ const ProductGrid = ({ onProductClick, onAddToCart: propOnAddToCart }) => {
     if (searchQuery && searchQuery !== "trending") {
       const fuse = new Fuse(products, {
         keys: [
-          { name: 'name', weight: 2 },
-          { name: 'tag', weight: 1.5 },
-          { name: 'category', weight: 1.5 },
-          { name: 'description', weight: 1 },
-          { name: 'sku', weight: 1 }
+          { name: 'name', weight: 3 },
+          { name: 'tag', weight: 2 },
+          { name: 'category', weight: 2 },
+          { name: 'sku', weight: 1.5 },
+          { name: 'description', weight: 0.3 }
         ],
-        threshold: 0.4,
+        threshold: 0.28,
         ignoreLocation: true
       });
       return fuse.search(searchQuery).map(result => result.item);
