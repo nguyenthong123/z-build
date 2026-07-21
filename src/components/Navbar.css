@@ -210,7 +210,7 @@
     order: 2;
     flex: 1;
     justify-content: flex-end;
-    gap: 4px;
+    gap: 8px; /* Increased gap from 4px for better tap target spacing on mobile */
   }
   
   /* Hide non-essential icons on mobile */
@@ -256,7 +256,7 @@
   }
 
   .search-bar input {
-    font-size: 14px;
+    font-size: 16px; /* Increased to 16px to prevent iOS Safari auto-zooming when focused */
     padding-left: 4px;
   }
 

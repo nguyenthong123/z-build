@@ -15,7 +15,7 @@ export function getDunvexBaseUrl(config) {
     try {
       const url = new URL(config.dunvexWebhookUrl);
       return url.origin;
-    } catch (e) { /* ignore */ }
+    } catch { /* ignore */ }
   }
 
   // 2. Dedicated Dunvex API URL
@@ -23,7 +23,7 @@ export function getDunvexBaseUrl(config) {
     try {
       const url = new URL(config.dunvexApiUrl);
       return url.origin;
-    } catch (e) { /* ignore */ }
+    } catch { /* ignore */ }
     return config.dunvexApiUrl.replace(/\/+$/, '');
   }
 

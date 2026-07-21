@@ -15,7 +15,6 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
   const [loading, setLoading] = useState(true);
   const allProductsCache = useRef([]); // Cache toàn bộ SP để search local
   const searchTimerRef = useRef(null); // Debounce timer
-  const [isSyncing, setIsSyncing] = useState(false); // auto-sync loading
   const [isSyncingExisting, setIsSyncingExisting] = useState(false); // nút 1: cập nhật
   const [isFetchingNew, setIsFetchingNew] = useState(false); // nút 2: lấy mới
   const [isDeletingOld, setIsDeletingOld] = useState(false); // nút 3: xoá cũ
@@ -54,7 +53,6 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
         
         if (now - lastSync >= oneDayMs) {
           setAutoSyncTriggered(true);
-          setIsSyncing(true);
           
           // Chạy sync ngầm (không chặn UI)
           try {
@@ -118,8 +116,6 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
             }
           } catch (e) {
             console.warn('Auto-sync failed (non-blocking):', e.message);
-          } finally {
-            setIsSyncing(false);
           }
         }
       } catch {

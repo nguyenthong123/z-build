@@ -112,7 +112,7 @@ const Navbar = ({ onCartClick, onWishlistClick, onProfileClick, onLogout, view, 
             {wishlistCount > 0 && <span className="nav-badge wishlist-badge">{wishlistCount > 99 ? '99+' : wishlistCount}</span>}
           </button>
           <button 
-            className={`icon-btn badge-btn ${view === 'compare' ? 'active' : ''}`} 
+            className={`icon-btn badge-btn compare-btn ${view === 'compare' ? 'active' : ''}`} 
             onClick={onCompareClick || (() => navigate('/compare'))} 
             title="So sánh"
             aria-label={`So sánh sản phẩm (${compareCount})`}

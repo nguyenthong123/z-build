@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { db } from '../firebase';
-import { collection, getDocs, query, where, orderBy, limit, writeBatch, doc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, writeBatch, doc } from 'firebase/firestore';
 import './AdminBackup.css';
 
 // ============================================================
@@ -40,12 +40,7 @@ const formatBytes = (bytes) => {
   return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
 };
 
-const timestampToISO = (val) => {
-  if (!val) return null;
-  if (val && typeof val.toDate === 'function') return val.toDate().toISOString();
-  if (val instanceof Date) return val.toISOString();
-  return val;
-};
+
 
 // ============================================================
 // 🗜️ Export: Tải toàn bộ data từ Firestore → JSON file
@@ -63,7 +58,6 @@ async function exportData(selectedCollections, dateFrom, dateTo, progressCallbac
   };
 
   let totalDocs = 0;
-  let completedDocs = 0;
 
   for (let i = 0; i < selectedCollections.length; i++) {
     const col = selectedCollections[i];

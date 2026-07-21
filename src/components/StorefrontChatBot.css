@@ -662,16 +662,8 @@
     z-index: 100001;
   }
 
+  /* Hide the floating chatbot toggle button on mobile since we have the Advisor tab in Bottom Nav */
   .sfcb-toggle {
-    bottom: 85px; /* Above the mobile nav */
-    right: 16px;
-    width: 54px;
-    height: 54px;
-    z-index: 100000;
-  }
-
-  /* Hide the floating toggle button completely on mobile when opened */
-  .sfcb-toggle.open {
     display: none !important;
   }
 

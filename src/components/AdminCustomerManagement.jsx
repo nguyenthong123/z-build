@@ -27,7 +27,10 @@ const AdminCustomerManagement = ({ onBack }) => {
   const [adminEmails, setAdminEmails] = useState([]);
   const [stats, setStats] = useState({ total: 0 });
 
-  useEffect(() => { loadAdminEmailsThenFetch(); }, []);
+  useEffect(() => {
+    loadAdminEmailsThenFetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadAdminEmailsThenFetch = async () => {
     try {
