@@ -515,3 +515,32 @@
     border-radius: 4px;
   }
 }
+
+/* Tablet responsive styles for ProductGrid */
+@media (min-width: 601px) and (max-width: 1024px) {
+  .product-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 16px;
+    padding: 0 var(--space-md);
+  }
+  
+  .category-tabs-container {
+    padding: 4px 16px 12px 16px;
+    margin-bottom: 24px;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    justify-content: flex-start;
+    scrollbar-width: none;
+  }
+  
+  .category-tabs-container::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .category-tab-btn {
+    flex-shrink: 0;
+    max-width: none;
+  }
+}

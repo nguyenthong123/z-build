@@ -191,7 +191,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .navbar {
     height: auto;
     padding: 8px 12px 10px 12px;
