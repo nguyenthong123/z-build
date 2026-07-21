@@ -265,7 +265,8 @@
     height: 32px;
   }
   
-  .navbar.product-view {
-    display: flex;
+  .navbar.product-view,
+  .navbar.cart-view {
+    display: none !important;
   }
 }

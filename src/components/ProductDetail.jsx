@@ -536,17 +536,17 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
             )}
 
             {/* Quick CTA: Thêm vào giỏ + Mua ngay — đặt ngay dưới trọng lượng */}
-            <div className="cta-quick-row" style={{ display: 'flex', gap: '12px', marginBottom: '20px', alignItems: 'center' }}>
-              <div className="quantity-selector" style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-light, #f8fafc)', borderRadius: '12px', padding: '4px', border: '1px solid var(--divider, #e2e8f0)', flexShrink: 0 }}>
-                <button onClick={() => quantity > 1 && setQuantity(quantity - 1)} disabled={quantity <= 1} style={{ width: '36px', height: '36px', border: 'none', background: 'var(--card-bg, #white)', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>−</button>
-                <span style={{ minWidth: '36px', textAlign: 'center', fontWeight: 'bold', fontSize: '16px', color: 'var(--text-main, #1e293b)' }}>{quantity}</span>
-                <button onClick={() => setQuantity(quantity + 1)} style={{ width: '36px', height: '36px', border: 'none', background: 'var(--card-bg, #white)', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>+</button>
+            <div className="cta-quick-row">
+              <div className="quantity-selector">
+                <button onClick={() => quantity > 1 && setQuantity(quantity - 1)} disabled={quantity <= 1}>−</button>
+                <span>{quantity}</span>
+                <button onClick={() => setQuantity(quantity + 1)}>+</button>
               </div>
-              <button className="btn-add-cart" onClick={() => onAddToCart(product, quantity)} style={{ flex: 1 }}>
+              <button className="btn-add-cart" onClick={() => onAddToCart(product, quantity)}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
                 Thêm vào giỏ hàng
               </button>
-              <button className="btn-buy-now" style={{ flex: 1 }} onClick={() => { onAddToCart(product, quantity); navigate('/checkout'); }}>Mua ngay</button>
+              <button className="btn-buy-now" onClick={() => { onAddToCart(product, quantity); navigate('/checkout'); }}>Mua ngay</button>
             </div>
 
             {/* Selectors */}
