@@ -58,35 +58,35 @@ const CartItemRow = ({ item, updateQuantity, updateVariant, removeItem }) => {
             />
           </div>
           
-          {/* Mobile Price */}
-          <span className="item-price-mobile">{Number(item.price).toLocaleString('vi-VN')}₫</span>
-          
-          {/* Mobile Quantity Selector with +/- buttons */}
-          <div className="item-qty-mobile">
-            <span className="qty-label">Số lượng:</span>
-            <div className="qty-control-row">
-              <button
-                type="button"
-                className="qty-btn"
-                onClick={() => {
-                  const newQty = Math.max(0.1, item.quantity - 1);
-                  updateQuantity(item.id, newQty, true);
-                }}
-              >–</button>
-              <input
-                type="text"
-                value={inputValue}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className="qty-input"
-              />
-              <button
-                type="button"
-                className="qty-btn"
-                onClick={() => {
-                  updateQuantity(item.id, item.quantity + 1, true);
-                }}
-              >+</button>
+          {/* Mobile Price & Quantity Selector Row */}
+          <div className="mobile-item-meta-row">
+            <span className="item-price-mobile">{Number(item.price).toLocaleString('vi-VN')}₫</span>
+            
+            <div className="item-qty-mobile">
+              <div className="qty-control-row">
+                <button
+                  type="button"
+                  className="qty-btn"
+                  onClick={() => {
+                    const newQty = Math.max(0.1, item.quantity - 1);
+                    updateQuantity(item.id, newQty, true);
+                  }}
+                >–</button>
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className="qty-input"
+                />
+                <button
+                  type="button"
+                  className="qty-btn"
+                  onClick={() => {
+                    updateQuantity(item.id, item.quantity + 1, true);
+                  }}
+                >+</button>
+              </div>
             </div>
           </div>
         </div>

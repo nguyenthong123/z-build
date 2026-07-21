@@ -206,7 +206,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .header-mobile {
     display: flex;
     align-items: center;

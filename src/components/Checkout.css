@@ -647,7 +647,7 @@
 /* =============================================================
    MOBILE CHECKOUT OPTIMIZATION — Phone (768px)
    ============================================================= */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .checkout-page { padding-bottom: 130px; }
   .checkout-form-section { padding: 16px 12px 0; }
   .checkout-summary-section { padding: 20px 12px 16px; }
