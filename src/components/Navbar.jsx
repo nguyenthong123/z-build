@@ -57,7 +57,7 @@ const Navbar = ({ onCartClick, onWishlistClick, onProfileClick, onLogout, view, 
   };
 
   return (
-    <nav className={`navbar ${view === 'product-detail' ? 'product-view' : ''} ${view === 'cart' ? 'cart-view' : ''} ${(view === 'order-history' || view === 'profile') ? 'profile-view' : ''} ${!isNavVisible ? 'nav-hidden' : ''}`}>
+    <nav className={`navbar ${view === 'product-detail' ? 'product-view' : ''} ${view === 'cart' ? 'cart-view' : ''} ${view === 'compare' ? 'compare-view' : ''} ${(view === 'order-history' || view === 'profile') ? 'profile-view' : ''} ${!isNavVisible ? 'nav-hidden' : ''}`}>
       <div className="container nav-content">
         <div className="logo" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
           <div className="logo-icon">

@@ -266,7 +266,8 @@
   }
   
   .navbar.product-view,
-  .navbar.cart-view {
+  .navbar.cart-view,
+  .navbar.compare-view {
     display: none !important;
   }
 }
