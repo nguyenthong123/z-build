@@ -40,26 +40,26 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 12px;
+  gap: 8px; /* Reduced from 12px for desktop fit */
   border-bottom: 2px solid var(--divider);
   padding: 0 0 2px 0;
   margin-bottom: 32px;
 }
 
 .category-tab-btn {
-  padding: 10px 14px;
+  padding: 8px 10px; /* Reduced from 10px 14px */
   background: transparent;
   color: var(--text-muted);
   border: none;
   border-bottom: 3px solid transparent;
   border-radius: 0;
-  font-size: 0.85rem;
+  font-size: 0.8rem; /* Reduced from 0.85rem */
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   cursor: pointer;
   white-space: nowrap;
-  max-width: 200px;
+  max-width: 170px; /* Reduced from 200px to fit on a single row */
   overflow: hidden;
   text-overflow: ellipsis;
   transition: all 0.25s ease;
