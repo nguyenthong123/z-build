@@ -164,6 +164,9 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
   const [openClawConfig, setOpenClawConfig] = useState(null);
   const [distanceKm, setDistanceKm] = useState(null);
   const [isLocating, setIsLocating] = useState(false);
+  const [deliveryLocation, setDeliveryLocation] = useState(null); // { lat, lng }
+  const [rawDeliveryLocation, setRawDeliveryLocation] = useState('');
+  const [showPasteLocation, setShowPasteLocation] = useState(false);
 
   // Auto-fill user data if logged in
   useEffect(() => {
@@ -294,12 +297,16 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          setDeliveryLocation({ lat, lng });
+          setRawDeliveryLocation(`${lat.toFixed(6)},${lng.toFixed(6)},17`);
           if (shippingSettings?.storeLat && shippingSettings?.storeLng) {
             const d = getDistanceFromLatLonInKm(
               parseFloat(shippingSettings.storeLat),
               parseFloat(shippingSettings.storeLng),
-              position.coords.latitude,
-              position.coords.longitude
+              lat,
+              lng
             );
             setDistanceKm(d);
           }
@@ -319,6 +326,34 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
     } else {
       alert('Trình duyệt của bạn không hỗ trợ định vị.');
       setIsLocating(false);
+    }
+  };
+
+  const handlePasteLocationChange = (e) => {
+    const val = e.target.value;
+    setRawDeliveryLocation(val);
+    if (!val.trim()) {
+      setDeliveryLocation(null);
+      setDistanceKm(null);
+      return;
+    }
+    const match = val.match(/@?(-?\d+\.\d+),\s*(-?\d+\.\d+)/);
+    if (match) {
+      const lat = parseFloat(match[1]);
+      const lng = parseFloat(match[2]);
+      setDeliveryLocation({ lat, lng });
+      if (shippingSettings?.storeLat && shippingSettings?.storeLng) {
+        const d = getDistanceFromLatLonInKm(
+          parseFloat(shippingSettings.storeLat),
+          parseFloat(shippingSettings.storeLng),
+          lat,
+          lng
+        );
+        setDistanceKm(d);
+      }
+    } else {
+      setDeliveryLocation(null);
+      setDistanceKm(null);
     }
   };
 
@@ -583,6 +618,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
           const orderNote = [
             `Đơn đặt từ web storefront, Mã đơn: ${orderNumber}`,
             variantNotes ? `📏 Ghi chú kích thước: ${variantNotes}` : '',
+            rawDeliveryLocation ? `📍 Vị trí giao hàng: ${rawDeliveryLocation}` : ''
           ].filter(Boolean).join('\n');
 
           const webhookBody = {
@@ -591,6 +627,8 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
             customerPhone: formData.phone || '',
             customerEmail: formData.email || user?.email || '',
             customerAddress: `${formData.address}, ${formData.city}`.trim(),
+            deliveryLocation: deliveryLocation || null,
+            rawDeliveryLocation: rawDeliveryLocation || '',
             items: webhookItems,
             shippingFee: Number(shippingCost) || 0,
             orderDate: new Date().toISOString(),
@@ -841,10 +879,33 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
               )}
               {formData.shippingMethod === 'express' && (
                 <div style={{ marginTop: '12px', padding: '14px', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
-                  <button type="button" onClick={(e) => { e.preventDefault(); handleGetLocation(); }} disabled={isLocating} className="btn-secondary" style={{ margin: 0, width: '100%' }}>
+                  <button type="button" onClick={(e) => { e.preventDefault(); handleGetLocation(); }} disabled={isLocating} className="btn-secondary" style={{ margin: 0, width: '100%', marginBottom: '12px' }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    {isLocating ? 'Đang định vị...' : (distanceKm !== null ? '📍 Cập nhật vị trí' : '📍 Lấy vị trí để tính phí')}
+                    {isLocating ? 'Đang định vị...' : (distanceKm !== null && deliveryLocation ? '📍 Cập nhật lại vị trí GPS hiện tại' : '📍 Lấy vị trí GPS hiện tại')}
                   </button>
+
+                  <div style={{ padding: '12px', background: '#ffffff', borderRadius: '10px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+                    <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      📋 Dán vị trí công trình (Tọa độ / Link Maps từ Zalo):
+                    </label>
+                    <input 
+                      type="text" 
+                      value={rawDeliveryLocation} 
+                      onChange={handlePasteLocationChange} 
+                      placeholder="VD: 10.6181946,106.758606,17 hoặc dán link Google Maps..." 
+                      style={{ padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #3b82f6', outline: 'none', fontSize: '0.85rem', width: '100%', background: '#ffffff', color: '#0f172a', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
+                    />
+                    <span style={{ fontSize: '0.73rem', color: '#64748b' }}>
+                      💡 Khách có thể copy link vị trí Zalo / Google Maps hoặc số tọa độ dán vào đây, hệ thống sẽ tự động chuyển cho tài xế giao đúng tới công trình.
+                    </span>
+                    {rawDeliveryLocation && !deliveryLocation && (
+                      <span style={{ fontSize: '0.75rem', color: '#e11d48', fontWeight: 600 }}>⚠️ Chưa nhận diện được tọa độ hợp lệ. Vui lòng kiểm tra lại chuỗi đã dán.</span>
+                    )}
+                    {deliveryLocation && (
+                      <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 700 }}>✅ Đã xác định vị trí công trình: {deliveryLocation.lat.toFixed(6)}, {deliveryLocation.lng.toFixed(6)}</span>
+                    )}
+                  </div>
+
                   {distanceKm !== null && (
                     <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
                       <div><div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Khoảng cách</div><strong style={{ fontSize: '0.9rem' }}>{distanceKm.toFixed(1)} km</strong></div>
