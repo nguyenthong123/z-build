@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, getDocs, doc, query, where, serverTimestamp, getDoc, runTransaction, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { getDunvexBaseUrl } from '../utils/dunvexSync';
 import './Checkout.css';
 
 const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
@@ -595,61 +596,75 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
 
       // Send webhook to Dunvex (non-blocking)
       try {
-        if (openClawConfig && openClawConfig.apiUrl && openClawConfig.botApiKey && openClawConfig.ownerId) {
-          let base = openClawConfig.apiUrl.replace(/\/api\/products\/?$/, '');
-          base = base.replace(/\/+$/, '');
-          const webhookUrl = `${base}/api/order-webhook`;
+        if (openClawConfig && openClawConfig.ownerId) {
+          const apiKey = openClawConfig.dunvexApiKey || openClawConfig.apiKey || openClawConfig.botApiKey || '';
+          let webhookUrl = openClawConfig.dunvexWebhookUrl;
+          if (!webhookUrl) {
+            const dunvexBase = getDunvexBaseUrl(openClawConfig);
+            if (dunvexBase) {
+              webhookUrl = `${dunvexBase}/api/order-webhook`;
+            }
+          }
 
-          const webhookItems = finalOrderData.cartItems.map(item => ({
-            productId: item.productId || item.dunvexId || item.id,
-            productName: item.name,
-            qty: Number(item.quantity) || 1,
-            price: Number(item.price) || 0,
-            variant: item.variant || '',
-            note: item.variant ? `K.thước: ${item.variant}` : ''
-          }));
+          if (webhookUrl && apiKey) {
+            const webhookItems = finalOrderData.cartItems.map(item => ({
+              productId: item.dunvexId || item.productId || item.id,
+              productName: item.name,
+              qty: Number(item.quantity) || 1,
+              price: Number(item.price) || 0,
+              variant: item.variant || '',
+              note: item.variant ? `K.thước: ${item.variant}` : ''
+            }));
 
-          // Tổng hợp ghi chú kích thước từ tất cả sản phẩm
-          const variantNotes = finalOrderData.cartItems
-            .filter(item => item.variant)
-            .map(item => `${item.name}: ${item.variant}`)
-            .join(' | ');
+            // Tổng hợp ghi chú kích thước từ tất cả sản phẩm
+            const variantNotes = finalOrderData.cartItems
+              .filter(item => item.variant)
+              .map(item => `${item.name}: ${item.variant}`)
+              .join(' | ');
 
-          const orderNote = [
-            `Đơn đặt từ web storefront, Mã đơn: ${orderNumber}`,
-            variantNotes ? `📏 Ghi chú kích thước: ${variantNotes}` : '',
-            rawDeliveryLocation ? `📍 Vị trí giao hàng: ${rawDeliveryLocation}` : ''
-          ].filter(Boolean).join('\n');
+            const orderNote = [
+              `Đơn đặt từ web storefront, Mã đơn: ${orderNumber}`,
+              variantNotes ? `📏 Ghi chú kích thước: ${variantNotes}` : '',
+              rawDeliveryLocation ? `📍 Vị trí giao hàng: ${rawDeliveryLocation}` : ''
+            ].filter(Boolean).join('\n');
 
-          const webhookBody = {
-            ownerId: openClawConfig.ownerId,
-            customerName: `${formData.firstName} ${formData.lastName}`.trim(),
-            customerPhone: formData.phone || '',
-            customerEmail: formData.email || user?.email || '',
-            customerAddress: `${formData.address}, ${formData.city}`.trim(),
-            deliveryLocation: deliveryLocation || null,
-            rawDeliveryLocation: rawDeliveryLocation || '',
-            items: webhookItems,
-            shippingFee: Number(shippingCost) || 0,
-            orderDate: new Date().toISOString(),
-            note: orderNote
-          };
+            const webhookBody = {
+              ownerId: openClawConfig.ownerId,
+              customerName: `${formData.firstName} ${formData.lastName}`.trim(),
+              customerPhone: formData.phone || '',
+              customerEmail: formData.email || user?.email || '',
+              customerAddress: `${formData.address}, ${formData.city}`.trim(),
+              deliveryLocation: deliveryLocation || null,
+              rawDeliveryLocation: rawDeliveryLocation || '',
+              items: webhookItems,
+              shippingFee: Number(shippingCost) || 0,
+              orderDate: new Date().toISOString(),
+              note: orderNote
+            };
 
-          fetch(webhookUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-api-key': openClawConfig.botApiKey
-            },
-            body: JSON.stringify(webhookBody)
-          })
-          .then(res => res.json())
-          .then(data => {
-            console.log('Dunvex webhook response:', data);
-          })
-          .catch(err => {
-            console.error('Dunvex webhook error:', err);
-          });
+            console.log('Sending order webhook to Dunvex:', webhookUrl, webhookBody);
+
+            fetch(webhookUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': apiKey,
+                'x-owner-id': openClawConfig.ownerId
+              },
+              body: JSON.stringify(webhookBody)
+            })
+            .then(res => res.json())
+            .then(data => {
+              console.log('Dunvex webhook response:', data);
+            })
+            .catch(err => {
+              console.error('Dunvex webhook error:', err);
+            });
+          } else {
+            console.warn('Skipping Dunvex webhook: Missing webhookUrl or apiKey in config.', { openClawConfig });
+          }
+        } else {
+          console.warn('Skipping Dunvex webhook: Missing openClawConfig or ownerId.', { openClawConfig });
         }
       } catch (webhookErr) {
         console.error('Failed to trigger Dunvex webhook:', webhookErr);
