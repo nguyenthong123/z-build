@@ -1841,6 +1841,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://zbuild.click/category/nha-v-ph-kin-tm-nha---gi-ti-kho</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://zbuild.click/category/sn-st--gi-ti-kho</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -1866,7 +1871,17 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://zbuild.click/category/tn-st---klp</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://zbuild.click/category/tm-duraflex--gi-ti-kho</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://zbuild.click/category/panel--gi-ti-kho</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -1916,12 +1931,17 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://zbuild.click/category/st-hp-klp</loc>
+    <loc>https://zbuild.click/category/nha-v-ph-kin-tm-nha---gi-ti-kho</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://zbuild.click/category/nha-v-ph-kin-tm-nha---gi-ti-kho</loc>
+    <loc>https://zbuild.click/category/tn-st---klp</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://zbuild.click/category/st-hp-klp</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
