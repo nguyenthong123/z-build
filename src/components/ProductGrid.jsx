@@ -7,6 +7,16 @@ import { useAppContext } from '../context/AppContext';
 import Fuse from 'fuse.js';
 import './ProductGrid.css';
 
+// ─── Vietnamese text normalization ───
+// Remove diacritics for accent-insensitive search: "sóng" → "song", "làm" → "lam"
+const normalizeVN = (str) => {
+  return (str || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd').replace(/Đ/g, 'D')
+    .toLowerCase();
+};
+
 const ProductGrid = ({ onProductClick, onAddToCart: propOnAddToCart }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -90,9 +100,13 @@ const ProductGrid = ({ onProductClick, onAddToCart: propOnAddToCart }) => {
     }
   }, [category]);
 
-  // Fuzzy search results client-side
+  // ─── Smart Vietnamese fuzzy search ───
+  // Tokenize query → search each token → merge & rank by match count + score
   const searchResults = React.useMemo(() => {
     if (searchQuery && searchQuery !== "trending") {
+      const tokens = normalizeVN(searchQuery).split(/\s+/).filter(Boolean);
+      if (tokens.length === 0) return [];
+
       const fuse = new Fuse(products, {
         keys: [
           { name: 'name', weight: 3 },
@@ -101,10 +115,40 @@ const ProductGrid = ({ onProductClick, onAddToCart: propOnAddToCart }) => {
           { name: 'sku', weight: 1.5 },
           { name: 'description', weight: 0.3 }
         ],
-        threshold: 0.28,
-        ignoreLocation: true
+        threshold: 0.35,
+        ignoreLocation: true,
+        includeScore: true,
+        minMatchCharLength: 1,
+        // Normalize Vietnamese text: bỏ dấu → "sóng" ↔ "song"
+        getFn: (obj, path) => normalizeVN(String((obj)[path] || ''))
       });
-      return fuse.search(searchQuery).map(result => result.item);
+
+      // Search each token independently, accumulate scores
+      const scoreMap = new Map();
+      for (const token of tokens) {
+        const results = fuse.search(token);
+        for (const r of results) {
+          const id = r.item.id;
+          if (scoreMap.has(id)) {
+            const entry = scoreMap.get(id);
+            entry.totalScore += r.score;
+            entry.matchCount++;
+            if (r.score < entry.bestScore) entry.bestScore = r.score;
+          } else {
+            scoreMap.set(id, {
+              item: r.item,
+              totalScore: r.score,
+              matchCount: 1,
+              bestScore: r.score
+            });
+          }
+        }
+      }
+
+      // Rank: match nhiều token hơn → ưu tiên; cùng số token → score tốt hơn
+      return Array.from(scoreMap.values())
+        .sort((a, b) => b.matchCount - a.matchCount || a.bestScore - b.bestScore)
+        .map(m => m.item);
     }
     return [];
   }, [searchQuery, products]);
