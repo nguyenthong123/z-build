@@ -1093,10 +1093,20 @@ async function updateProductDetails({ product_id, description, category, specs }
 async function updateProductStock({ product_name, new_stock }) {
   try {
     const snap = await getDocs(collection(db, 'products'));
-    const allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.title);
     
-    const kw = (product_name || '').toLowerCase();
-    const found = allProducts.find(p => (p.title || '').toLowerCase().includes(kw));
+    const kw = (product_name || '').trim();
+    let found = null;
+    if (kw) {
+      const fuse = new Fuse(allProducts, { keys: ['title'], threshold: 0.4, ignoreLocation: true, minMatchCharLength: 2, includeScore: true });
+      const results = fuse.search(kw);
+      if (results.length > 0) {
+        found = results[0].item;
+      } else {
+        const kwLower = kw.toLowerCase();
+        found = allProducts.find(p => (p.title || '').toLowerCase().includes(kwLower));
+      }
+    }
     
     if (found) {
       await updateDoc(doc(db, "products", found.id), { 
@@ -1116,9 +1126,19 @@ async function updateProductStock({ product_name, new_stock }) {
 async function updateProductPrice({ product_name, base_price, discount_price }) {
   try {
     const snap = await getDocs(collection(db, "products"));
-    const allP = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const kw = (product_name || "").toLowerCase();
-    const found = allP.find(p => (p.title || "").toLowerCase().includes(kw));
+    const allP = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.title);
+    const kw = (product_name || "").trim();
+    let found = null;
+    if (kw) {
+      const fuse = new Fuse(allP, { keys: ['title'], threshold: 0.4, ignoreLocation: true, minMatchCharLength: 2, includeScore: true });
+      const results = fuse.search(kw);
+      if (results.length > 0) {
+        found = results[0].item;
+      } else {
+        const kwLower = kw.toLowerCase();
+        found = allP.find(p => (p.title || "").toLowerCase().includes(kwLower));
+      }
+    }
     if (!found) return { error: "Không tìm thấy sản phẩm: " + product_name }
     const update = { price: sanitizeNumber(base_price), basePrice: sanitizeNumber(base_price), updatedAt: new Date().toISOString() };
     if (discount_price !== undefined) { update.discountPrice = sanitizeNumber(discount_price); update.price = sanitizeNumber(discount_price); }
@@ -1130,9 +1150,19 @@ async function updateProductPrice({ product_name, base_price, discount_price }) 
 async function updateProductStatus({ product_name, status }) {
   try {
     const snap = await getDocs(collection(db, "products"));
-    const allP = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const kw = (product_name || "").toLowerCase();
-    const found = allP.find(p => (p.title || "").toLowerCase().includes(kw));
+    const allP = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.title);
+    const kw = (product_name || "").trim();
+    let found = null;
+    if (kw) {
+      const fuse = new Fuse(allP, { keys: ['title'], threshold: 0.4, ignoreLocation: true, minMatchCharLength: 2, includeScore: true });
+      const results = fuse.search(kw);
+      if (results.length > 0) {
+        found = results[0].item;
+      } else {
+        const kwLower = kw.toLowerCase();
+        found = allP.find(p => (p.title || "").toLowerCase().includes(kwLower));
+      }
+    }
     if (!found) return { error: "Không tìm thấy sản phẩm: " + product_name }
     const validStatuses = ["Draft", "Active", "Inactive"];
     const newStatus = validStatuses.find(s => s.toLowerCase() === (status || "").toLowerCase()) || status;
@@ -1144,9 +1174,19 @@ async function updateProductStatus({ product_name, status }) {
 async function deleteProduct({ product_name }) {
   try {
     const snap = await getDocs(collection(db, "products"));
-    const allP = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const kw = (product_name || "").toLowerCase();
-    const found = allP.find(p => (p.title || "").toLowerCase().includes(kw));
+    const allP = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.title);
+    const kw = (product_name || "").trim();
+    let found = null;
+    if (kw) {
+      const fuse = new Fuse(allP, { keys: ['title'], threshold: 0.4, ignoreLocation: true, minMatchCharLength: 2, includeScore: true });
+      const results = fuse.search(kw);
+      if (results.length > 0) {
+        found = results[0].item;
+      } else {
+        const kwLower = kw.toLowerCase();
+        found = allP.find(p => (p.title || "").toLowerCase().includes(kwLower));
+      }
+    }
     if (!found) return { error: "Không tìm thấy sản phẩm: " + product_name }
     await deleteDoc(doc(db, "products", found.id));
     return { success: true, message: "Da xoa san pham: " + found.title };
@@ -1408,14 +1448,32 @@ async function syncPricesFromSheet({ sheet_url, match_field = "id" }) {
 // ============================================================
 async function generateProductDescription({ product_name, instructions = '', product_info = '' }) {
   try {
-    // Tìm sản phẩm
+    // Tìm sản phẩm — dùng Fuse.js fuzzy search (chịu sai chính tả, dấu, dấu cách)
     const snap = await getDocs(collection(db, 'products'));
-    const allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const kw = (product_name || '').toLowerCase().trim();
-    const found = allProducts.find(p => (p.title || '').toLowerCase().includes(kw));
+    const allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.title);
+    const kw = (product_name || '').trim();
+    
+    let found = null;
+    if (kw) {
+      const fuse = new Fuse(allProducts, {
+        keys: ['title'],
+        threshold: 0.4,
+        ignoreLocation: true,
+        minMatchCharLength: 2,
+        includeScore: true
+      });
+      const results = fuse.search(kw);
+      if (results.length > 0) {
+        found = results[0].item;
+      } else {
+        // Fallback: tìm contains đơn giản (đã chuẩn hoá)
+        const kwLower = kw.toLowerCase();
+        found = allProducts.find(p => (p.title || '').toLowerCase().includes(kwLower));
+      }
+    }
     
     if (!found) {
-      return { success: false, error: `Không tìm thấy sản phẩm nào khớp với tên "${product_name}".` };
+      return { success: false, error: `Không tìm thấy sản phẩm nào khớp với tên "${product_name}". Thử nhập tên ngắn hơn hoặc chính xác hơn nhé!` };
     }
 
     // Build context từ dữ liệu sản phẩm
