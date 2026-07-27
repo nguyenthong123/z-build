@@ -22,6 +22,22 @@ const formatDateTime = (d) => {
   return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
+const Pagination = ({ page, totalItems, perPage, onPageChange }) => {
+  const totalPages = Math.ceil(totalItems / perPage);
+  if (totalPages <= 1) return null;
+  const pages = [];
+  for (let i = 1; i <= totalPages; i++) pages.push(i);
+  return (
+    <div className="cd-pagination">
+      <button className="cd-page-btn" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>‹ Trước</button>
+      {pages.map(p => (
+        <button key={p} className={`cd-page-btn${p === page ? ' active' : ''}`} onClick={() => onPageChange(p)}>{p}</button>
+      ))}
+      <button className="cd-page-btn" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>Sau ›</button>
+    </div>
+  );
+};
+
 const statusMap = {
   pending: { label: 'Chờ xác nhận', color: '#F59E0B', bg: '#FEF3C7' },
   confirmed: { label: 'Đã xác nhận', color: '#3B82F6', bg: '#DBEAFE' },
@@ -148,6 +164,9 @@ const CustomerDebts = () => {
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState('');
   const [productCache, setProductCache] = useState(null);
+  const [orderPage, setOrderPage] = useState(1);
+  const [paymentPage, setPaymentPage] = useState(1);
+  const PER_PAGE = 10;
   const navigate = useNavigate();
 
   const handleSearch = async (e) => {
@@ -181,8 +200,8 @@ const CustomerDebts = () => {
       ]);
 
       const sorted = (ordersData || []).sort((a, b) => {
-        const dA = a.createdAt?.seconds || a.createdAt?._seconds || 0;
-        const dB = b.createdAt?.seconds || b.createdAt?._seconds || 0;
+        const dA = new Date(a.createdAt || a.orderDate || 0).getTime();
+        const dB = new Date(b.createdAt || b.orderDate || 0).getTime();
         return dB - dA;
       });
 
@@ -294,7 +313,7 @@ const CustomerDebts = () => {
 
           <div className="cd-section-title">📦 Đơn hàng ({orders.length})</div>
           <div className="cd-orders-list">
-            {orders.map((order, idx) => {
+            {orders.slice((orderPage - 1) * PER_PAGE, orderPage * PER_PAGE).map((order, idx) => {
               const orderId = order.id || order.orderNumber || `#${idx}`;
               const paidAmount = getOrderPaidAmount(orderId);
               const remaining = getOrderRemaining(order);
@@ -330,6 +349,7 @@ const CustomerDebts = () => {
               );
             })}
           </div>
+          <Pagination page={orderPage} totalItems={orders.length} perPage={PER_PAGE} onPageChange={setOrderPage} />
 
           {payments.length > 0 && (
             <>
@@ -342,10 +362,10 @@ const CustomerDebts = () => {
                   <span>Ghi chú</span>
                 </div>
                 {[...payments].sort((a, b) => {
-                  const dA = a.createdAt?.seconds || a.createdAt?._seconds || 0;
-                  const dB = b.createdAt?.seconds || b.createdAt?._seconds || 0;
+                  const dA = new Date(a.createdAt || a.date || 0).getTime();
+                  const dB = new Date(b.createdAt || b.date || 0).getTime();
                   return dB - dA;
-                }).map((p, i) => (
+                }).slice((paymentPage - 1) * PER_PAGE, paymentPage * PER_PAGE).map((p, i) => (
                   <div key={i} className="cd-payments-row">
                     <span className="cd-payment-date">{formatDateTime(p.createdAt)}</span>
                     <span className="cd-payment-amount">{formatCurrency(p.amount)}đ</span>
@@ -354,14 +374,15 @@ const CustomerDebts = () => {
                   </div>
                 ))}
               </div>
+              <Pagination page={paymentPage} totalItems={payments.length} perPage={PER_PAGE} onPageChange={setPaymentPage} />
             </>
           )}
-        </>
-      )}
 
       {selectedOrder && (
         <OrderDetailModal order={selectedOrder} onClose={() => setSelectedOrder(null)} productCache={productCache} />
       )}
+      </>
+    )}
     </div>
   );
 };

@@ -743,6 +743,49 @@
 .cd-payment-note { color: var(--text-muted); font-size: 12px; }
 .cd-payment-order { font-weight: 600; color: var(--accent-blue); }
 
+/* Pagination */
+.cd-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.cd-page-btn {
+  min-width: 36px;
+  height: 36px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+}
+
+.cd-page-btn:hover:not(:disabled):not(.active) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.cd-page-btn.active {
+  background: #3B82F6;
+  border-color: #3B82F6;
+  color: #fff;
+}
+
+.cd-page-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   .customer-debts-page { padding: 16px 12px 80px; }
