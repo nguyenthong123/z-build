@@ -28,9 +28,9 @@ const AccountSidebar = ({ user, activeView, onViewChange, onLogout }) => {
     { id: 'profile', label: 'Hồ sơ của tôi', icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
     )},
-    { id: 'payments', label: 'Thanh toán', icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-    )},
+    { id: 'debts', label: 'Công nợ', icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    ), external: true, path: '/my-debts'},
     { id: 'settings', label: 'Cài đặt', icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.72l-.22-.39a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
     )}
@@ -75,14 +75,25 @@ const AccountSidebar = ({ user, activeView, onViewChange, onLogout }) => {
       </div>
       <nav className="sidebar-nav">
         {menuItems.map(item => (
-          <button 
-            key={item.id}
-            className={`nav-link ${activeView === item.id ? 'active' : ''}`}
-            onClick={() => onViewChange(item.id)}
-            aria-label={item.label}
-          >
-            {item.icon} {item.label}
-          </button>
+          item.external ? (
+            <a 
+              key={item.id}
+              href={item.path}
+              className={`nav-link ${activeView === item.id ? 'active' : ''}`}
+              aria-label={item.label}
+            >
+              {item.icon} {item.label}
+            </a>
+          ) : (
+            <button 
+              key={item.id}
+              className={`nav-link ${activeView === item.id ? 'active' : ''}`}
+              onClick={() => onViewChange(item.id)}
+              aria-label={item.label}
+            >
+              {item.icon} {item.label}
+            </button>
+          )
         ))}
       </nav>
       

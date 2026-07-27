@@ -29,6 +29,7 @@ const SignUp = lazy(() => import('./components/SignUp'));
 const OrderConfirmation = lazy(() => import('./components/OrderConfirmation'));
 const AIAdvisor = lazy(() => import('./components/AIAdvisor'));
 const ProductCompare = lazy(() => import('./components/ProductCompare'));
+const CustomerDebts = lazy(() => import('./components/CustomerDebts'));
 
 const AdminProductList = lazy(() => import('./components/AdminProductList'));
 const AdminAddProduct = lazy(() => import('./components/AdminAddProduct'));
@@ -542,7 +543,7 @@ function App() {
           <Route path="/advisor" element={
             <AIAdvisor onNavigate={(target) => navigate(target === 'home' ? '/' : `/${target}`)} advisorState={storefrontAdvisorState} />
           } />
-
+          <Route path="/my-debts" element={<CustomerDebts />} />
 
           {/* === ADMIN ROUTES === */}
           <Route path="/admin" element={<AdminLayout />}>
