@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import './AccountSidebar.css';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { useToast } from '../context/ToastContext';
 
 const AccountSidebar = ({ user, activeView, onViewChange, onLogout }) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { addToast } = useToast();
 
   const handleLogout = async () => {
@@ -40,28 +42,43 @@ const AccountSidebar = ({ user, activeView, onViewChange, onLogout }) => {
   const displayName = user?.name || user?.displayName || 'Khách';
   const initial = displayName.charAt(0).toUpperCase();
 
+  const NavLink = ({ item }) => {
+    if (item.external) {
+      return (
+        <Link
+          to={item.path}
+          className={`nav-link${activeView === item.id ? ' active' : ''}`}
+          onClick={() => setMobileMenuOpen(false)}
+        >
+          {item.icon} {item.label}
+        </Link>
+      );
+    }
+    return (
+      <button
+        className={`nav-link${activeView === item.id ? ' active' : ''}`}
+        onClick={() => { onViewChange(item.id); setMobileMenuOpen(false); }}
+      >
+        {item.icon} {item.label}
+      </button>
+    );
+  };
+
   return (
     <aside className="account-sidebar">
       <div className="account-user-card">
-        <div 
-          className="user-avatar-small" 
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            background: imgError || !user?.photoURL ? 'linear-gradient(135deg, #FFB800 0%, #FF9800 100%)' : 'transparent', 
-            color: '#fff', 
-            fontSize: '18px', 
-            fontWeight: 'bold',
-            borderRadius: '50%',
-            overflow: 'hidden'
+        <div
+          className="user-avatar-small"
+          style={{
+            background: imgError || !user?.photoURL ? 'linear-gradient(135deg, #FFB800 0%, #FF9800 100%)' : 'transparent',
+            color: '#fff', fontSize: 18, fontWeight: 'bold', borderRadius: '50%', overflow: 'hidden'
           }}
         >
           {user?.photoURL && !imgError ? (
-            <img 
-              src={user.photoURL} 
-              alt={displayName} 
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+            <img
+              src={user.photoURL}
+              alt={displayName}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               onError={() => setImgError(true)}
             />
           ) : (
@@ -73,30 +90,44 @@ const AccountSidebar = ({ user, activeView, onViewChange, onLogout }) => {
           <h3>{displayName}</h3>
         </div>
       </div>
-      <nav className="sidebar-nav">
-        {menuItems.map(item => (
-          item.external ? (
-            <a 
-              key={item.id}
-              href={item.path}
-              className={`nav-link ${activeView === item.id ? 'active' : ''}`}
-              aria-label={item.label}
-            >
-              {item.icon} {item.label}
-            </a>
-          ) : (
-            <button 
-              key={item.id}
-              className={`nav-link ${activeView === item.id ? 'active' : ''}`}
-              onClick={() => onViewChange(item.id)}
-              aria-label={item.label}
-            >
-              {item.icon} {item.label}
-            </button>
-          )
-        ))}
+
+      <nav className="sidebar-nav desktop-nav">
+        {menuItems.map(item => <NavLink key={item.id} item={item} />)}
       </nav>
-      
+
+      <div className="mobile-menu-trigger" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          {mobileMenuOpen ? (
+            <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>
+          ) : (
+            <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>
+          )}
+        </svg>
+        <span>Menu</span>
+      </div>
+
+      {mobileMenuOpen && (
+        <>
+          <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)} />
+          <div className="mobile-menu-dropdown">
+            <div className="mobile-menu-header">
+              <div className="user-avatar-small-mobile">{initial}</div>
+              <div>
+                <div className="mobile-user-name">{displayName}</div>
+                <div className="mobile-user-email">{user?.email || ''}</div>
+              </div>
+            </div>
+            <nav className="sidebar-nav mobile-nav">
+              {menuItems.map(item => <NavLink key={item.id} item={item} />)}
+            </nav>
+            <button className="mobile-logout-btn" onClick={handleLogout}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F44336" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+              Đăng xuất
+            </button>
+          </div>
+        </>
+      )}
+
       <div className="sidebar-promo">
         <span className="promo-tag">NÂNG CẤP</span>
         <h4>Tham gia Gold Plus để miễn phí vận chuyển</h4>

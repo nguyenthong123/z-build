@@ -2,9 +2,58 @@
  * Dunvex API Service
  * Fetches customer debt/order/payment data from Dunvex backend
  */
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection, query, where, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getDunvexBaseUrl } from '../utils/dunvexSync';
+
+// Cache product images
+let _productCache = null;
+
+/** Tải tất cả sản phẩm từ Firestore và index theo dunvexId + tên */
+export async function loadProductImageMap() {
+  if (_productCache) return _productCache;
+  try {
+    const snap = await getDocs(collection(db, 'products'));
+    const map = {};
+    const list = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      const img = d.images?.[0] || d.image || d.mainImage || d.thumbnail || '';
+      const entry = { id: doc.id, dunvexId: d.dunvexId || '', title: d.title || '', image: img };
+      list.push(entry);
+      if (d.dunvexId) map[d.dunvexId] = img;
+    });
+    _productCache = { byId: map, list };
+    return _productCache;
+  } catch (e) {
+    console.warn('Failed to load product images:', e);
+    return { byId: {}, list: [] };
+  }
+}
+
+/** Tìm ảnh sản phẩm: ưu tiên dunvexId, fallback fuzzy theo tên */
+export function findProductImage(cache, itemId, itemName) {
+  const { byId, list } = cache || { byId: {}, list: [] };
+  // Ưu tiên match bằng dunvexId
+  if (itemId && byId[itemId]) return byId[itemId];
+  // Fuzzy match tên
+  if (itemName && list.length) {
+    const name = itemName.toLowerCase().replace(/\s+/g, ' ').trim();
+    // try exact match first
+    let match = list.find(p => p.title.toLowerCase() === name);
+    if (match?.image) return match.image;
+    // try includes
+    match = list.find(p => p.title.toLowerCase().includes(name) || name.includes(p.title.toLowerCase()));
+    if (match?.image) return match.image;
+    // try first 3 words
+    const words = name.split(' ').slice(0, 3).join(' ');
+    if (words.length > 2) {
+      match = list.find(p => p.title.toLowerCase().includes(words));
+      if (match?.image) return match.image;
+    }
+  }
+  return null;
+}
 
 async function getDunvexConfig() {
   const docRef = doc(db, 'storeSettings', 'main');

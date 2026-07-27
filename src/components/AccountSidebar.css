@@ -69,6 +69,7 @@
   transition: all 0.2s ease;
   width: 100%;
   text-align: left;
+  text-decoration: none;
 }
 
 .nav-link:hover {
@@ -144,7 +145,28 @@
   width: 100%;
 }
 
-/* Responsive Sidebar Changes */
+/* Mobile hamburger trigger */
+.mobile-menu-trigger {
+  display: none;
+}
+
+.mobile-menu-dropdown {
+  display: none;
+}
+
+.mobile-menu-overlay {
+  display: none;
+}
+
+.mobile-menu-header {
+  display: none;
+}
+
+.mobile-logout-btn {
+  display: none;
+}
+
+/* Responsive: Tablet — horizontal nav */
 @media (max-width: 1024px) {
   .account-sidebar {
     width: 100%;
@@ -164,7 +186,7 @@
     display: none;
   }
 
-  .sidebar-nav {
+  .desktop-nav {
     flex-direction: row;
     overflow-x: auto;
     padding-bottom: 0.5rem;
@@ -174,13 +196,14 @@
     padding: 0.5rem;
     border-radius: 1rem;
     border: 1px solid rgba(0,0,0,0.05);
+    gap: 0;
   }
 
-  .sidebar-nav::-webkit-scrollbar {
+  .desktop-nav::-webkit-scrollbar {
     display: none;
   }
 
-  .nav-link {
+  .desktop-nav .nav-link {
     white-space: nowrap;
     width: auto;
     padding: 0.6rem 1rem;
@@ -188,8 +211,139 @@
   }
 }
 
+/* Responsive: Mobile — hamburger menu */
 @media (max-width: 768px) {
   .account-sidebar {
-    display: none; /* Hide on mobile as we use bottom nav and dedicated header */
+    width: 100%;
+    position: static;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    gap: 0;
+    border-radius: 0;
+    border: none;
+    background: white;
+    border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .account-user-card, .sidebar-promo, .sign-out-btn, .desktop-nav {
+    display: none;
+  }
+
+  .mobile-menu-trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    color: #1a1a2e;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+
+  .mobile-menu-trigger:hover {
+    background: #f1f5f9;
+  }
+
+  .mobile-menu-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 999;
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .mobile-menu-dropdown {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 85vw;
+    max-width: 320px;
+    height: 100vh;
+    background: white;
+    z-index: 1000;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+    animation: slideInLeft 0.25s ease-out;
+    padding: 1.25rem;
+    gap: 0;
+  }
+
+  @keyframes slideInLeft {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+  }
+
+  .mobile-menu-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f0f2f5;
+    margin-bottom: 0.75rem;
+  }
+
+  .user-avatar-small-mobile {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #FFB800 0%, #FF9800 100%);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  .mobile-user-name {
+    font-weight: 700;
+    color: #1a1a2e;
+    font-size: 0.95rem;
+  }
+
+  .mobile-user-email {
+    font-size: 0.75rem;
+    color: #94a3b8;
+  }
+
+  .mobile-nav {
+    flex: 1;
+    overflow-y: auto;
+    gap: 0.25rem;
+  }
+
+  .mobile-nav .nav-link {
+    font-size: 0.95rem;
+    padding: 0.875rem 1rem;
+  }
+
+  .mobile-logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: none;
+    border: none;
+    color: #F44336;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    border-top: 1px solid #eee;
+    width: 100%;
+    margin-top: 0.5rem;
   }
 }

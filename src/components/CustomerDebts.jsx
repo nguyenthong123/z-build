@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchOrdersByCustomerId, fetchPaymentsByCustomerId, fetchCustomerByPhone } from '../services/dunvexApi';
+import { fetchOrdersByCustomerId, fetchPaymentsByCustomerId, fetchCustomerByPhone, loadProductImageMap, findProductImage } from '../services/dunvexApi';
 import './CustomerDebts.css';
 
 const formatCurrency = (n) => {
@@ -38,8 +38,23 @@ const statusMap = {
 
 const getStatusStyle = (s) => statusMap[s] || statusMap['pending'];
 
-const OrderDetailModal = ({ order, onClose }) => {
+const OrderDetailModal = ({ order, onClose, productCache }) => {
   const total = Number(order.totalAmount || order.total || 0);
+  const subTotal = Number(order.subTotal || 0);
+  const discount = Number(order.discountValue || 0);
+  const shipping = Math.max(0, total - subTotal + discount);
+  const itemsTotal = (order.items || []).reduce((sum, item) => sum + (item.qty || item.quantity || 1) * Number(item.price || 0), 0);
+  const [imgCache, setImgCache] = useState({});
+
+  const getImage = (itemId, itemName) => {
+    if (imgCache[itemId || itemName]) return imgCache[itemId || itemName];
+    return findProductImage(productCache, itemId, itemName);
+  };
+
+  const handleImgError = (key) => {
+    setImgCache(prev => ({ ...prev, [key]: null }));
+  };
+
   return (
     <div className="cd-modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="cd-modal">
@@ -59,23 +74,62 @@ const OrderDetailModal = ({ order, onClose }) => {
         <div className="cd-modal-body">
           <div className="cd-modal-section">
             <h4>📦 Sản phẩm ({(order.items || []).length})</h4>
-            <div className="cd-modal-items">
-              {(order.items || []).map((item, i) => (
-                <div key={i} className="cd-modal-item">
-                  <div className="cd-modal-item-main">
-                    <span className="cd-modal-item-name">{item.name || item.productName || 'Sản phẩm'}</span>
-                    <span className="cd-modal-item-qty">×{item.qty || item.quantity || 1}</span>
+            <div className="cd-modal-product-table">
+              <div className="cd-modal-product-header">
+                <span className="cd-th-img">Hình</span>
+                <span className="cd-th-name">Tên sản phẩm</span>
+                <span className="cd-th-price">Đơn giá</span>
+                <span className="cd-th-qty">SL</span>
+                <span className="cd-th-total">Thành tiền</span>
+              </div>
+              {(order.items || []).map((item, i) => {
+                const img = getImage(item.id, item.name || item.productName);
+                const key = item.id || item.name || i;
+                const qty = item.qty || item.quantity || 1;
+                const price = Number(item.price || 0);
+                const subtotal = qty * price;
+                return (
+                  <div key={i} className="cd-modal-product-row">
+                    <span className="cd-td-img">
+                      {img ? (
+                        <img src={img} alt={item.name} className="cd-product-thumb" onError={() => handleImgError(key)} />
+                      ) : (
+                        <div className="cd-product-thumb-placeholder">📦</div>
+                      )}
+                    </span>
+                    <span className="cd-td-name" title={item.name || item.productName}>
+                      {item.name || item.productName || '—'}
+                    </span>
+                    <span className="cd-td-price">{formatCurrency(price)}đ</span>
+                    <span className="cd-td-qty">×{qty}</span>
+                    <span className="cd-td-total">{formatCurrency(subtotal)}đ</span>
                   </div>
-                  <div className="cd-modal-item-price">
-                    <span>{formatCurrency(item.price || 0)}đ</span>
-                    <span className="cd-modal-item-subtotal">= {formatCurrency((item.qty || item.quantity || 1) * (item.price || 0))}đ</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
-            <div className="cd-modal-total-line">
-              <span>Tổng cộng</span>
-              <span>{formatCurrency(total)}đ</span>
+
+            {/* Tổng kết đơn hàng */}
+            <div className="cd-modal-summary">
+              <div className="cd-modal-summary-row">
+                <span>Tổng tiền hàng</span>
+                <span>{formatCurrency(itemsTotal)}đ</span>
+              </div>
+              {discount > 0 && (
+                <div className="cd-modal-summary-row cd-summary-discount">
+                  <span>Giảm giá</span>
+                  <span>-{formatCurrency(discount)}đ</span>
+                </div>
+              )}
+              {shipping > 0 && (
+                <div className="cd-modal-summary-row cd-summary-shipping">
+                  <span>🚚 Vận chuyển</span>
+                  <span>{formatCurrency(shipping)}đ</span>
+                </div>
+              )}
+              <div className="cd-modal-summary-row cd-summary-total">
+                <span>Tổng cộng</span>
+                <span>{formatCurrency(total)}đ</span>
+              </div>
             </div>
           </div>
         </div>
@@ -93,6 +147,7 @@ const CustomerDebts = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState('');
+  const [productCache, setProductCache] = useState(null);
   const navigate = useNavigate();
 
   const handleSearch = async (e) => {
@@ -107,6 +162,8 @@ const CustomerDebts = () => {
     setPayments([]);
 
     try {
+      // Bỏ cache cũ
+      setProductCache(null);
       // B1: Tìm customer theo SĐT
       const cust = await fetchCustomerByPhone(phone);
       if (!cust) {
@@ -131,6 +188,9 @@ const CustomerDebts = () => {
 
       setOrders(sorted);
       setPayments(paymentsData || []);
+
+      // Tải cache ảnh sản phẩm (không block UI)
+      loadProductImageMap().then(setProductCache).catch(() => {});
     } catch (err) {
       console.error('Lỗi tải công nợ:', err);
       setError('Không thể kết nối đến hệ thống. Thử lại sau.');
@@ -300,7 +360,7 @@ const CustomerDebts = () => {
       )}
 
       {selectedOrder && (
-        <OrderDetailModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
+        <OrderDetailModal order={selectedOrder} onClose={() => setSelectedOrder(null)} productCache={productCache} />
       )}
     </div>
   );
