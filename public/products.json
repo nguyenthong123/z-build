@@ -27,7 +27,7 @@
     "packaging": "",
     "weight": 1.2,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:14.398Z"
+    "last_updated": "2026-08-01T02:12:40.325Z"
   },
   {
     "title": "Nam Kim 4.5D",
@@ -42,7 +42,7 @@
     "packaging": "",
     "weight": 4.5,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:42.218Z"
+    "last_updated": "2026-08-01T02:12:45.865Z"
   },
   {
     "title": "KẾT THÚC PIMA -11",
@@ -72,7 +72,7 @@
     "packaging": "",
     "weight": "1,35",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:45:59.626Z"
+    "last_updated": "2026-08-01T02:12:28.870Z"
   },
   {
     "title": "phào cân ps màu gỗ nhạt dát vàng ",
@@ -87,7 +87,7 @@
     "packaging": "",
     "weight": "0,65",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:45:55.967Z"
+    "last_updated": "2026-08-01T02:12:25.979Z"
   },
   {
     "title": "LỤC GIÁC TRẮNG DÁT VÀNG",
@@ -102,7 +102,7 @@
     "packaging": "",
     "weight": 0.3,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:55.419Z"
+    "last_updated": "2026-08-01T02:12:47.928Z"
   },
   {
     "title": "GÓC ÂM PIMA - 11",
@@ -177,13 +177,13 @@
     "packaging": "",
     "weight": 2.7,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:25.087Z"
+    "last_updated": "2026-08-01T02:12:48.447Z"
   },
   {
     "title": "tấm ốp panel kim loại 14",
     "slug": "tam-op-panel-kim-loai-14",
     "category": "Panel- giá tại kho",
-    "description": "\n  Tấm ốp panel kim loại 14 - Giải pháp ốp tường vân gỗ cao cấp\n  Tấm ốp panel kim loại 14 là dòng sản phẩm ốp tường trang trí cao cấp, được thiết kế với bề mặt vân gỗ nâu sang trọng, kết hợp cùng cấu trúc kim loại bền chắc. Đây là lựa chọn hoàn hảo cho những ai đang tìm kiếm một giải pháp ốp tường ",
+    "description": "\n  Tấm ốp panel kim loại 14 - Giải pháp ốp tường vân gỗ cao cấp\n  Tấm ốp panel kim loại 14 là dòng sản phẩm ốp tường trang trí cao cấp, được thiết kế với bề mặt vân gỗ nâu sang trọng, kết hợp cùng cấu trúc kim loại bền chắc. Đây là lựa chọn hoàn hảo cho những ai đang tìm kiếm một giải pháp ��p tường",
     "price": 199830,
     "price_formatted": "199.830 VND",
     "image_url": "https://res.cloudinary.com/dtdgrcznj/image/upload/v1783064671/dvssavizibl6ezorpvt9.jpg",
@@ -207,7 +207,7 @@
     "packaging": "",
     "weight": 0.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:19.502Z"
+    "last_updated": "2026-08-01T02:12:23.296Z"
   },
   {
     "title": "4 SÓNG THẤP PIMA - mã 13 (TẤM)",
@@ -237,10 +237,10 @@
     "packaging": "",
     "weight": 3.2,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:07.486Z"
+    "last_updated": "2026-08-01T02:12:35.048Z"
   },
   {
-    "title": "sắt hộp sendo 20 X 40 X 1 mm",
+    "title": "s��t hộp sendo 20 X 40 X 1 mm",
     "slug": "sat-hop-sendo-20-x-40-x-1-mm",
     "category": "tôn sắt - klp",
     "description": "",
@@ -252,7 +252,7 @@
     "packaging": "",
     "weight": 5.16,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:17.357Z"
+    "last_updated": "2026-08-01T02:12:21.407Z"
   },
   {
     "title": "Đinh thép A+",
@@ -282,7 +282,7 @@
     "packaging": "",
     "weight": 3.8,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:58.484Z"
+    "last_updated": "2026-08-01T02:11:13.276Z"
   },
   {
     "title": "ống thép Ø27 độ dày 1,2 mm",
@@ -297,7 +297,7 @@
     "packaging": "",
     "weight": 5.15,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:58.666Z"
+    "last_updated": "2026-08-01T02:11:13.478Z"
   },
   {
     "title": "CÂN TRẮNG DÁT VÀNG",
@@ -312,7 +312,7 @@
     "packaging": "",
     "weight": 0.65,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:56.570Z"
+    "last_updated": "2026-08-01T02:11:10.966Z"
   },
   {
     "title": "sắt hộp sendo 25 X 25 X 1,4 mm",
@@ -342,7 +342,7 @@
     "packaging": "",
     "weight": 3.9,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:13.528Z"
+    "last_updated": "2026-08-01T02:11:46.737Z"
   },
   {
     "title": "phào cân ps màu trắng - hoa vàng",
@@ -357,7 +357,7 @@
     "packaging": "",
     "weight": "0,65",
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:58.128Z"
+    "last_updated": "2026-08-01T02:11:12.863Z"
   },
   {
     "title": "S.S MẠ KẼM-E264-XANH DA TRỜI (800ML) (LON)",
@@ -372,7 +372,7 @@
     "packaging": "",
     "weight": 0.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:21.359Z"
+    "last_updated": "2026-08-01T02:12:24.741Z"
   },
   {
     "title": "CỔ TRẦN PIMA _mã 09 (CÂY)",
@@ -402,12 +402,12 @@
     "packaging": "",
     "weight": 2.5,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:19.242Z"
+    "last_updated": "2026-08-01T02:12:23.076Z"
   },
   {
     "title": "nẹp V - phụ kiện ốp kim loại",
     "slug": "nep-v-phu-kien-op-kim-loai",
-    "category": "tấm ốp kim loại",
+    "category": "tấm ��p kim loại",
     "description": "",
     "price": 120000,
     "price_formatted": "120.000 VND",
@@ -417,7 +417,7 @@
     "packaging": "",
     "weight": "0,45",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:03.610Z"
+    "last_updated": "2026-08-01T02:12:31.965Z"
   },
   {
     "title": "Tam giác (Bó 10c) Lớn",
@@ -432,7 +432,7 @@
     "packaging": "",
     "weight": "2",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:05.173Z"
+    "last_updated": "2026-08-01T02:12:33.223Z"
   },
   {
     "title": "H NỐI PIMA _mã 03 (THANH)",
@@ -462,7 +462,7 @@
     "packaging": "",
     "weight": "1,35",
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:19.011Z"
+    "last_updated": "2026-08-01T02:12:22.888Z"
   },
   {
     "title": "V GÓC PIMA _mã 03 - (CÂY)",
@@ -477,7 +477,7 @@
     "packaging": "",
     "weight": 0.9,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:12.088Z"
+    "last_updated": "2026-08-01T02:12:38.577Z"
   },
   {
     "title": "sắt hộp sendo 40 X 80 X 1,4 mm",
@@ -492,7 +492,7 @@
     "packaging": "",
     "weight": 14.4,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:07.794Z"
+    "last_updated": "2026-08-01T02:12:35.239Z"
   },
   {
     "title": "trọn gói thi công ( trần thả ak + khung lê trần)",
@@ -522,7 +522,7 @@
     "packaging": "",
     "weight": 0.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:15.657Z"
+    "last_updated": "2026-08-01T02:12:41.541Z"
   },
   {
     "title": "phào cổ trần ps 7 cm -  màu gỗ đỏ nhạt lưới mạ vàng",
@@ -552,7 +552,7 @@
     "packaging": "",
     "weight": 0.01,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:02.549Z"
+    "last_updated": "2026-08-01T02:12:31.169Z"
   },
   {
     "title": "sắt hộp sendo 30 X 90 X 1,2 mm",
@@ -567,7 +567,7 @@
     "packaging": "",
     "weight": 12.5,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:57.931Z"
+    "last_updated": "2026-08-01T02:11:12.568Z"
   },
   {
     "title": "ống thép Ø21 độ dày 1 mm",
@@ -597,7 +597,7 @@
     "packaging": "20",
     "weight": "0,02",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:02.023Z"
+    "last_updated": "2026-08-01T02:12:30.701Z"
   },
   {
     "title": "tấm thạch cao gyproc chịu ẩm",
@@ -672,7 +672,7 @@
     "packaging": "",
     "weight": 18.48,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:15.709Z"
+    "last_updated": "2026-08-01T02:12:20.171Z"
   },
   {
     "title": "Khung bao T20",
@@ -687,7 +687,7 @@
     "packaging": "",
     "weight": "10",
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:18.082Z"
+    "last_updated": "2026-08-01T02:12:22.005Z"
   },
   {
     "title": "S.S MẠ KẼM-E560- MÀU VÀNG CHANH (800ML) (LON)",
@@ -702,7 +702,7 @@
     "packaging": "",
     "weight": 0.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:22.998Z"
+    "last_updated": "2026-08-01T02:12:47.304Z"
   },
   {
     "title": "CỔ TRẦN 1 K RÔ 8.5CM",
@@ -717,7 +717,7 @@
     "packaging": "",
     "weight": 1.35,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:20.919Z"
+    "last_updated": "2026-08-01T02:12:45.644Z"
   },
   {
     "title": "S.S MẠ KẼM-E160-MÀU TRẮNG (2.5ML) (LON)",
@@ -732,7 +732,7 @@
     "packaging": "",
     "weight": 2.5,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:16.706Z"
+    "last_updated": "2026-08-01T02:12:42.335Z"
   },
   {
     "title": "La 50",
@@ -762,7 +762,7 @@
     "packaging": "",
     "weight": "0,22",
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:42.020Z"
+    "last_updated": "2026-08-01T02:12:45.689Z"
   },
   {
     "title": "Khung bao T15 G4 Đỏ",
@@ -777,7 +777,7 @@
     "packaging": "",
     "weight": "10",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:06.216Z"
+    "last_updated": "2026-08-01T02:12:34.070Z"
   },
   {
     "title": "sắt hộp sendo 25 X 50 X 1,4 mm",
@@ -822,7 +822,7 @@
     "packaging": "",
     "weight": 7.2,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:39.558Z"
+    "last_updated": "2026-08-01T02:12:43.526Z"
   },
   {
     "title": "CÂN GỖ NHẠT DÁT VÀNG",
@@ -837,7 +837,7 @@
     "packaging": "",
     "weight": 0.65,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:20.179Z"
+    "last_updated": "2026-08-01T02:12:45.274Z"
   },
   {
     "title": "sắt hộp sendo 40 X 80 X 1,1 mm",
@@ -852,7 +852,7 @@
     "packaging": "",
     "weight": 11.41,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:06.436Z"
+    "last_updated": "2026-08-01T02:12:34.270Z"
   },
   {
     "title": "MÂM TRẮNG DÁT VÀNG 90CM",
@@ -867,7 +867,7 @@
     "packaging": "",
     "weight": 3.2,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:45:56.263Z"
+    "last_updated": "2026-08-01T02:12:26.170Z"
   },
   {
     "title": "3 SÓNG THẤP PIMA - mã 13 (TẤM)",
@@ -882,7 +882,7 @@
     "packaging": "",
     "weight": 3.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:12.315Z"
+    "last_updated": "2026-08-01T02:12:38.771Z"
   },
   {
     "title": "thanh phụ finiline 600 khung trần thả",
@@ -897,13 +897,13 @@
     "packaging": "",
     "weight": 0.12,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:15.875Z"
+    "last_updated": "2026-08-01T02:12:41.735Z"
   },
   {
     "title": "keo durafiler 1kg",
     "slug": "keo-durafiler-1kg",
     "category": "tấm duraflex- giá tại kho",
-    "description": "Keo Xử Lý Mối Nối DURAfiller 1kg – Giải Pháp Chống Nứt Hoàn Hảo Cho Tường, Trần Lắp Ghép\n\nKeo xử lý mối nối DURAfiller 1kg là sản phẩm vật tư phụ cao cấp không thể thiếu trong quá trình thi công hệ thống tấm xi măng DURAflex và tấm thạch cao. Được đặc chế bởi Công ty Cổ phần Công nghiệp Vĩnh Tường (",
+    "description": "Keo Xử Lý Mối Nối DURAfiller 1kg – Giải Pháp Chống Nứt Hoàn Hảo Cho Tường, Trần Lắp Ghép\n\nKeo xử lý mối nối DURAfiller 1kg là sản phẩm vật tư phụ cao cấp không thể thiếu trong quá trình thi công h��� thống tấm xi măng DURAflex và tấm thạch cao. Được đặc chế bởi Công ty Cổ phần Công nghiệp Vĩnh Tường",
     "price": 61027,
     "price_formatted": "61.027 VND",
     "image_url": "https://res.cloudinary.com/dtdgrcznj/image/upload/v1782462084/hxb6kimo6annbn4jl8gm.jpg",
@@ -927,7 +927,7 @@
     "packaging": "",
     "weight": 72.38,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:45:57.303Z"
+    "last_updated": "2026-08-01T02:12:26.993Z"
   },
   {
     "title": "keo silicon apollo màu trong a500",
@@ -942,7 +942,7 @@
     "packaging": "",
     "weight": 0.3,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:19.012Z"
+    "last_updated": "2026-08-01T02:12:44.320Z"
   },
   {
     "title": "sắt hộp sendo 25 X 25 X 1,2 mm",
@@ -957,7 +957,7 @@
     "packaging": "",
     "weight": 5.07,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:12.176Z"
+    "last_updated": "2026-08-01T02:11:45.635Z"
   },
   {
     "title": "thép hình i150 độ dày ps",
@@ -987,7 +987,7 @@
     "packaging": "",
     "weight": "2",
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:57.745Z"
+    "last_updated": "2026-08-01T02:11:12.312Z"
   },
   {
     "title": "3 SÓNG THẤP PIMA - mã 26 (TẤM)",
@@ -1002,7 +1002,7 @@
     "packaging": "",
     "weight": 3.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:14.898Z"
+    "last_updated": "2026-08-01T02:12:19.592Z"
   },
   {
     "title": "MÂM TRẮNG DÁT VÀNG 66CM",
@@ -1017,7 +1017,7 @@
     "packaging": "",
     "weight": 1.4,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:18.768Z"
+    "last_updated": "2026-08-01T02:12:22.683Z"
   },
   {
     "title": "thanh lam hợp kim zuno 3 sóng thấp",
@@ -1032,7 +1032,7 @@
     "packaging": "",
     "weight": "0.95",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:45:55.428Z"
+    "last_updated": "2026-08-01T02:12:25.561Z"
   },
   {
     "title": "tấm ốp panel kim loại 02",
@@ -1047,7 +1047,7 @@
     "packaging": "",
     "weight": 3.6,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:18.323Z"
+    "last_updated": "2026-08-01T02:12:22.222Z"
   },
   {
     "title": "S.S MẠ KẼM-E363-MÀU XINGFA ĐEN (2.5ML) (LON)",
@@ -1077,7 +1077,7 @@
     "packaging": "",
     "weight": 7.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:14.185Z"
+    "last_updated": "2026-08-01T02:12:40.130Z"
   },
   {
     "title": "3 SÓNG THẤP PIMA - mã 10 (TẤM)",
@@ -1092,7 +1092,7 @@
     "packaging": "",
     "weight": 3.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:19.876Z"
+    "last_updated": "2026-08-01T02:12:23.490Z"
   },
   {
     "title": "Băng keo Lưới A+",
@@ -1137,7 +1137,7 @@
     "packaging": "",
     "weight": "1",
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:58.861Z"
+    "last_updated": "2026-08-01T02:11:13.680Z"
   },
   {
     "title": "vít tự khoan bắn vách 26mm",
@@ -1167,7 +1167,7 @@
     "packaging": "",
     "weight": 4.15,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:11.787Z"
+    "last_updated": "2026-08-01T02:12:38.339Z"
   },
   {
     "title": "ống thép Ø76 độ dày 1,4 mm",
@@ -1182,7 +1182,7 @@
     "packaging": "",
     "weight": 14.35,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:55.800Z"
+    "last_updated": "2026-08-01T02:12:48.434Z"
   },
   {
     "title": "công thợ trần nano",
@@ -1227,13 +1227,13 @@
     "packaging": "",
     "weight": "",
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:11.182Z"
+    "last_updated": "2026-08-01T02:11:14.676Z"
   },
   {
     "title": "S.S MẠ KẼM-E360- MÀU GHI SẪM (800ML) (LON)",
     "slug": "ss-ma-kem-e360-mau-ghi-sam-800ml-lon",
     "category": "Sơn sắt- giá tại kho",
-    "description": "Sơn Sắt Mạ Kẽm INDU - Màu Ghi Sẫm E360 (800ML): Giải Pháp Bảo Vệ Và Trang Trí Kim Loại Toàn Diện\nTrong thi công xây dựng và thiết kế nội ngoại thất hiện đại, các vật liệu kim loại như sắt mạ kẽm, nhôm, inox đang được sử dụng rộng rãi nhờ độ bền cao. Tuy nhiên, việc tìm kiếm một dòng sơn có khả năng ",
+    "description": "Sơn Sắt Mạ Kẽm INDU - Màu Ghi Sẫm E360 (800ML): Giải Pháp Bảo Vệ Và Trang Trí Kim Loại Toàn Diện\nTrong thi công xây dựng và thiết k��� nội ngoại thất hiện đại, các vật liệu kim loại như sắt mạ kẽm, nhôm, inox đang được sử dụng rộng rãi nhờ độ bền cao. Tuy nhiên, việc tìm kiếm một dòng sơn có khả năn",
     "price": 114261,
     "price_formatted": "114.261 VND",
     "image_url": "https://res.cloudinary.com/dtdgrcznj/image/upload/v1782464422/xqdyfff5yxutbl3gpcz7.jpg",
@@ -1257,7 +1257,7 @@
     "packaging": "",
     "weight": 1.6,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:05.389Z"
+    "last_updated": "2026-08-01T02:12:33.464Z"
   },
   {
     "title": "KẾT THÚC PIMA _mã 03 - (CÂY)",
@@ -1272,7 +1272,7 @@
     "packaging": "",
     "weight": "1",
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:10.481Z"
+    "last_updated": "2026-08-01T02:11:14.071Z"
   },
   {
     "title": "Tôn Nam Kim 4.0",
@@ -1302,7 +1302,7 @@
     "packaging": "",
     "weight": "36",
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:41.400Z"
+    "last_updated": "2026-08-01T02:12:45.169Z"
   },
   {
     "title": "tấm ốp panel kim loại 15",
@@ -1317,7 +1317,7 @@
     "packaging": "",
     "weight": 3.6,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:09.704Z"
+    "last_updated": "2026-08-01T02:12:36.629Z"
   },
   {
     "title": "sắt hộp sendo 20 X 40 X 1,2 mm",
@@ -1332,7 +1332,7 @@
     "packaging": "",
     "weight": 6.32,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:10.288Z"
+    "last_updated": "2026-08-01T02:12:37.020Z"
   },
   {
     "title": "TẤM NANO_072",
@@ -1362,7 +1362,7 @@
     "packaging": "",
     "weight": 5.1,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:45:58.353Z"
+    "last_updated": "2026-08-01T02:12:27.858Z"
   },
   {
     "title": "PHÀO LỆCH PS 6CM TRẮNG DÁT VÀNG",
@@ -1380,7 +1380,7 @@
     "last_updated": "2026-07-30T03:46:31.604Z"
   },
   {
-    "title": "tấm tr���n thả ánh kim ngọc lục - 30",
+    "title": "tấm trần thả ánh kim ngọc lục - 30",
     "slug": "tam-tran-tha-anh-kim-ngoc-luc-30",
     "category": "Trần và Phụ kiện- giá tại kho",
     "description": "Tấm Trần Thả Ánh Kim Ngọc Lục - 30: Vẻ Đẹp Ngọc Bích Sang Trọng Cho Trần Nhà\nMang vẻ đẹp quý phái của ngọc lục bảo, tấm trần thả ánh kim Ngọc Lục - 30 là lựa chọn hoàn hảo cho những ai yêu thích sự sang trọng, tinh tế nhưng vẫn gần gũi với thiên nhiên. Sản phẩm không chỉ đẹp mà còn bền bỉ, thích hợp",
@@ -1392,7 +1392,7 @@
     "packaging": "",
     "weight": 3.9,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:14.418Z"
+    "last_updated": "2026-08-01T02:12:04.709Z"
   },
   {
     "title": "PHÀO LỆCH PIMA _mã 12 (CÂY)",
@@ -1413,7 +1413,7 @@
     "title": "TẤM NANO_ BP02",
     "slug": "tam-nano-bp02",
     "category": "tấm nhựa - dtn",
-    "description": "Giới Thiệu Về TẤM NANO_ BP02 – Giải Pháp Ốp Tường Vân Gỗ Óc Chó Cao Cấp, Tiết Kiệm Vượt Trội\nBạn đang mơ ước về một không gian sống sang trọng, ấm cúng với những đường vân gỗ óc chó tự nhiên đầy tinh tế, nhưng lại e ngại chi phí đắt đỏ và những rủi ro tiềm ẩn của gỗ thật như cong vênh, mối mọt? TẤM ",
+    "description": "Giới Thiệu Về TẤM NANO_ BP02 – Giải Pháp Ốp Tường Vân Gỗ Óc Chó Cao Cấp, Tiết Kiệm Vượt Trội\nBạn đang mơ ước về một không gian sống sang trọng, ấm cúng với những đường vân gỗ óc chó tự nhiên đầy tinh tế, nhưng lại e ngại chi phí đắt đỏ và những rủi ro ti���m ẩn của gỗ thật như cong vênh, mối mọt? TẤ",
     "price": 90000,
     "price_formatted": "90.000 VND",
     "image_url": "https://res.cloudinary.com/dtdgrcznj/image/upload/v1785314034/md6budqssrsabg51xrny.jpg",
@@ -1437,7 +1437,7 @@
     "packaging": "",
     "weight": 2.7,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:56.954Z"
+    "last_updated": "2026-08-01T02:11:11.390Z"
   },
   {
     "title": "ống thép Ø21 độ dày 1,4 mm",
@@ -1452,7 +1452,7 @@
     "packaging": "",
     "weight": 3.41,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:45:56.781Z"
+    "last_updated": "2026-08-01T02:12:26.592Z"
   },
   {
     "title": "TẤM NANO_004",
@@ -1482,7 +1482,7 @@
     "packaging": "",
     "weight": 2.5,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:11.571Z"
+    "last_updated": "2026-08-01T02:12:38.131Z"
   },
   {
     "title": "S.S MẠ KẼM-E261- XANH LÁ CÂY (800ML) (LON)",
@@ -1497,7 +1497,7 @@
     "packaging": "",
     "weight": 0.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:14.611Z"
+    "last_updated": "2026-08-01T02:12:40.533Z"
   },
   {
     "title": "S.S MẠ KẼM-E363-MÀU XINGFA ĐEN (2.5ML) (LON)",
@@ -1512,7 +1512,7 @@
     "packaging": "",
     "weight": 2.5,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:17.107Z"
+    "last_updated": "2026-08-01T02:12:21.227Z"
   },
   {
     "title": "sắt hộp sendo 40 X 40 X 1,1 mm",
@@ -1527,7 +1527,7 @@
     "packaging": "",
     "weight": 7.79,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:15.137Z"
+    "last_updated": "2026-08-01T02:12:19.770Z"
   },
   {
     "title": "PHÀO LỆCH PIMA _mã 10 (CÂY)",
@@ -1542,7 +1542,7 @@
     "packaging": "",
     "weight": 0.9,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:13.880Z"
+    "last_updated": "2026-08-01T02:12:39.942Z"
   },
   {
     "title": "S.S MẠ KẼM-E364-MÀU XINGFA XÁM (2.5ML) (LON)",
@@ -1572,7 +1572,7 @@
     "packaging": "",
     "weight": "32",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:45:59.928Z"
+    "last_updated": "2026-08-01T02:12:29.054Z"
   },
   {
     "title": "mâm trống đồng 90 cm - màu đỏ  dát vàng",
@@ -1602,10 +1602,10 @@
     "packaging": "",
     "weight": 0.6,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:20.845Z"
+    "last_updated": "2026-08-01T02:12:24.318Z"
   },
   {
-    "title": "phào cổ tr���n pima -mã 11",
+    "title": "phào cổ trần pima -mã 11",
     "slug": "phao-co-tran-pima-ma-11",
     "category": "nhựa nhà máy pima",
     "description": "",
@@ -1632,7 +1632,7 @@
     "packaging": "",
     "weight": 29.32,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:23.518Z"
+    "last_updated": "2026-08-01T02:12:47.690Z"
   },
   {
     "title": "Tam giác (Bó 20c) Nhỏ",
@@ -1647,7 +1647,7 @@
     "packaging": "",
     "weight": "2",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:22.464Z"
+    "last_updated": "2026-08-01T02:12:46.835Z"
   },
   {
     "title": "tấm trần thả ánh kim ngọc bích - 28",
@@ -1662,7 +1662,7 @@
     "packaging": "",
     "weight": 3.9,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:45:57.005Z"
+    "last_updated": "2026-08-01T02:12:26.783Z"
   },
   {
     "title": "LỆCH 4CM - TRẮNG VÀNG - (CÂY)",
@@ -1677,7 +1677,7 @@
     "packaging": "",
     "weight": 0.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:03.828Z"
+    "last_updated": "2026-08-01T02:12:32.166Z"
   },
   {
     "title": "sắt hộp sendo 40 X 40 X 1,4 mm",
@@ -1692,7 +1692,7 @@
     "packaging": "",
     "weight": 9.7,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:41.811Z"
+    "last_updated": "2026-08-01T02:12:45.505Z"
   },
   {
     "title": "Ma tít trám khe-Acryrub White SE-Asia-450gr",
@@ -1722,7 +1722,7 @@
     "packaging": "",
     "weight": 13.5,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:07.272Z"
+    "last_updated": "2026-08-01T02:12:34.850Z"
   },
   {
     "title": "HỘP ĐÈN 90x32 GỖ NHẠT HOA VÀNG",
@@ -1737,7 +1737,7 @@
     "packaging": "",
     "weight": "1,2",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:23.735Z"
+    "last_updated": "2026-08-01T02:12:47.910Z"
   },
   {
     "title": "sắt hộp sendo 60 X 120 X 1,8 mm",
@@ -1752,7 +1752,7 @@
     "packaging": "",
     "weight": 28.99,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:20.107Z"
+    "last_updated": "2026-08-01T02:12:23.720Z"
   },
   {
     "title": "S.S MẠ KẼM - E861 - MÀU ĐEN MỜ (2.5ML) (LON)",
@@ -1782,7 +1782,7 @@
     "packaging": "",
     "weight": "2",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:00.683Z"
+    "last_updated": "2026-08-01T02:12:29.705Z"
   },
   {
     "title": "sắt hộp sendo 100 X 100 X 1,4 mm",
@@ -1815,7 +1815,7 @@
     "last_updated": "2026-07-30T03:46:57.312Z"
   },
   {
-    "title": "tấm trần thả ánh kim hoàng kim - 14",
+    "title": "tấm trần thả ánh kim ho��ng kim - 14",
     "slug": "tam-tran-tha-anh-kim-hoang-kim-14",
     "category": "Trần và Phụ kiện- giá tại kho",
     "description": "Tấm Trần Thả Ánh Kim Hoàng Kim - 14: Đẳng Cấp Vương Giả Cho Trần Nhà Cao Cấp\nSắc vàng hoàng kim lấp lánh - biểu tượng của sự giàu sang, quyền quý và đẳng cấp. Tấm trần thả ánh kim Hoàng Kim - 14 mang đến vẻ đẹp xa hoa, tráng lệ cho mọi không gian nội thất, biến trần nhà bạn thành tác phẩm nghệ thuật",
@@ -1842,7 +1842,7 @@
     "packaging": "",
     "weight": "15",
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:15.961Z"
+    "last_updated": "2026-08-01T02:12:20.379Z"
   },
   {
     "title": "ống thép Ø42 độ dày 1,2 mm",
@@ -1857,7 +1857,7 @@
     "packaging": "",
     "weight": 6.93,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:21.424Z"
+    "last_updated": "2026-08-01T02:12:46.008Z"
   },
   {
     "title": "thi công trần chìm ( khung vĩnh tường + chống ẩm )",
@@ -1917,7 +1917,7 @@
     "packaging": "",
     "weight": "2",
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:41.206Z"
+    "last_updated": "2026-08-01T02:12:44.996Z"
   },
   {
     "title": "GÓC KÉP TRẮNG DÁT VÀNG",
@@ -1947,7 +1947,7 @@
     "packaging": "",
     "weight": "",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:17.431Z"
+    "last_updated": "2026-08-01T02:12:43.117Z"
   },
   {
     "title": "thép hình i100 độ dày Á.C",
@@ -1992,7 +1992,7 @@
     "packaging": "",
     "weight": "1",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:15.142Z"
+    "last_updated": "2026-08-01T02:12:40.950Z"
   },
   {
     "title": "GÓC ÂM A0034 - (CÂY)",
@@ -2007,7 +2007,7 @@
     "packaging": "",
     "weight": 0.6,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:17.579Z"
+    "last_updated": "2026-08-01T02:12:21.591Z"
   },
   {
     "title": "S.S MẠ KẼM-E560- MÀU VÀNG CHANH (800ML) - km",
@@ -2052,7 +2052,7 @@
     "packaging": "",
     "weight": "10",
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:40.161Z"
+    "last_updated": "2026-08-01T02:12:44.046Z"
   },
   {
     "title": "thanh chính fineline khung trần thả",
@@ -2067,10 +2067,10 @@
     "packaging": "",
     "weight": 0.92,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:56.379Z"
+    "last_updated": "2026-08-01T02:11:10.785Z"
   },
   {
-    "title": "S.S MẠ KẼM-E860- MÀU ĐEN(800ML) - km",
+    "title": "S.S MẠ KẼM-E860- M��U ĐEN(800ML) - km",
     "slug": "ss-ma-kem-e860-mau-den800ml-km",
     "category": "Sơn sắt- giá tại kho",
     "description": "SƠN SẮT MẠ KẼM INDU - MÀU ĐEN E860 (800ML): GIẢI PHÁP BẢO VỆ VÀ TRANG TRÍ KIM LOẠI TOÀN DIỆN\nTrong thi công xây dựng và thiết kế nội ngoại thất hiện đại, các vật liệu kim loại như sắt mạ kẽm, nhôm, inox đang được sử dụng rộng rãi nhờ độ bền cao. Tuy nhiên, việc tìm kiếm một dòng sơn có khả năng bám ",
@@ -2082,7 +2082,7 @@
     "packaging": "LON",
     "weight": 0.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:21.601Z"
+    "last_updated": "2026-08-01T02:12:24.953Z"
   },
   {
     "title": "3 SÓNG THẤP PIMA - mã 05 (TẤM)",
@@ -2097,13 +2097,13 @@
     "packaging": "",
     "weight": 3.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:00.977Z"
+    "last_updated": "2026-08-01T02:12:29.907Z"
   },
   {
     "title": "LỤC GIÁC GỖ ĐẬM DÁT VÀNG",
     "slug": "luc-giac-go-dam-dat-vang",
     "category": "phào chỉ - hộp đèn-mâm",
-    "description": "Giới thiệu sản phẩm: LỤC GIÁC GỖ ĐẬM DÁT VÀNG – Điểm nhấn trần nhà đẳng cấp cho không gian sống\nTrong thế giới nội thất hiện đại, việc tạo ra những điểm nhấn kiến trúc độc đáo không chỉ đơn thuần là trang trí mà còn là cách thể hiện gu thẩm mỹ và đ���ng cấp của gia chủ. LỤC GIÁC GỖ ĐẬM DÁT VÀNG chín",
+    "description": "Giới thiệu sản phẩm: LỤC GIÁC GỖ ĐẬM DÁT VÀNG – Điểm nhấn trần nhà đẳng cấp cho không gian sống\nTrong thế giới nội thất hiện đại, việc tạo ra những điểm nhấn kiến trúc độc đáo không chỉ đơn thuần là trang trí mà còn là cách thể hiện gu thẩm mỹ và đẳng cấp của gia chủ. LỤC GIÁC GỖ ĐẬM DÁT VÀNG chính ",
     "price": 86998,
     "price_formatted": "86.998 VND",
     "image_url": "https://res.cloudinary.com/dtdgrcznj/image/upload/v1784362988/iobdwzs1zsrrlj3n8yuo.jpg",
@@ -2172,13 +2172,13 @@
     "packaging": "",
     "weight": 3.9,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:01.720Z"
+    "last_updated": "2026-08-01T02:12:30.485Z"
   },
   {
-    "title": "S.S MẠ KẼM-E365- MÀU XÁM ĐẬM (800ML) (LON)",
+    "title": "S.S MẠ KẼM-E365- MÀU X��M ĐẬM (800ML) (LON)",
     "slug": "ss-ma-kem-e365-mau-xam-dam-800ml-lon",
     "category": "Sơn sắt- giá tại kho",
-    "description": "SƠN&nbsp;SẮT&nbsp;MẠ&nbsp;KẼM&nbsp;iNDU&nbsp;-&nbsp;MÀU&nbsp;XÁM&nbsp;ĐẬM&nbsp;(800ML)&nbsp;-&nbsp;GIẢI&nbsp;PHÁP&nbsp;BẢO&nbsp;VỆ&nbsp;KIM&nbsp;LOẠI&nbsp;TOÀN&nbsp;DIỆNS.S&nbsp;M���&nbsp;KẼM-E365-&nbsp;MÀU&nbsp;XÁM&nbsp;ĐẬM&nbsp;(800ML)&nbsp;(LON)&nbsp;là&nbsp;sản&nbsp;phẩm&nbsp;sơn&nbsp;sắt&nbsp;m",
+    "description": "SƠN&nbsp;SẮT&nbsp;MẠ&nbsp;KẼM&nbsp;iNDU&nbsp;-&nbsp;MÀU&nbsp;XÁM&nbsp;ĐẬM&nbsp;(800ML)&nbsp;-&nbsp;GIẢI&nbsp;PHÁP&nbsp;BẢO&nbsp;VỆ&nbsp;KIM&nbsp;LOẠI&nbsp;TOÀN&nbsp;DIỆNS.S&nbsp;MẠ&nbsp;KẼM-E365-&nbsp;MÀU&nbsp;XÁM&nbsp;ĐẬM&nbsp;(800ML)&nbsp;(LON)&nbsp;là&nbsp;sản&nbsp;phẩm&nbsp;sơn&nbsp;sắt&nbsp;mạ&",
     "price": 114261,
     "price_formatted": "114.261 VND",
     "image_url": "https://res.cloudinary.com/dtdgrcznj/image/upload/v1783149190/vgrfq7aorlkenqg3meuj.jpg",
@@ -2187,7 +2187,7 @@
     "packaging": "",
     "weight": 0.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:45:58.567Z"
+    "last_updated": "2026-08-01T02:12:28.057Z"
   },
   {
     "title": "GÓC KÉP GỖ ĐẬM DÁT VÀNG",
@@ -2232,7 +2232,7 @@
     "packaging": "",
     "weight": 1.97,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:18.496Z"
+    "last_updated": "2026-08-01T02:12:43.949Z"
   },
   {
     "title": "vận chuyển chành",
@@ -2247,7 +2247,7 @@
     "packaging": "",
     "weight": "",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:19.536Z"
+    "last_updated": "2026-08-01T02:12:44.706Z"
   },
   {
     "title": "La 20",
@@ -2262,7 +2262,7 @@
     "packaging": "",
     "weight": "2",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:11.264Z"
+    "last_updated": "2026-08-01T02:12:37.931Z"
   },
   {
     "title": "Ty treo 3.4 2.5m",
@@ -2277,7 +2277,7 @@
     "packaging": "",
     "weight": 1.7,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:04.648Z"
+    "last_updated": "2026-08-01T02:12:32.835Z"
   },
   {
     "title": "TẤM NANO_001",
@@ -2322,7 +2322,7 @@
     "packaging": "",
     "weight": "1.52",
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:16.602Z"
+    "last_updated": "2026-08-01T02:12:20.825Z"
   },
   {
     "title": "thi công trần chìm ( khung lê trần + chống ẩm )",
@@ -2352,7 +2352,7 @@
     "packaging": "",
     "weight": 0.9,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:22.677Z"
+    "last_updated": "2026-08-01T02:12:47.043Z"
   },
   {
     "title": "Thanh phụ 1m2 trần thả - GYPTEE ",
@@ -2367,7 +2367,7 @@
     "packaging": "",
     "weight": "0.76",
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:21.984Z"
+    "last_updated": "2026-08-01T02:12:25.152Z"
   },
   {
     "title": "GÓC ÂM PIMA _mã 10 (CÂY)",
@@ -2382,7 +2382,7 @@
     "packaging": "",
     "weight": 0.6,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:15.354Z"
+    "last_updated": "2026-08-01T02:12:41.157Z"
   },
   {
     "title": "sắt hộp sendo 25 X 25 X 1,1 mm",
@@ -2397,7 +2397,7 @@
     "packaging": "",
     "weight": 4.6,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:08.030Z"
+    "last_updated": "2026-08-01T02:12:35.417Z"
   },
   {
     "title": "S.S MẠ KẼM-E861- MÀU ĐEN MỜ (800ML) (LON)",
@@ -2412,12 +2412,12 @@
     "packaging": "",
     "weight": 0.8,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:55.006Z"
+    "last_updated": "2026-08-01T02:12:47.532Z"
   },
   {
     "title": "tấm duraflex 6mm",
     "slug": "tam-duraflex-6mm",
-    "category": "t���m duraflex-thông",
+    "category": "tấm duraflex-thông",
     "description": "",
     "price": 170000,
     "price_formatted": "170.000 VND",
@@ -2427,7 +2427,7 @@
     "packaging": "",
     "weight": "29,30",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:10.072Z"
+    "last_updated": "2026-08-01T02:12:36.828Z"
   },
   {
     "title": "keo màu che khuyết điểm - màu vàng",
@@ -2442,7 +2442,7 @@
     "packaging": "20",
     "weight": "0,02",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:45:58.058Z"
+    "last_updated": "2026-08-01T02:12:27.646Z"
   },
   {
     "title": "ĐÈN 32*32 GỖ NHẠT TRƠN",
@@ -2472,13 +2472,13 @@
     "packaging": "",
     "weight": 3.88,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:12.893Z"
+    "last_updated": "2026-08-01T02:11:46.331Z"
   },
   {
     "title": "TẤM NANO_019",
     "slug": "tam-nano-019-1",
     "category": "tấm nhựa - dtn",
-    "description": "Giới thiệu sản phẩm TẤM NANO_019 – Vẻ đẹp gỗ gõ đỏ đẳng cấp cho không gian sống\nTrong thế giới vật liệu ốp tường cao cấp, TẤM NANO_019 nổi lên như một tuyệt tác của dòng tấm nhựa PVC khoáng chất, mang vẻ đẹp trầm ấm, sang trọng của gỗ nâu đỏ đậm. Được ch�� tác từ công nghệ Nano Bình Phước, sản phẩm ",
+    "description": "Giới thiệu sản phẩm TẤM NANO_019 – Vẻ đẹp gỗ gõ đỏ đẳng cấp cho không gian sống\nTrong thế giới vật liệu ốp tường cao cấp, TẤM NANO_019 nổi lên như một tuyệt tác của dòng tấm nhựa PVC khoáng chất, mang vẻ đẹp trầm ấm, sang trọng của gỗ nâu đỏ đậm. Được chế tác từ công nghệ Nano Bình Phước, sản phẩm k",
     "price": 90000,
     "price_formatted": "90.000 VND",
     "image_url": "https://res.cloudinary.com/dtdgrcznj/image/upload/v1785314013/uhztabajumoq6ucbtrsh.jpg",
@@ -2562,12 +2562,12 @@
     "packaging": "",
     "weight": 0.66,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:42.624Z"
+    "last_updated": "2026-08-01T02:12:46.212Z"
   },
   {
     "title": "LEN CHÂN PIMA _mã 03 - (CÂY)",
     "slug": "len-chan-pima-ma-03-cay",
-    "category": "Nhựa và Phụ kiện tấm nhựa - giá tại kho",
+    "category": "Nhựa và Phụ kiện t���m nhựa - giá tại kho",
     "description": "LEN&nbsp;CHÂN&nbsp;TƯỜNG&nbsp;PIMA&nbsp;mã&nbsp;03&nbsp;-&nbsp;Phụ&nbsp;kiện&nbsp;chân&nbsp;tường&nbsp;đồng&nbsp;bộ&nbsp;cho&nbsp;tấm&nbsp;Nano,&nbsp;Lam&nbsp;sóngLen&nbsp;chân&nbsp;tường&nbsp;PIMA&nbsp;là&nbsp;phụ&nbsp;kiện&nbsp;chuyên&nbsp;dụng&nbsp;đi&nbsp;kèm&nbsp;trong&nbsp;hệ&nbsp;sinh&nbsp;th",
     "price": 77363,
     "price_formatted": "77.363 VND",
@@ -2577,7 +2577,7 @@
     "packaging": "",
     "weight": 1.6,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:01.498Z"
+    "last_updated": "2026-08-01T02:12:30.282Z"
   },
   {
     "title": "PHÀO LỆCH PS 6CM GỖ NHẠT DÁT VÀNG",
@@ -2607,7 +2607,7 @@
     "packaging": "",
     "weight": 3.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:09.081Z"
+    "last_updated": "2026-08-01T02:12:36.236Z"
   },
   {
     "title": "GÓC KÉP GỖ NHẠT DÁT VÀNG",
@@ -2622,7 +2622,7 @@
     "packaging": "",
     "weight": 0.15,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:57.336Z"
+    "last_updated": "2026-08-01T02:11:11.835Z"
   },
   {
     "title": "sắt hộp sendo 20 X 20 X 1,2 mm",
@@ -2637,7 +2637,7 @@
     "packaging": "",
     "weight": 4.15,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:43.012Z"
+    "last_updated": "2026-08-01T02:12:46.654Z"
   },
   {
     "title": "keo màu che khuyết điểm gỗ- màu nâu đỏ ",
@@ -2652,7 +2652,7 @@
     "packaging": "20",
     "weight": "0,02",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:13.667Z"
+    "last_updated": "2026-08-01T02:12:39.691Z"
   },
   {
     "title": "Lệch 4CM - GÕ VÀNG - (CÂY)",
@@ -2667,13 +2667,13 @@
     "packaging": "",
     "weight": 0.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:16.923Z"
+    "last_updated": "2026-08-01T02:12:42.532Z"
   },
   {
     "title": "NANO PIMA 03 (TẤM)",
     "slug": "nano-pima-03-tam",
     "category": "Nhựa và Phụ kiện tấm nhựa - giá tại kho",
-    "description": "Tấm Ốp Nano PIMA ECP: Giải Pháp Tân Trang Không Gian Siêu Tiết Kiệm – Màu Sắc Trẻ TrungBạn đang muốn cải tạo không gian sống, làm mới cửa hàng hay văn phòng nhưng lại e ngại về chi phí vật liệu quá cao? B���n mong muốn một không gian bừng sáng, hiện đại mà không phải tốn thời gian sơn sửa phức tạp? ",
+    "description": "Tấm Ốp Nano PIMA ECP: Giải Pháp Tân Trang Không Gian Siêu Tiết Kiệm – Màu Sắc Trẻ TrungBạn đang muốn cải tạo không gian sống, làm mới cửa hàng hay văn phòng nhưng lại e ngại về chi phí vật liệu quá cao? Bạn mong muốn một không gian bừng sáng, hiện đại mà không phải tốn thời gian sơn sửa phức tạp? Tấ",
     "price": 95757,
     "price_formatted": "95.757 VND",
     "image_url": "https://res.cloudinary.com/dtdgrcznj/image/upload/v1782807626/abazxcdh3tmpbdrhb5sg.jpg",
@@ -2682,7 +2682,7 @@
     "packaging": "",
     "weight": "15",
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:10.256Z"
+    "last_updated": "2026-08-01T02:11:13.877Z"
   },
   {
     "title": "ống thép Ø42 độ dày 1,4 mm",
@@ -2697,7 +2697,7 @@
     "packaging": "",
     "weight": 8.16,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:19.965Z"
+    "last_updated": "2026-08-01T02:12:45.089Z"
   },
   {
     "title": "Vít Xám 2.5 HT",
@@ -2727,7 +2727,7 @@
     "packaging": "",
     "weight": 9.92,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:39.761Z"
+    "last_updated": "2026-08-01T02:12:43.701Z"
   },
   {
     "title": "Việt Nhật SSSC 4.5D",
@@ -2757,7 +2757,7 @@
     "packaging": "100",
     "weight": "1",
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:55.610Z"
+    "last_updated": "2026-08-01T02:12:48.179Z"
   },
   {
     "title": "khung sắt hộp + công thợ mạnh",
@@ -2772,7 +2772,7 @@
     "packaging": "",
     "weight": "",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:05.914Z"
+    "last_updated": "2026-08-01T02:12:33.870Z"
   },
   {
     "title": "S.S MẠ KẼM-E365- MÀU XÁM ĐẬM (800ML) (LON)- km",
@@ -2787,7 +2787,7 @@
     "packaging": "LON",
     "weight": 0.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:02.244Z"
+    "last_updated": "2026-08-01T02:12:30.921Z"
   },
   {
     "title": "Tôn Hoa Sen 4dem",
@@ -2808,7 +2808,7 @@
     "title": "PIMA 4 SÓNG CAO 13 (THANH)",
     "slug": "pima-4-song-cao-13-thanh",
     "category": "Nhựa và Phụ kiện tấm nhựa - giá tại kho",
-    "description": "Lam&nbsp;4&nbsp;Sóng&nbsp;Cao&nbsp;PIMA&nbsp;mã&nbsp;13&nbsp;-&nbsp;Điểm&nbsp;nhấn&nbsp;không&nbsp;gian&nbsp;3D&nbsp;đẳng&nbsp;cấpLam&nbsp;4&nbsp;Sóng&nbsp;Cao&nbsp;PIMA&nbsp;mã&nbsp;13&nbsp;có&nbsp;độ&nbsp;chênh&nbsp;lệch&nbsp;(độ&nbsp;sâu)&nbsp;của&nbsp;các&nbsp;bước&nbsp;sóng&nbsp;lớn&nbsp;hơn&nb",
+    "description": "Lam&nbsp;4&nbsp;Sóng&nbsp;Cao&nbsp;PIMA&nbsp;mã&nbsp;13&nbsp;-&nbsp;Điểm&nbsp;nhấn&nbsp;không&nbsp;gian&nbsp;3D&nbsp;đẳng&nbsp;cấpLam&nbsp;4&nbsp;Sóng&nbsp;Cao&nbsp;PIMA&nbsp;mã&nbsp;13&nbsp;có&nbsp;độ&nbsp;chênh&nbsp;lệch&nbsp;(độ&nbsp;sâu)&nbsp;của&nbsp;các&nbsp;bước&nbsp;sóng&nbsp;l��n&nbsp;hơn&n",
     "price": 83587,
     "price_formatted": "83.587 VND",
     "image_url": "https://res.cloudinary.com/dtdgrcznj/image/upload/v1782530464/gzrbkuc14dhsiwimz7fy.png",
@@ -2832,13 +2832,13 @@
     "packaging": "",
     "weight": 0.9,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:05.694Z"
+    "last_updated": "2026-08-01T02:12:33.664Z"
   },
   {
     "title": "TẤM ỐP PANEL MK02 (390X16X2900) (Tấm)",
     "slug": "tam-op-panel-mk02-390x16x2900-tam",
     "category": "Panel- giá tại kho",
-    "description": "Tấm Ốp Panel MK02 (390x16x2900) – Vân Gỗ Nâu Sang Trọng Cho Mọi Công TrìnhTấm ốp panel MK02 (390x16x2900) là dòng sản phẩm ốp tường cao cấp với thiết kế vân gỗ nâu tinh tế, kích thước chuẩn 390x16x2900mm. Sản phẩm được sản xuất theo công nghệ hiện đại, đáp ứng nhu cầu ốp tường trang trí cho cả nội t",
+    "description": "Tấm Ốp Panel MK02 (390x16x2900) – Vân Gỗ Nâu Sang Trọng Cho Mọi Công TrìnhTấm ốp panel MK02 (390x16x2900) là dòng sản phẩm ốp tường cao cấp với thiết kế vân gỗ nâu tinh tế, kích thước chuẩn 390x16x2900mm. Sản phẩm được sản xuất theo công nghệ hiện đ��i, đáp ứng nhu cầu ốp tường trang trí cho cả nội ",
     "price": 202524,
     "price_formatted": "202.524 VND",
     "image_url": "https://res.cloudinary.com/dtdgrcznj/image/upload/v1783064195/o1r9oo1bop4vevcc3o8r.png",
@@ -2850,7 +2850,7 @@
     "last_updated": "2026-07-30T03:46:49.956Z"
   },
   {
-    "title": "thi công tr��n chìm ( khung vĩnh tường + siêu bền X )",
+    "title": "thi công trần chìm ( khung vĩnh tường + siêu bền X )",
     "slug": "thi-cong-tran-chim-khung-vinh-tuong-sieu-ben-x-",
     "category": "thi công hoàn thiện",
     "description": "",
@@ -2907,7 +2907,7 @@
     "packaging": "",
     "weight": 0.9,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:43.394Z"
+    "last_updated": "2026-08-01T02:12:47.062Z"
   },
   {
     "title": "CỔ TRẦN PIMA _mã 03 - (CÂY)",
@@ -2922,7 +2922,7 @@
     "packaging": "",
     "weight": 1.6,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:15.389Z"
+    "last_updated": "2026-08-01T02:12:19.978Z"
   },
   {
     "title": "Tôn Việt Pháp (hoặc tương đương)",
@@ -2952,7 +2952,7 @@
     "packaging": "",
     "weight": "3,3",
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:11.418Z"
+    "last_updated": "2026-08-01T02:11:14.886Z"
   },
   {
     "title": "S.S MẠ KẼM-E160- MÀU TRẮNG (800ML) - km",
@@ -2982,7 +2982,7 @@
     "packaging": "",
     "weight": "15",
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:57.142Z"
+    "last_updated": "2026-08-01T02:11:11.623Z"
   },
   {
     "title": "sắt hộp sendo 30 X 60 X 1,4 mm",
@@ -2997,7 +2997,7 @@
     "packaging": "",
     "weight": 10.5,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:11.681Z"
+    "last_updated": "2026-08-01T02:11:15.085Z"
   },
   {
     "title": "Thanh V trần thả- GYPTEE",
@@ -3012,7 +3012,7 @@
     "packaging": "",
     "weight": "0.83",
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:20.572Z"
+    "last_updated": "2026-08-01T02:12:24.116Z"
   },
   {
     "title": "PIMA 4 SÓNG CAO 26 (THANH)",
@@ -3027,7 +3027,7 @@
     "packaging": "",
     "weight": 3.5,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:20.480Z"
+    "last_updated": "2026-08-01T02:12:45.455Z"
   },
   {
     "title": "ống thép Ø60 độ dày 1,4 mm",
@@ -3048,7 +3048,7 @@
     "title": "Keo dán NỘI THẤT 3X-BOND (Chai)",
     "slug": "keo-dan-noi-that-3x-bond-chai",
     "category": "Nhựa và Phụ kiện tấm nhựa - giá tại kho",
-    "description": "Keo&nbsp;Dán&nbsp;Nội&nbsp;Thất&nbsp;3X-BOND:&nbsp;Giải&nbsp;Pháp&nbsp;Kết&nbsp;Dính&nbsp;Đa&nbsp;Năng,&nbsp;An&nbsp;Toàn&nbsp;Tuyệt&nbsp;Đối&nbsp;Cho&nbsp;Mọi&nbsp;Vật&nbsp;LiệuTrong&nbsp;thi&nbsp;công&nbsp;trang&nbsp;trí&nbsp;nội&nbsp;thất&nbsp;hiện&nbsp;đại,&nbsp;việc&nbsp;hạn&nbsp;chế&nbsp;khoan",
+    "description": "Keo&nbsp;Dán&nbsp;Nội&nbsp;Thất&nbsp;3X-BOND:&nbsp;Giải&nbsp;Pháp&nbsp;K���t&nbsp;Dính&nbsp;Đa&nbsp;Năng,&nbsp;An&nbsp;Toàn&nbsp;Tuyệt&nbsp;Đối&nbsp;Cho&nbsp;Mọi&nbsp;Vật&nbsp;LiệuTrong&nbsp;thi&nbsp;công&nbsp;trang&nbsp;trí&nbsp;nội&nbsp;thất&nbsp;hiện&nbsp;đại,&nbsp;việc&nbsp;hạn&nbsp;chế&nbsp;kho",
     "price": 26355,
     "price_formatted": "26.355 VND",
     "image_url": null,
@@ -3057,7 +3057,7 @@
     "packaging": "",
     "weight": 0.3,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:00.153Z"
+    "last_updated": "2026-08-01T02:12:29.251Z"
   },
   {
     "title": "GÓC ÂM PIMA _mã 09 (CÂY)",
@@ -3072,10 +3072,10 @@
     "packaging": "",
     "weight": 0.6,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:04.342Z"
+    "last_updated": "2026-08-01T02:12:32.625Z"
   },
   {
-    "title": "sắt hộp sendo 50 X 100 X 1,8 mm",
+    "title": "sắt h��p sendo 50 X 100 X 1,8 mm",
     "slug": "sat-hop-sendo-50-x-100-x-1-8-mm",
     "category": "tôn sắt - klp",
     "description": "",
@@ -3087,7 +3087,7 @@
     "packaging": "",
     "weight": "24",
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:13.252Z"
+    "last_updated": "2026-08-01T02:11:46.528Z"
   },
   {
     "title": "ống thép Ø114 độ dày 1,4 mm",
@@ -3102,7 +3102,7 @@
     "packaging": "",
     "weight": 23.32,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:17.767Z"
+    "last_updated": "2026-08-01T02:12:43.320Z"
   },
   {
     "title": "TẤM ỐP PANEL MK13 (TẤM)",
@@ -3117,7 +3117,7 @@
     "packaging": "",
     "weight": 3.5,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:45:56.482Z"
+    "last_updated": "2026-08-01T02:12:26.379Z"
   },
   {
     "title": "PIMA 4 SÓNG CAO 12 (THANH)",
@@ -3177,7 +3177,7 @@
     "packaging": "100",
     "weight": "1",
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:57.558Z"
+    "last_updated": "2026-08-01T02:11:12.044Z"
   },
   {
     "title": "S.S MẠ KẼM-E361-MÀU GHI SÁNG (2.5ML) (LON)",
@@ -3192,7 +3192,7 @@
     "packaging": "",
     "weight": 2.5,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:02.760Z"
+    "last_updated": "2026-08-01T02:12:31.388Z"
   },
   {
     "title": "MÂM VÂN GỖ DÁT VÀNG 66CM",
@@ -3237,7 +3237,7 @@
     "packaging": "LON",
     "weight": 2.5,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:13.758Z"
+    "last_updated": "2026-08-01T02:12:04.154Z"
   },
   {
     "title": "S.S MẠ KẼM-E660- MÀU KEM (800ML) (LON)",
@@ -3267,7 +3267,7 @@
     "packaging": "",
     "weight": 3.5,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:45:57.833Z"
+    "last_updated": "2026-08-01T02:12:27.455Z"
   },
   {
     "title": "HỘP ĐÈN 90*32 TRẮNG HOA VÀNG",
@@ -3297,7 +3297,7 @@
     "packaging": "",
     "weight": "0,8",
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:39.960Z"
+    "last_updated": "2026-08-01T02:12:43.877Z"
   },
   {
     "title": "sắt hộp sendo 20 X 20 X 1 mm",
@@ -3312,7 +3312,7 @@
     "packaging": "",
     "weight": 3.47,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:25.313Z"
+    "last_updated": "2026-08-01T02:12:48.830Z"
   },
   {
     "title": "S.S MẠ KẼM-E266- X.DƯƠNG TƯƠI (800ML) (LON)",
@@ -3327,7 +3327,7 @@
     "packaging": "",
     "weight": 0.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:24.569Z"
+    "last_updated": "2026-08-01T02:12:48.627Z"
   },
   {
     "title": "thanh lam hợp kim zuno 4 sóng",
@@ -3342,13 +3342,13 @@
     "packaging": "",
     "weight": "0,942",
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:58.307Z"
+    "last_updated": "2026-08-01T02:11:13.044Z"
   },
   {
     "title": "tấm trần thả ánh kim quý tộc - 23",
     "slug": "tam-tran-tha-anh-kim-quy-toc-23",
     "category": "Trần và Phụ kiện- giá tại kho",
-    "description": "Tấm Trần Thả Ánh Kim Quý Tộc - 23: Đẳng Cấp Vương Giả Cho Trần Nhà Cao Cấp\nBạn đang tìm kiếm một giải pháp trần thả vừa đẹp mê hồn, vừa bền bỉ theo thời gian? Tấm trần thả ánh kim Quý Tộc - 23 chính là lựa chọn hoàn hảo dành cho bạn. Với s���c màu sang trọng, lấp lánh như những viên đá quý, sản phẩm",
+    "description": "Tấm Trần Thả Ánh Kim Quý Tộc - 23: Đẳng Cấp Vương Giả Cho Trần Nhà Cao Cấp\nBạn đang tìm kiếm một giải pháp trần thả vừa đẹp mê hồn, vừa bền bỉ theo thời gian? Tấm trần thả ánh kim Quý Tộc - 23 chính là lựa chọn hoàn hảo dành cho bạn. Với sắc màu sang trọng, lấp lánh như những viên đá quý, sản phẩm m",
     "price": 51000,
     "price_formatted": "51.000 VND",
     "image_url": "https://res.cloudinary.com/dtdgrcznj/image/upload/v1782544858/ytsenatfopbpueoqbpbm.webp",
@@ -3357,7 +3357,7 @@
     "packaging": "",
     "weight": 3.9,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:54.773Z"
+    "last_updated": "2026-08-01T02:12:47.321Z"
   },
   {
     "title": "sắt hộp sendo 30 X 60 X 1,2 mm",
@@ -3372,7 +3372,7 @@
     "packaging": "",
     "weight": 9.3,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:00.458Z"
+    "last_updated": "2026-08-01T02:12:29.482Z"
   },
   {
     "title": "S.S MẠ KẼM - E365 - MÀU XÁM ĐẬM (2.5ML) (LON)",
@@ -3402,7 +3402,7 @@
     "packaging": "",
     "weight": 12.5,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:16.260Z"
+    "last_updated": "2026-08-01T02:12:20.633Z"
   },
   {
     "title": "MÂM GỖ TRẮNG DÁT VÀNG 76CM",
@@ -3417,7 +3417,7 @@
     "packaging": "",
     "weight": "2",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:23.223Z"
+    "last_updated": "2026-08-01T02:12:47.518Z"
   },
   {
     "title": "V góc A0034 (30x30) - (Cây)",
@@ -3432,13 +3432,13 @@
     "packaging": "",
     "weight": 0.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:21.181Z"
+    "last_updated": "2026-08-01T02:12:45.833Z"
   },
   {
     "title": "GÓC ÂM PIMA _mã 12 (CÂY)",
     "slug": "goc-am-pima-ma-12-cay",
     "category": "Nhựa và Phụ kiện tấm nhựa - giá tại kho",
-    "description": "Nẹp&nbsp;Góc&nbsp;Âm&nbsp;PIMA&nbsp;Mã&nbsp;12&nbsp;-&nbsp;Phụ&nbsp;Kiện&nbsp;Xử&nbsp;Lý&nbsp;Góc&nbsp;Trong&nbsp;Cho&nbsp;T��m&nbsp;Ốp&nbsp;Nano&nbsp;&amp;&nbsp;Lam&nbsp;SóngNẹp&nbsp;Góc&nbsp;Âm&nbsp;PIMA&nbsp;mã&nbsp;12&nbsp;là&nbsp;phụ&nbsp;kiện&nbsp;chuyên&nbsp;dụng&nbsp;dành&nbsp;cho&nbsp;việc&",
+    "description": "Nẹp&nbsp;Góc&nbsp;Âm&nbsp;PIMA&nbsp;Mã&nbsp;12&nbsp;-&nbsp;Phụ&nbsp;Kiện&nbsp;Xử&nbsp;Lý&nbsp;Góc&nbsp;Trong&nbsp;Cho&nbsp;Tấm&nbsp;Ốp&nbsp;Nano&nbsp;&amp;&nbsp;Lam&nbsp;SóngNẹp&nbsp;Góc&nbsp;Âm&nbsp;PIMA&nbsp;mã&nbsp;12&nbsp;là&nbsp;phụ&nbsp;kiện&nbsp;chuyên&nbsp;dụng&nbsp;dành&nbsp;cho&nbsp;việc&n",
     "price": 28936,
     "price_formatted": "28.936 VND",
     "image_url": "https://res.cloudinary.com/dtdgrcznj/image/upload/v1782892823/rpre4cvn51yc4nv12j7r.jpg",
@@ -3447,7 +3447,7 @@
     "packaging": "",
     "weight": 0.6,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:03.073Z"
+    "last_updated": "2026-08-01T02:12:31.573Z"
   },
   {
     "title": "CÂN GỖ ĐẬM DÁT VÀNG",
@@ -3462,7 +3462,7 @@
     "packaging": "",
     "weight": 0.65,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:17.222Z"
+    "last_updated": "2026-08-01T02:12:42.921Z"
   },
   {
     "title": "ống thép Ø49 độ dày 1,2 mm",
@@ -3507,7 +3507,7 @@
     "packaging": "",
     "weight": 77.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:09.478Z"
+    "last_updated": "2026-08-01T02:12:36.429Z"
   },
   {
     "title": "thanh V vĩnh tường chìm khung trần chìm",
@@ -3522,7 +3522,7 @@
     "packaging": "",
     "weight": 0.45,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:45:59.404Z"
+    "last_updated": "2026-08-01T02:12:28.662Z"
   },
   {
     "title": "tấm nano pima - 05",
@@ -3552,7 +3552,7 @@
     "packaging": "",
     "weight": 1.6,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:17.808Z"
+    "last_updated": "2026-08-01T02:12:21.806Z"
   },
   {
     "title": "PIMA 4 SÓNG CAO 20 - (THANH)",
@@ -3582,7 +3582,7 @@
     "packaging": "",
     "weight": "1",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:18.798Z"
+    "last_updated": "2026-08-01T02:12:44.132Z"
   },
   {
     "title": "ống thép Ø34 độ dày 1,4 mm",
@@ -3597,7 +3597,7 @@
     "packaging": "",
     "weight": "6",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:11.050Z"
+    "last_updated": "2026-08-01T02:12:37.729Z"
   },
   {
     "title": "LEN CHÂN PIMA _mã 10 (CÂY)",
@@ -3627,7 +3627,7 @@
     "packaging": "",
     "weight": "0.34",
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:56.185Z"
+    "last_updated": "2026-08-01T02:12:48.859Z"
   },
   {
     "title": "Tôn Việt Nhật SSSC 4.0 zem",
@@ -3642,13 +3642,13 @@
     "packaging": "",
     "weight": 3.51,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:12.618Z"
+    "last_updated": "2026-08-01T02:12:38.953Z"
   },
   {
     "title": "PHÀO CỬA PIMA _mã 03 - (CÂY)",
     "slug": "phao-cua-pima-ma-03-cay",
     "category": "Nhựa và Phụ kiện tấm nhựa - giá tại kho",
-    "description": "Phào Cửa PIMA mã 03 (CÂY) - Phụ kiện ốp viền khung cửa cho tấm Nano, Lam sóngPhào Cửa PIMA là phụ kiện thi công kèm tấm nano, lam sóng, chuyên dụng cho khu vực cửa ra vào và cửa sổ.Tính năng:Ốp bo quanh viền khung cửa sổ, cửa đi, giúp che đi các mép tường thô sau khi ốp lát.Ưu đi��m:Chuyển tiếp hài ",
+    "description": "Phào Cửa PIMA mã 03 (CÂY) - Phụ kiện ốp viền khung cửa cho tấm Nano, Lam sóngPhào Cửa PIMA là phụ kiện thi công kèm tấm nano, lam sóng, chuyên dụng cho khu vực cửa ra vào và cửa sổ.Tính năng:Ốp bo quanh viền khung cửa sổ, cửa đi, giúp che đi các mép tường thô sau khi ốp lát.Ưu điểm:Chuyển tiếp hài h",
     "price": 79435,
     "price_formatted": "79.435 VND",
     "image_url": "https://res.cloudinary.com/dtdgrcznj/image/upload/v1782807817/sajcvqfimwrdspszqpbn.jpg",
@@ -3672,7 +3672,7 @@
     "packaging": "",
     "weight": 22.24,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:42.805Z"
+    "last_updated": "2026-08-01T02:12:46.419Z"
   },
   {
     "title": "sắt hộp sendo 40 X 80 X 1,8 mm",
@@ -3687,7 +3687,7 @@
     "packaging": "",
     "weight": "19",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:10.525Z"
+    "last_updated": "2026-08-01T02:12:37.289Z"
   },
   {
     "title": "4 SÓNG THẤP PIMA - mã 26 (THANH)",
@@ -3702,7 +3702,7 @@
     "packaging": "",
     "weight": 2.7,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:21.641Z"
+    "last_updated": "2026-08-01T02:12:46.184Z"
   },
   {
     "title": "nano pima cắt theo yêu cầu - màu 03",
@@ -3777,7 +3777,7 @@
     "packaging": "",
     "weight": "1,912",
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:16.824Z"
+    "last_updated": "2026-08-01T02:12:21.008Z"
   },
   {
     "title": "Tấm ốp nano pima  ECP- 06",
@@ -3807,7 +3807,7 @@
     "packaging": "",
     "weight": "22",
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:40.580Z"
+    "last_updated": "2026-08-01T02:12:44.429Z"
   },
   {
     "title": "góc kép vân gỗ nhạt dát vàng",
@@ -3837,7 +3837,7 @@
     "packaging": "",
     "weight": "1",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:22.156Z"
+    "last_updated": "2026-08-01T02:12:46.635Z"
   },
   {
     "title": "S.S MẠ KẼM -E960- MÀU NHŨ BẠC (800ML) (LON)",
@@ -3852,7 +3852,7 @@
     "packaging": "",
     "weight": 0.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:03.347Z"
+    "last_updated": "2026-08-01T02:12:31.769Z"
   },
   {
     "title": "Ty Treo 3.5mm",
@@ -3867,7 +3867,7 @@
     "packaging": "",
     "weight": 1.73,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:13.968Z"
+    "last_updated": "2026-08-01T02:12:04.343Z"
   },
   {
     "title": "MÂM VÂN GỖ DÁT VÀNG 90CM",
@@ -3912,7 +3912,7 @@
     "packaging": "",
     "weight": 0.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:11.931Z"
+    "last_updated": "2026-08-01T02:11:15.377Z"
   },
   {
     "title": "tấm ốp panel kim loại 13",
@@ -3942,7 +3942,7 @@
     "packaging": "",
     "weight": 3.9,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:43.205Z"
+    "last_updated": "2026-08-01T02:12:46.853Z"
   },
   {
     "title": "PHÀO CÂN PIMA _mã 11 - (CÂY)",
@@ -3957,7 +3957,7 @@
     "packaging": "",
     "weight": 0.9,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:45:59.102Z"
+    "last_updated": "2026-08-01T02:12:28.444Z"
   },
   {
     "title": "GÓC ÂM PIMA _mã 03 - (CÂY)",
@@ -3972,7 +3972,7 @@
     "packaging": "",
     "weight": 0.6,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:42.420Z"
+    "last_updated": "2026-08-01T02:12:46.038Z"
   },
   {
     "title": "S.S MẠ KẼM-E860- MÀU ĐEN(800ML) (LON)",
@@ -3987,7 +3987,7 @@
     "packaging": "",
     "weight": 0.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:21.946Z"
+    "last_updated": "2026-08-01T02:12:46.402Z"
   },
   {
     "title": "sắt hộp sendo 20 X 20 X 1,1 mm",
@@ -4002,7 +4002,7 @@
     "packaging": "",
     "weight": 3.7,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:13.146Z"
+    "last_updated": "2026-08-01T02:12:39.296Z"
   },
   {
     "title": "sắt hộp sendo 12 X 12 X 1 mm",
@@ -4017,7 +4017,7 @@
     "packaging": "",
     "weight": 1.95,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:13.365Z"
+    "last_updated": "2026-08-01T02:12:39.483Z"
   },
   {
     "title": "Tôn Nam Kim 3.5",
@@ -4032,7 +4032,7 @@
     "packaging": "",
     "weight": 2.9,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:04.120Z"
+    "last_updated": "2026-08-01T02:12:32.383Z"
   },
   {
     "title": "S.S MẠ KẼM-E860-MÀU ĐEN (2.5ML) -km",
@@ -4047,7 +4047,7 @@
     "packaging": "LON",
     "weight": 2.5,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:08.843Z"
+    "last_updated": "2026-08-01T02:12:36.041Z"
   },
   {
     "title": "V GÓC PIMA _mã 11 - (CÂY)",
@@ -4062,7 +4062,7 @@
     "packaging": "",
     "weight": 0.9,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:45:58.879Z"
+    "last_updated": "2026-08-01T02:12:28.252Z"
   },
   {
     "title": "SẮT V4 Trung",
@@ -4077,7 +4077,7 @@
     "packaging": "",
     "weight": 8.5,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:56Z"
+    "last_updated": "2026-08-01T02:12:48.645Z"
   },
   {
     "title": "SẮT V3 Trung",
@@ -4092,7 +4092,7 @@
     "packaging": "",
     "weight": "5",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:17.987Z"
+    "last_updated": "2026-08-01T02:12:43.558Z"
   },
   {
     "title": "Tấm DURAflex 18.0mm 1220x2440",
@@ -4107,7 +4107,7 @@
     "packaging": "",
     "weight": 88.1,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:10.928Z"
+    "last_updated": "2026-08-01T02:11:14.475Z"
   },
   {
     "title": "H NỐI PIMA _mã 11 - (CÂY)",
@@ -4122,7 +4122,7 @@
     "packaging": "",
     "weight": "1",
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:18.549Z"
+    "last_updated": "2026-08-01T02:12:22.474Z"
   },
   {
     "title": "phào lệch pima - 11",
@@ -4137,7 +4137,7 @@
     "packaging": "50",
     "weight": "0,7",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:45:57.552Z"
+    "last_updated": "2026-08-01T02:12:27.245Z"
   },
   {
     "title": "NANO PIMA 12 (TẤM)",
@@ -4152,7 +4152,7 @@
     "packaging": "",
     "weight": "15",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:08.537Z"
+    "last_updated": "2026-08-01T02:12:35.830Z"
   },
   {
     "title": "tấm nano pima -11",
@@ -4167,7 +4167,7 @@
     "packaging": "8",
     "weight": "4,8",
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:40.358Z"
+    "last_updated": "2026-08-01T02:12:44.221Z"
   },
   {
     "title": "H NỐI A0034 - (CÂY)",
@@ -4197,7 +4197,7 @@
     "packaging": "",
     "weight": 17.4,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:24.043Z"
+    "last_updated": "2026-08-01T02:12:48.161Z"
   },
   {
     "title": "Tôn Nam Kim 3.0",
@@ -4212,7 +4212,7 @@
     "packaging": "",
     "weight": 2.37,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:41.017Z"
+    "last_updated": "2026-08-01T02:12:44.821Z"
   },
   {
     "title": "HOA SEN 4D",
@@ -4257,7 +4257,7 @@
     "packaging": "",
     "weight": 0.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:20.339Z"
+    "last_updated": "2026-08-01T02:12:23.909Z"
   },
   {
     "title": "sắt hộp sendo 1mm",
@@ -4287,7 +4287,7 @@
     "packaging": "",
     "weight": 1.6,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:24.262Z"
+    "last_updated": "2026-08-01T02:12:48.417Z"
   },
   {
     "title": "Vít xám 2.5 A+",
@@ -4302,7 +4302,7 @@
     "packaging": "",
     "weight": "1",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:16.401Z"
+    "last_updated": "2026-08-01T02:12:42.134Z"
   },
   {
     "title": "TẤM NANO_063",
@@ -4347,7 +4347,7 @@
     "packaging": "",
     "weight": 4.5,
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:56.772Z"
+    "last_updated": "2026-08-01T02:11:11.186Z"
   },
   {
     "title": "S.S MẠ KẼM -E161- MÀU TRẮNG MỜ (800ML) (LON)",
@@ -4377,7 +4377,7 @@
     "packaging": "",
     "weight": 0.8,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:01.204Z"
+    "last_updated": "2026-08-01T02:12:30.101Z"
   },
   {
     "title": "sắt hộp sendo 30 X 30 X 1,2 mm",
@@ -4392,7 +4392,7 @@
     "packaging": "",
     "weight": "6",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:24.787Z"
+    "last_updated": "2026-08-01T02:12:48.846Z"
   },
   {
     "title": "nano wall 42 - t6",
@@ -4422,7 +4422,7 @@
     "packaging": "",
     "weight": 7.25,
     "in_stock": true,
-    "last_updated": "2026-07-30T08:55:14.202Z"
+    "last_updated": "2026-08-01T02:12:04.527Z"
   },
   {
     "title": "Tấm DURAflex 8.0mm 1220x2440",
@@ -4452,7 +4452,7 @@
     "packaging": "",
     "weight": "3",
     "in_stock": true,
-    "last_updated": "2026-07-31T10:13:55.222Z"
+    "last_updated": "2026-08-01T02:12:47.704Z"
   },
   {
     "title": "Lam 3 sóng vuông-màu vân gỗ đỏ ",
@@ -4467,7 +4467,7 @@
     "packaging": "",
     "weight": "4,18",
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:14.828Z"
+    "last_updated": "2026-08-01T02:12:40.746Z"
   },
   {
     "title": "Tôn Việt Nhật SSSC 4.5 zem",
@@ -4497,6 +4497,6 @@
     "packaging": "",
     "weight": 0.5,
     "in_stock": true,
-    "last_updated": "2026-07-30T03:46:06.966Z"
+    "last_updated": "2026-08-01T02:12:34.650Z"
   }
 ]
