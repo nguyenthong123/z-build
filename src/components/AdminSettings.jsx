@@ -53,6 +53,13 @@ const AdminSettings = () => {
     apiUrl: '',
     ownerId: ''
   });
+  const [telegramChatConfig, setTelegramChatConfig] = useState({
+    botToken: '',
+    botConnected: false,
+    chatId: '',
+    groupForwardEnabled: false,
+    enabled: false
+  });
   const [adminEmails, setAdminEmails] = useState([]);
   const [newAdminEmail, setNewAdminEmail] = useState('');
 
@@ -146,6 +153,18 @@ const AdminSettings = () => {
           });
         }
 
+        if (docSnap.exists() && docSnap.data().telegramChatConfig) {
+          setTelegramChatConfig(docSnap.data().telegramChatConfig);
+        } else {
+          setTelegramChatConfig({
+            botToken: '',
+            botConnected: false,
+            chatId: '',
+            groupForwardEnabled: false,
+            enabled: false
+          });
+        }
+
         const adminDocRef = doc(db, 'settings', 'admins');
         const adminSnap = await getDoc(adminDocRef);
         if (adminSnap.exists() && adminSnap.data().emails) {
@@ -171,12 +190,73 @@ const AdminSettings = () => {
     setIsSaving(true);
     try {
       const docRef = doc(db, 'storeSettings', 'main');
-      await setDoc(docRef, { bankInfo, openClawConfig, googleSheetUrl, shippingSettings, footerInfo }, { merge: true });
+      await setDoc(docRef, { bankInfo, openClawConfig, googleSheetUrl, shippingSettings, footerInfo, telegramChatConfig }, { merge: true });
 
       setToast({ message: 'Lưu cấu hình thành công!', type: 'success' });
     } catch (err) {
       console.error('Lỗi khi lưu cài đặt:', err);
       setToast({ message: 'Có lỗi xảy ra khi lưu!', type: 'error' });
+    } finally {
+      setIsSaving(false);
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
+  const handleToggleBotConnection = async () => {
+    const isConnecting = !telegramChatConfig.botConnected;
+    if (isConnecting && !telegramChatConfig.botToken.trim()) {
+      alert("Vui lòng nhập Telegram Bot Token trước khi kết nối!");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // First save current state to DB
+      const docRef = doc(db, 'storeSettings', 'main');
+      const updatedConfig = {
+        ...telegramChatConfig,
+        botConnected: isConnecting
+      };
+      
+      await setDoc(docRef, { telegramChatConfig: updatedConfig }, { merge: true });
+      setTelegramChatConfig(updatedConfig);
+
+      // Call backend function API to register/unregister webhook
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const baseUrl = isLocal 
+        ? "https://us-central1-z-build-dunvex.cloudfunctions.net/server"
+        : "";
+      const response = await fetch(`${baseUrl}/api/setup-telegram-webhook`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          botToken: telegramChatConfig.botToken.trim(),
+          botConnected: isConnecting
+        })
+      });
+
+      const resData = await response.json();
+      if (!response.ok || !resData.success) {
+        throw new Error(resData.error || "Không thể thiết lập Webhook Bot");
+      }
+
+      setToast({
+        message: isConnecting 
+          ? 'Đăng ký Webhook Telegram Bot thành công!' 
+          : 'Đã xoá Webhook Telegram Bot thành công!',
+        type: 'success'
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi kết nối Telegram: " + err.message);
+      // Revert state
+      const docRef = doc(db, 'storeSettings', 'main');
+      const reverted = {
+        ...telegramChatConfig,
+        botConnected: !isConnecting
+      };
+      await setDoc(docRef, { telegramChatConfig: reverted }, { merge: true });
+      setTelegramChatConfig(reverted);
     } finally {
       setIsSaving(false);
       setTimeout(() => setToast(null), 3000);
@@ -618,6 +698,88 @@ const AdminSettings = () => {
                       onChange={(e) => setFooterInfo({ ...footerInfo, copyright: e.target.value })} 
                       placeholder="VD: 2026 ZBUILD Store. Bảo lưu mọi quyền."
                     />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Telegram Live Chat Settings */}
+            <div className="settings-panel" style={{ marginTop: '24px' }}>
+              <div className="settings-section">
+                <div className="settings-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+                  <div>
+                    <h3>💬 Cấu hình Telegram Live Chat</h3>
+                    <p>Thiết lập kết nối với Telegram Bot để chuyển tiếp tin nhắn và chat trực tiếp với khách hàng.</p>
+                  </div>
+                  <div className="switch-container">
+                    <span className="switch-label">Kích hoạt Live Chat (Thay AI)</span>
+                    <label className="switch">
+                      <input 
+                        type="checkbox" 
+                        checked={telegramChatConfig.enabled || false}
+                        onChange={(e) => setTelegramChatConfig(prev => ({ ...prev, enabled: e.target.checked }))}
+                      />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="settings-form-grid" style={{ marginTop: '20px' }}>
+                  <div className="setting-field" style={{ gridColumn: '1 / -1' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <label style={{ margin: 0 }}>Telegram Bot Token</label>
+                      <div className="switch-container">
+                        <span className="switch-label" style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                          {telegramChatConfig.botConnected ? "🟢 Đã kết nối" : "🔴 Ngắt kết nối"}
+                        </span>
+                        <label className="switch">
+                          <input 
+                            type="checkbox" 
+                            checked={telegramChatConfig.botConnected || false}
+                            onChange={handleToggleBotConnection}
+                          />
+                          <span className="slider"></span>
+                        </label>
+                      </div>
+                    </div>
+                    <input 
+                      type="text" 
+                      placeholder="VD: 5849302195:AAH6vQ4g..."
+                      value={telegramChatConfig.botToken || ''}
+                      onChange={(e) => setTelegramChatConfig(prev => ({ ...prev, botToken: e.target.value }))}
+                      disabled={telegramChatConfig.botConnected}
+                    />
+                    <p className="field-hint" style={{ fontSize: '12px', color: '#64748B', marginTop: '5px' }}>
+                      * Nhập Token từ @BotFather. Khi bật công tắc "Kết nối", hệ thống sẽ tự động đăng ký Webhook nhận tin nhắn.
+                    </p>
+                  </div>
+
+                  <div className="setting-field" style={{ gridColumn: '1 / -1' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <label style={{ margin: 0 }}>Telegram Chat ID / Nhóm ID</label>
+                      <div className="switch-container">
+                        <span className="switch-label" style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                          Gửi vào Nhóm
+                        </span>
+                        <label className="switch">
+                          <input 
+                            type="checkbox" 
+                            checked={telegramChatConfig.groupForwardEnabled || false}
+                            onChange={(e) => setTelegramChatConfig(prev => ({ ...prev, groupForwardEnabled: e.target.checked }))}
+                          />
+                          <span className="slider"></span>
+                        </label>
+                      </div>
+                    </div>
+                    <input 
+                      type="text" 
+                      placeholder="VD: -1001859384725 hoặc 59284720"
+                      value={telegramChatConfig.chatId || ''}
+                      onChange={(e) => setTelegramChatConfig(prev => ({ ...prev, chatId: e.target.value }))}
+                    />
+                    <p className="field-hint" style={{ fontSize: '12px', color: '#64748B', marginTop: '5px' }}>
+                      * ID của nhóm chat hoặc ID tài khoản Telegram nhận tin nhắn. Đối với nhóm siêu riêng tư (Supergroup), ID thường có tiền tố `-100`.
+                    </p>
                   </div>
                 </div>
               </div>

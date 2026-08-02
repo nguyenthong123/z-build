@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { db, auth } from '../firebase';
-import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, limit } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, limit, doc, onSnapshot, setDoc } from 'firebase/firestore';
 import Fuse from 'fuse.js';
 import { STOREFRONT_AI_FUNCTIONS, executeFunction } from '../services/aiFunctions';
 
@@ -13,6 +13,47 @@ import { STOREFRONT_AI_FUNCTIONS, executeFunction } from '../services/aiFunction
  */
 export const useStorefrontAI = (productContext) => {
   const storageKey = `zbuild_ai_messages_storefront`;
+  const [liveChatConfig, setLiveChatConfig] = useState({ enabled: false });
+  const [liveChatMessages, setLiveChatMessages] = useState([]);
+
+  // 1. Listen to storeSettings/main for Telegram Live Chat enabled status
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'storeSettings', 'main'), (docSnap) => {
+      if (docSnap.exists() && docSnap.data().telegramChatConfig) {
+        setLiveChatConfig(docSnap.data().telegramChatConfig);
+      }
+    }, (err) => {
+      console.warn("useStorefrontAI: onSnapshot storeSettings/main failed:", err);
+    });
+    return unsub;
+  }, []);
+
+  // 2. Real-time listener for Firestore live chat messages
+  useEffect(() => {
+    if (!liveChatConfig.enabled || !auth.currentUser) return;
+
+    const messagesRef = collection(db, 'conversations', auth.currentUser.uid, 'messages');
+    const q = query(messagesRef, orderBy('createdAt', 'asc'));
+
+    const unsub = onSnapshot(q, (snapshot) => {
+      const msgs = snapshot.docs.map(docSnap => {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          text: data.text,
+          isBot: data.sender === 'staff', // Display staff messages on the left like bot responses
+          image: data.image,
+          time: data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+      });
+      setLiveChatMessages(msgs);
+    }, (err) => {
+      console.warn("useStorefrontAI: onSnapshot conversations messages failed:", err);
+    });
+
+    return unsub;
+  }, [liveChatConfig.enabled, auth.currentUser]);
+
   const [messages, setMessages] = useState(() => {
     try {
       const saved = localStorage.getItem(storageKey);
@@ -202,6 +243,61 @@ export const useStorefrontAI = (productContext) => {
   const handleSend = useCallback(async (msgText, imageFile = null) => {
     if (!msgText?.trim() && !imageFile) return;
     
+    if (liveChatConfig.enabled && auth.currentUser) {
+      setInput("");
+      setIsTyping(true);
+
+      let imageUrl = null;
+
+      if (imageFile) {
+        try {
+          const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dtdgrcznj';
+          const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'zbuild';
+          const formData = new FormData();
+          formData.append('file', imageFile);
+          formData.append('upload_preset', uploadPreset);
+          const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+            method: 'POST',
+            body: formData,
+          });
+          const data = await response.json();
+          if (response.ok && data.secure_url) {
+            imageUrl = data.secure_url;
+          } else {
+            console.error("Cloudinary upload failed", data);
+          }
+        } catch (err) {
+          console.error("Error uploading to Cloudinary", err);
+        }
+      }
+
+      try {
+        const convoRef = doc(db, 'conversations', auth.currentUser.uid);
+        const messagesRef = collection(db, 'conversations', auth.currentUser.uid, 'messages');
+
+        await setDoc(convoRef, {
+          userId: auth.currentUser.uid,
+          userName: auth.currentUser.displayName || userName || "Khách hàng",
+          userEmail: auth.currentUser.email || "",
+          lastMessageText: msgText || "[Hình ảnh]",
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        await addDoc(messagesRef, {
+          text: msgText || "",
+          image: imageUrl || "",
+          sender: 'user',
+          createdAt: serverTimestamp()
+        });
+
+      } catch (err) {
+        console.error("Error sending message to Firestore", err);
+      } finally {
+        setIsTyping(false);
+      }
+      return;
+    }
+
     setInput("");
     setIsTyping(true);
 
@@ -304,7 +400,7 @@ Tài liệu nội bộ: ${getKnowledgeContext(msgText)}`;
       setIsTyping(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userName, getKnowledgeContext, callAI, dbCategories]);
+  }, [userName, getKnowledgeContext, callAI, dbCategories, liveChatConfig.enabled]);
 
   // Handle Product Context
   useEffect(() => {
@@ -347,8 +443,22 @@ Tài liệu nội bộ: ${getKnowledgeContext(msgText)}`;
     }
   }, [messages]);
 
+  // Default welcome message for live chat when empty
+  const defaultLiveWelcome = [
+    {
+      id: "welcome",
+      text: "Chào bạn! Bạn đang kết nối trực tiếp với **Cơ sở thạch cao Tâm An**. Vui lòng để lại tin nhắn, nhân viên của chúng tôi sẽ phản hồi bạn ngay lập tức tại đây ạ!",
+      isBot: true,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+  ];
+
+  const activeMessages = liveChatConfig.enabled
+    ? (liveChatMessages.length === 0 ? defaultLiveWelcome : liveChatMessages)
+    : (messages.length === 0 ? [] : messages);
+
   return {
-    messages, input, setInput, isTyping, activeModel, productSuggestions, userName,
+    messages: activeMessages, input, setInput, isTyping, activeModel, productSuggestions, userName,
     handleSend, handleFeedback
   };
 };

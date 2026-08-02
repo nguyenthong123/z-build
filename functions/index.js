@@ -8,6 +8,17 @@ const app = express();
 
 app.use(express.json()); // Parse JSON bodies
 
+// Custom CORS middleware
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 // Hàm tạo slug tự động
 const slugify = (text) => {
   if (!text) return '';
@@ -248,10 +259,155 @@ app.get("/sitemap.xml", async (req, res) => {
   }
 });
 
-exports.server = functions.https.onRequest(app);
+// ==========================================
+// TELEGRAM BOT WEBHOOK & LIVE CHAT
+// ==========================================
+
+// Setup Webhook endpoint
+app.post("/api/setup-telegram-webhook", async (req, res) => {
+  const { botToken, botConnected } = req.body;
+  if (!botToken) {
+    return res.status(400).json({ success: false, error: "Missing botToken" });
+  }
+
+  try {
+    const projectId = process.env.GCLOUD_PROJECT || "dunvex-89461";
+    const webhookUrl = `https://us-central1-${projectId}.cloudfunctions.net/server/api/telegram-webhook`;
+    
+    if (botConnected) {
+      // Set Webhook
+      const url = `https://api.telegram.org/bot${botToken}/setWebhook?url=${encodeURIComponent(webhookUrl)}&allowed_updates=${JSON.stringify(["message"])}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        return res.status(500).json({ success: false, error: data.description || "Failed to set webhook" });
+      }
+      console.log("Telegram webhook successfully registered:", webhookUrl);
+    } else {
+      // Delete Webhook
+      const url = `https://api.telegram.org/bot${botToken}/deleteWebhook`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        return res.status(500).json({ success: false, error: data.description || "Failed to delete webhook" });
+      }
+      console.log("Telegram webhook successfully deleted.");
+    }
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Telegram Webhook endpoint (Staff replies -> Web Customer)
+app.post("/api/telegram-webhook", async (req, res) => {
+  const update = req.body;
+  console.log("Received Telegram update:", JSON.stringify(update));
+
+  const message = update.message;
+  if (!message) {
+    return res.sendStatus(200);
+  }
+
+  const replyTo = message.reply_to_message;
+  if (!replyTo) {
+    return res.sendStatus(200);
+  }
+
+  const textToSearch = replyTo.text || replyTo.caption || '';
+  const match = textToSearch.match(/\[KH_ID:\s*([a-zA-Z0-9_-]+)\]/);
+  if (!match) {
+    return res.sendStatus(200);
+  }
+
+  const userId = match[1];
+  const db = admin.firestore();
+
+  try {
+    const settingsSnap = await db.collection("storeSettings").doc("main").get();
+    if (!settingsSnap.exists) {
+      return res.sendStatus(200);
+    }
+    const config = settingsSnap.data().telegramChatConfig;
+    const botToken = config?.botToken;
+
+    let imageUrl = "";
+    const replyText = message.text || message.caption || "";
+
+    // Handle image reply from staff
+    if (message.photo && message.photo.length > 0 && botToken) {
+      const photo = message.photo[message.photo.length - 1];
+      const fileId = photo.file_id;
+
+      const getFileUrl = `https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`;
+      const getFileRes = await fetch(getFileUrl);
+      const getFileData = await getFileRes.json();
+
+      if (getFileRes.ok && getFileData.ok && getFileData.result?.file_path) {
+        const filePath = getFileData.result.file_path;
+        const downloadUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
+
+        const imgFetch = await fetch(downloadUrl);
+        if (imgFetch.ok) {
+          const arrayBuffer = await imgFetch.arrayBuffer();
+          const base64Data = Buffer.from(arrayBuffer).toString('base64');
+          const mimeType = imgFetch.headers.get('content-type') || 'image/jpeg';
+          const dataUri = `data:${mimeType};base64,${base64Data}`;
+
+          // Upload to Cloudinary
+          const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dtdgrcznj';
+          const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'zbuild';
+
+          const formData = new URLSearchParams();
+          formData.append('file', dataUri);
+          formData.append('upload_preset', uploadPreset);
+
+          const cloudRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData.toString()
+          });
+          const cloudData = await cloudRes.json();
+          if (cloudRes.ok && cloudData.secure_url) {
+            imageUrl = cloudData.secure_url;
+          } else {
+            console.error("Cloudinary upload failed from Telegram webhook:", cloudData);
+          }
+        }
+      }
+    }
+
+    if (replyText || imageUrl) {
+      await db.collection("conversations").doc(userId).collection("messages").add({
+        text: replyText,
+        image: imageUrl,
+        sender: 'staff',
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      await db.collection("conversations").doc(userId).update({
+        lastMessageText: replyText || "[Hình ảnh]",
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      console.log(`Successfully forwarded Telegram reply to user ${userId}`);
+    }
+  } catch (err) {
+    console.error("Error processing Telegram reply:", err);
+  }
+
+  return res.sendStatus(200);
+});
+
+exports.server = functions.runWith({
+  serviceAccount: "z-build-dunvex@appspot.gserviceaccount.com"
+}).https.onRequest(app);
 
 // Cron Job: Tự động học sản phẩm vào 2:00 sáng mỗi ngày
-exports.autoLearnProducts = functions.pubsub.schedule('0 2 * * *').timeZone('Asia/Ho_Chi_Minh').onRun(async () => {
+exports.autoLearnProducts = functions.runWith({
+  serviceAccount: "z-build-dunvex@appspot.gserviceaccount.com"
+}).pubsub.schedule('0 2 * * *').timeZone('Asia/Ho_Chi_Minh').onRun(async () => {
   const db = admin.firestore();
   
   try {
@@ -353,4 +509,88 @@ exports.autoLearnProducts = functions.pubsub.schedule('0 2 * * *').timeZone('Asi
     return null;
   }
 });
+
+// Firestore trigger to forward user messages to Telegram Bot in real-time
+exports.onConversationMessageCreated = functions.runWith({
+  serviceAccount: "z-build-dunvex@appspot.gserviceaccount.com"
+}).firestore
+  .document('conversations/{userId}/messages/{messageId}')
+  .onCreate(async (snapshot, context) => {
+    const message = snapshot.data();
+    if (message.sender !== 'user') return null;
+
+    const userId = context.params.userId;
+    const db = admin.firestore();
+
+    try {
+      // 1. Fetch Telegram live chat configs
+      const settingsSnap = await db.collection("storeSettings").doc("main").get();
+      if (!settingsSnap.exists) return null;
+      
+      const config = settingsSnap.data().telegramChatConfig;
+      if (!config || !config.enabled || !config.botConnected || !config.groupForwardEnabled) {
+        console.log("Telegram forwarding is disabled or inactive.");
+        return null;
+      }
+
+      const botToken = config.botToken;
+      const chatId = config.chatId;
+
+      if (!botToken || !chatId) {
+        console.error("Missing Bot Token or Chat ID in Telegram config.");
+        return null;
+      }
+
+      // 2. Fetch user display info
+      const userSnap = await db.collection("users").doc(userId).get();
+      const userData = userSnap.exists ? userSnap.data() : {};
+      const userName = userData.displayName || message.userName || "Khách hàng";
+      const userEmail = userData.email || "";
+
+      // Escape Markdown characters for Telegram Markdown parsing
+      const cleanName = String(userName).replace(/[_*`\[]/g, '\\$&');
+      const cleanEmail = String(userEmail).replace(/[_*`\[]/g, '\\$&');
+      const cleanText = String(message.text || '').replace(/[_*`\[]/g, '\\$&');
+
+      const textMessage = `👉 *Khách hàng*: *${cleanName}* ${cleanEmail ? `(${cleanEmail})` : ''}\n\`[KH_ID: ${userId}]\`\n\n💬 *Tin nhắn*: ${cleanText || '[Hình ảnh]'}`;
+
+      if (message.image) {
+        // Send image to Telegram
+        const url = `https://api.telegram.org/bot${botToken}/sendPhoto`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            photo: message.image,
+            caption: textMessage,
+            parse_mode: 'Markdown'
+          })
+        });
+        if (!response.ok) {
+          const errText = await response.text();
+          console.error("Failed to forward photo to Telegram:", errText);
+        }
+      } else {
+        // Send text to Telegram
+        const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: textMessage,
+            parse_mode: 'Markdown'
+          })
+        });
+        if (!response.ok) {
+          const errText = await response.text();
+          console.error("Failed to forward message to Telegram:", errText);
+        }
+      }
+    } catch (err) {
+      console.error("Error in onConversationMessageCreated:", err);
+    }
+    return null;
+  });
 

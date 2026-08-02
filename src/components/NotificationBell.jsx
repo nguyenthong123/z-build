@@ -34,6 +34,8 @@ const NotificationBell = ({ user }) => {
       }));
       setNotifications(notifs);
       setUnreadCount(notifs.filter(n => !n.read).length);
+    }, (err) => {
+      console.warn("NotificationBell: onSnapshot notifications failed:", err);
     });
 
     return () => unsubscribe();
