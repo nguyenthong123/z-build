@@ -2,7 +2,7 @@
  * Dunvex API Service
  * Fetches customer debt/order/payment data from Dunvex backend
  */
-import { doc, getDoc, getDocs, collection, query, where, limit } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getDunvexBaseUrl } from '../utils/dunvexSync';
 

@@ -167,7 +167,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
   const [isLocating, setIsLocating] = useState(false);
   const [deliveryLocation, setDeliveryLocation] = useState(null); // { lat, lng }
   const [rawDeliveryLocation, setRawDeliveryLocation] = useState('');
-  const [showPasteLocation, setShowPasteLocation] = useState(false);
+
 
   // Auto-fill user data if logged in
   useEffect(() => {
