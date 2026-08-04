@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import './AdminSettings.css';
 
 const VIETNAMESE_BANKS = [
@@ -63,15 +63,25 @@ const AdminSettings = () => {
   const [adminEmails, setAdminEmails] = useState([]);
   const [newAdminEmail, setNewAdminEmail] = useState('');
 
-  // Auto-save admin emails to Firestore immediately
-  const saveAdminEmails = async (emails) => {
+  // Dùng arrayUnion/arrayRemove để tránh race condition khi nhiều admin cùng sửa
+  const addAdminEmail = async (email) => {
     try {
       const adminDocRef = doc(db, 'settings', 'admins');
-      await setDoc(adminDocRef, { emails }, { merge: true });
-      console.log('Admin emails auto-saved:', emails);
+      await updateDoc(adminDocRef, { emails: arrayUnion(email) });
     } catch (err) {
-      console.error('Lỗi lưu admin emails:', err);
-      setToast({ message: 'Lỗi lưu phân quyền! Kiểm tra Firestore rules.', type: 'error' });
+      console.error('Lỗi thêm admin email:', err);
+      setToast({ message: 'Lỗi thêm phân quyền!', type: 'error' });
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
+  const removeAdminEmail = async (email) => {
+    try {
+      const adminDocRef = doc(db, 'settings', 'admins');
+      await updateDoc(adminDocRef, { emails: arrayRemove(email) });
+    } catch (err) {
+      console.error('Lỗi xoá admin email:', err);
+      setToast({ message: 'Lỗi xoá phân quyền!', type: 'error' });
       setTimeout(() => setToast(null), 3000);
     }
   };
@@ -79,17 +89,15 @@ const AdminSettings = () => {
   const handleAddAdmin = () => {
     const email = newAdminEmail.trim().toLowerCase();
     if (email && !adminEmails.includes(email)) {
-      const updated = [...adminEmails, email];
-      setAdminEmails(updated);
+      setAdminEmails(prev => [...prev, email]);
       setNewAdminEmail('');
-      saveAdminEmails(updated);
+      addAdminEmail(email);
     }
   };
 
   const handleRemoveAdmin = (email) => {
-    const updated = adminEmails.filter(e => e !== email);
-    setAdminEmails(updated);
-    saveAdminEmails(updated);
+    setAdminEmails(prev => prev.filter(e => e !== email));
+    removeAdminEmail(email);
   };
   const [googleSheetUrl, setGoogleSheetUrl] = useState('');
   const [shippingSettings, setShippingSettings] = useState({
