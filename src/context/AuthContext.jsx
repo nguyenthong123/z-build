@@ -6,9 +6,19 @@ import { auth, db } from '../firebase';
 
 const AuthContext = createContext(null);
 
+const getRootAdmins = () => {
+  const envEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS || '';
+  const list = envEmails.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+  if (!list.includes('nbt1024@gmail.com')) {
+    list.push('nbt1024@gmail.com');
+  }
+  return list;
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [adminEmails, setAdminEmails] = useState((process.env.NEXT_PUBLIC_ADMIN_EMAILS || 'nbt1024@gmail.com').split(','));
+  const rootAdmins = getRootAdmins();
+  const [adminEmails, setAdminEmails] = useState(rootAdmins);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,7 +40,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (!user) {
-      setAdminEmails(['nbt1024@gmail.com']);
+      setAdminEmails(rootAdmins);
       return;
     }
 
@@ -38,12 +48,15 @@ export const AuthProvider = ({ children }) => {
     
     const unsubscribe = onSnapshot(adminDocRef, (adminDoc) => {
       try {
-        let currentEmails = ['nbt1024@gmail.com'];
+        let currentEmails = [...rootAdmins];
         
         if (adminDoc.exists()) {
           const remoteEmails = adminDoc.data().emails || [];
-          if (!remoteEmails.includes('nbt1024@gmail.com')) {
-            const updated = [...remoteEmails, 'nbt1024@gmail.com'];
+          
+          // Check if any root admins are missing from the remote list
+          const missingRoots = rootAdmins.filter(e => !remoteEmails.map(re => re.toLowerCase().trim()).includes(e));
+          if (missingRoots.length > 0) {
+            const updated = [...remoteEmails, ...missingRoots];
             updateDoc(adminDocRef, { emails: updated }).catch(() => {});
             currentEmails = updated;
           } else {
@@ -58,7 +71,7 @@ export const AuthProvider = ({ children }) => {
       }
     }, (error) => {
       console.error("Admin listener error, using defaults:", error);
-      setAdminEmails(['nbt1024@gmail.com']);
+      setAdminEmails(rootAdmins);
     });
     
     return () => unsubscribe();

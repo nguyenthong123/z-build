@@ -3,6 +3,15 @@ import { db } from '../firebase';
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import './AdminSettings.css';
 
+const getRootAdmins = () => {
+  const envEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS || '';
+  const list = envEmails.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+  if (!list.includes('nbt1024@gmail.com')) {
+    list.push('nbt1024@gmail.com');
+  }
+  return list;
+};
+
 const VIETNAMESE_BANKS = [
   { code: 'vcb', name: 'Vietcombank' },
   { code: 'vtb', name: 'VietinBank' },
@@ -178,7 +187,7 @@ const AdminSettings = () => {
         if (adminSnap.exists() && adminSnap.data().emails) {
           setAdminEmails(adminSnap.data().emails);
         } else {
-          setAdminEmails((process.env.NEXT_PUBLIC_ADMIN_EMAILS || 'nbt1024@gmail.com').split(','));
+          setAdminEmails(getRootAdmins());
         }
       } catch (err) {
         console.error('Lỗi khi tải cài đặt:', err);
@@ -833,7 +842,7 @@ const AdminSettings = () => {
                              <span className="role-badge">Admin</span>
                            </div>
                         </div>
-                        {email.toLowerCase() !== 'nbt1024@gmail.com' ? (
+                        {!getRootAdmins().includes(email.toLowerCase().trim()) ? (
                           <button 
                             className="btn-remove-role"
                             onClick={() => handleRemoveAdmin(email)}

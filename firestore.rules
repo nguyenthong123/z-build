@@ -5,7 +5,7 @@ service cloud.firestore {
     // Function to check if the current user is an admin
     function isAdmin() {
       return request.auth != null && (
-        request.auth.token.email == 'nbt1024@gmail.com' ||
+        request.auth.token.email in ['nbt1024@gmail.com', 'ngocdanh19.08x@gmail.com', 'thachcao.taman@gmail.com'] ||
         request.auth.token.email in get(/databases/$(database)/documents/settings/admins).data.emails
       );
     }
@@ -80,19 +80,19 @@ service cloud.firestore {
     // Settings (contains admins list)
     match /settings/admins {
       allow read: if request.auth != null;
-      allow write: if isAdmin() || (request.auth != null && request.auth.token.email == 'nbt1024@gmail.com');
+      allow write: if isAdmin() || (request.auth != null && request.auth.token.email in ['nbt1024@gmail.com', 'ngocdanh19.08x@gmail.com', 'thachcao.taman@gmail.com']);
     }
     
     // Public settings (general, shipping, etc.)
     match /settings/{docId} {
       allow read: if true;
-      allow write: if isAdmin() || (request.auth != null && request.auth.token.email == 'nbt1024@gmail.com');
+      allow write: if isAdmin() || (request.auth != null && request.auth.token.email in ['nbt1024@gmail.com', 'ngocdanh19.08x@gmail.com', 'thachcao.taman@gmail.com']);
     }
     
     // Store settings (main config, bank info, openclaw, etc.)
     match /storeSettings/{docId} {
       allow read: if true;
-      allow write: if isAdmin() || (request.auth != null && request.auth.token.email == 'nbt1024@gmail.com');
+      allow write: if isAdmin() || (request.auth != null && request.auth.token.email in ['nbt1024@gmail.com', 'ngocdanh19.08x@gmail.com', 'thachcao.taman@gmail.com']);
     }
     
     // Users
