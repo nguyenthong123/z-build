@@ -10,7 +10,7 @@ import './AdminProductList.css';
 const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => {
 
   const [activeTab] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(() => sessionStorage.getItem('admin_product_search') || '');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const allProductsCache = useRef([]); // Cache toàn bộ SP để search local
@@ -26,8 +26,17 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
   
   // Batch delete states
   const [selectedProducts, setSelectedProducts] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState(() => sessionStorage.getItem('admin_product_category') || 'All');
   const [allCategories, setAllCategories] = useState(new Set(['All', 'Chưa phân loại']));
+
+  // Sync filters to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('admin_product_search', searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    sessionStorage.setItem('admin_product_category', selectedCategory);
+  }, [selectedCategory]);
 
 
 
