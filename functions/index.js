@@ -144,6 +144,69 @@ app.get(["/api/products.json", "/products.json"], async (req, res) => {
   }
 });
 
+// Endpoint for products with filtering and pagination/limit for n8n/Ollama
+app.get("/api/products", async (req, res) => {
+  const apiKey = req.headers["x-api-key"] || req.headers["authorization"]?.replace("Bearer ", "");
+  
+  try {
+    const db = admin.firestore();
+    
+    // Retrieve the expected API key
+    const settingsSnap = await db.collection("storeSettings").doc("main").get();
+    let expectedApiKey = "bot_zbuild_2026"; // Fallback
+    if (settingsSnap.exists) {
+      const openClawConfig = settingsSnap.data().openClawConfig;
+      if (openClawConfig && openClawConfig.botApiKey) {
+        expectedApiKey = openClawConfig.botApiKey;
+      }
+    }
+    
+    if (!apiKey || apiKey !== expectedApiKey) {
+      return res.status(401).json({ error: "Unauthorized: Invalid or missing API Key" });
+    }
+
+    const status = req.query.status;
+    const limitVal = parseInt(req.query.limit, 10);
+
+    let queryRef = db.collection("products");
+
+    if (status) {
+      const statusList = [status];
+      if (status.toLowerCase() !== status) {
+        statusList.push(status.toLowerCase());
+      } else {
+        const capitalized = status.charAt(0).toUpperCase() + status.slice(1);
+        if (capitalized !== status) {
+          statusList.push(capitalized);
+        }
+      }
+      queryRef = queryRef.where("status", "in", statusList);
+    }
+
+    const snap = await queryRef.get();
+    let products = snap.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    // Sort in memory by createdAt descending
+    products.sort((a, b) => {
+      const timeA = a.createdAt ? (a.createdAt.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt).getTime()) : 0;
+      const timeB = b.createdAt ? (b.createdAt.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt).getTime()) : 0;
+      return timeB - timeA;
+    });
+
+    // Apply limit
+    if (!isNaN(limitVal) && limitVal > 0) {
+      products = products.slice(0, limitVal);
+    }
+
+    return res.json(products);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoint for Bots to create new products
 app.post("/api/products", async (req, res) => {
   const apiKey = req.headers["x-api-key"] || req.headers["authorization"]?.replace("Bearer ", "");

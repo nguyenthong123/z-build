@@ -12,6 +12,10 @@
     ],
     "rewrites": [
       {
+        "source": "/api/**",
+        "function": "server"
+      },
+      {
         "source": "/product/**",
         "function": "server"
       },
