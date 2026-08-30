@@ -283,6 +283,66 @@ app.post("/api/products", async (req, res) => {
   }
 });
 
+// Endpoint for Bots to update products (e.g. n8n updating description)
+app.put("/api/products/:productId", async (req, res) => {
+  const apiKey = req.headers["x-api-key"] || req.headers["authorization"]?.replace("Bearer ", "");
+  
+  if (!apiKey) {
+    return res.status(401).json({ error: "Unauthorized: Missing API Key" });
+  }
+
+  try {
+    const db = admin.firestore();
+
+    // 1. Lấy cấu hình API Key từ database
+    const settingsSnap = await db.collection("storeSettings").doc("main").get();
+    let expectedApiKey = "bot_zbuild_2026"; // Fallback
+    
+    if (settingsSnap.exists) {
+      const openClawConfig = settingsSnap.data().openClawConfig;
+      if (openClawConfig && openClawConfig.botApiKey) {
+        expectedApiKey = openClawConfig.botApiKey;
+      }
+    }
+
+    // 2. So sánh API Key
+    if (apiKey !== expectedApiKey) {
+      return res.status(403).json({ error: "Forbidden: Invalid API Key" });
+    }
+
+    const { productId } = req.params;
+    const { description, status } = req.body;
+
+    const productRef = db.collection("products").doc(productId);
+    const productSnap = await productRef.get();
+    if (!productSnap.exists) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    const updateData = {
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (description !== undefined) {
+      updateData.description = description;
+    }
+    if (status !== undefined) {
+      updateData.status = status;
+    }
+
+    await productRef.update(updateData);
+
+    return res.json({
+      success: true,
+      message: "Product updated successfully"
+    });
+
+  } catch (error) {
+    console.error("Error updating product via API:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // Endpoint for dynamic Sitemap (Googlebot & SEO)
 app.get("/sitemap.xml", async (req, res) => {
   try {

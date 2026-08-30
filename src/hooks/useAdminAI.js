@@ -287,6 +287,41 @@ export const useAdminAI = () => {
       } : m));
     }
 
+    // Intercept and redirect to local n8n Webhook if it's a request to write descriptions for draft products
+    const lowerMsg = (msgText || "").toLowerCase();
+    if ((lowerMsg.includes("quét") || lowerMsg.includes("quet") || lowerMsg.includes("n8n")) && 
+        (lowerMsg.includes("draft") || lowerMsg.includes("nháp") || lowerMsg.includes("nhap"))) {
+      try {
+        let response = await fetch("http://localhost:5678/webhook/dong-bo-sp-ai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: msgText })
+        });
+        
+        if (response.status === 404) {
+          // Thử gọi webhook-test nếu workflow chưa được Active trong n8n
+          response = await fetch("http://localhost:5678/webhook-test/dong-bo-sp-ai", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: msgText })
+          });
+        }
+        
+        if (response.ok) {
+          const data = await response.json();
+          const reply = data.response || "Đã kích hoạt sơ đồ n8n xử lý viết bài thành công! Bạn hãy tải lại trang sau ít phút để kiểm tra sản phẩm.";
+          setMessages(prev => [...prev, { id: Date.now() + 1, text: reply, isBot: true, time: "Vừa xong" }]);
+          setIsTyping(false);
+          return;
+        } else {
+          console.warn("n8n Webhook response error:", response.status);
+        }
+      } catch (err) {
+        console.warn("Failed to connect to local n8n Webhook:", err.message);
+        // Tự động fallback về Deepseek bình thường nếu n8n offline
+      }
+    }
+
     try {
       const systemPrompt = `Bạn là Trợ lý AI Quản trị của Z-BUILD, hỗ trợ Admin quản lý toàn bộ hệ thống. Bạn CÓ QUYỀN và BẮT BUỘC PHẢI SỬ DỤNG function calling.
 
