@@ -618,7 +618,7 @@
     <loc>https://zbuild.click/product/nep-v-nhua-a23</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <lastmod>2026-08-29</lastmod>
+    <lastmod>2026-08-30</lastmod>
   </url>
   <url>
     <loc>https://zbuild.click/product/tam-nano-t07</loc>
@@ -774,7 +774,7 @@
     <loc>https://zbuild.click/product/nep-v-nhua-a03</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <lastmod>2026-08-29</lastmod>
+    <lastmod>2026-08-30</lastmod>
   </url>
   <url>
     <loc>https://zbuild.click/product/tam-nhua-tran-tha-tg-130</loc>
@@ -1891,17 +1891,17 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://zbuild.click/category/nha-v-ph-kin-tm-nha---gi-ti-kho</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://zbuild.click/category/tm-trn-th-vnh-tng</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://zbuild.click/category/pho-ch-ps-tl</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://zbuild.click/category/trn-v-ph-kin--gi-ti-kho</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -1957,11 +1957,6 @@
   </url>
   <url>
     <loc>https://zbuild.click/category/tin-mn</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://zbuild.click/category/nha-v-ph-kin-tm-nha---gi-ti-kho</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
