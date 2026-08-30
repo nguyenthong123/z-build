@@ -320,10 +320,15 @@ export const useAdminAI = () => {
           return;
         } else {
           console.warn("n8n Webhook response error:", response.status);
+          setMessages(prev => [...prev, { id: Date.now() + 1, text: `⚠️ n8n Webhook trả về lỗi (Mã: ${response.status}). Vui lòng kiểm tra trạng thái workflow trên n8n.`, isBot: true, time: "Vừa xong" }]);
+          setIsTyping(false);
+          return;
         }
       } catch (err) {
         console.warn("Failed to connect to local n8n Webhook:", err.message);
-        // Tự động fallback về Deepseek bình thường nếu n8n offline
+        setMessages(prev => [...prev, { id: Date.now() + 1, text: `⚠️ Không thể kết nối hoặc yêu cầu quá hạn (timeout) tới n8n local. Lỗi: ${err.message}. Vui lòng đảm bảo Docker/n8n đang chạy, hoặc tải lại danh sách sản phẩm để kiểm tra tiến trình chạy ngầm.`, isBot: true, time: "Vừa xong" }]);
+        setIsTyping(false);
+        return;
       }
     }
 
