@@ -289,8 +289,13 @@ export const useAdminAI = () => {
 
     // Intercept and redirect to local n8n Webhook if it's a request to write descriptions for draft products
     const lowerMsg = (msgText || "").toLowerCase();
-    if ((lowerMsg.includes("quét") || lowerMsg.includes("quet") || lowerMsg.includes("n8n")) && 
-        (lowerMsg.includes("draft") || lowerMsg.includes("nháp") || lowerMsg.includes("nhap"))) {
+    const isBulkDraftRequest = (lowerMsg.includes("quét") || lowerMsg.includes("quet") || lowerMsg.includes("n8n")) && 
+                               (lowerMsg.includes("draft") || lowerMsg.includes("nháp") || lowerMsg.includes("nhap"));
+    const isSelectedProductsRequest = lowerMsg.includes("danh sách các sản phẩm") && 
+                                      lowerMsg.includes("cần viết") && 
+                                      lowerMsg.includes("nội dung chi tiết");
+
+    if (isBulkDraftRequest || isSelectedProductsRequest) {
       try {
         let response = await fetch("http://localhost:5678/webhook/dong-bo-sp-ai", {
           method: "POST",
