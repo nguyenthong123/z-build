@@ -1936,17 +1936,27 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://zbuild.click/category/trn-v-ph-kin--gi-ti-kho</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://zbuild.click/category/tn-st---klp</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://zbuild.click/category/keo-trm---gi-ti-kho</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://zbuild.click/category/hp-n-tl</loc>
+    <loc>https://zbuild.click/category/ng-tin</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://zbuild.click/category/ng-tin</loc>
+    <loc>https://zbuild.click/category/tm-nha-nano</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
