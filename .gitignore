@@ -47,3 +47,10 @@ out/
 # (Dunvex API key, DeepSeek key, Telegram token, customer DB)
 data/
 server/
+
+# Scripts phụ trợ chứa secret cứng (giữ local, không push)
+test-webhook.js
+scripts/sync_run.cjs
+scripts/sync_run_admin.cjs
+src/find_missing_sync.cjs
+scripts/telegram-bot.cjs
