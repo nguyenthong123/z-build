@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { collection, getDocs, doc, query, where, serverTimestamp, getDoc, runTransaction, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getDunvexBaseUrl } from '../utils/dunvexSync';
+import { apiGetCustomers, apiCreateOrder, apiGetSettings } from '../services/sqliteApi';
 import './Checkout.css';
 
 const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
@@ -39,15 +40,15 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
   const [selectedCustomerForOrder, setSelectedCustomerForOrder] = useState(null);
   const customerDropdownRef = React.useRef(null);
 
-  // Load customer list for admin
+  // Load customer list for admin from SQLite
   useEffect(() => {
     if (!isAdmin) return;
     const loadCustomers = async () => {
       try {
-        const snap = await getDocs(collection(db, 'customers'));
-        const list = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.name);
-        list.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi'));
-        setCustomerList(list);
+        const list = await apiGetCustomers();
+        const validList = (list || []).filter(c => c.name);
+        validList.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi'));
+        setCustomerList(validList);
       } catch (e) { console.error('Load customers error', e); }
     };
     loadCustomers();
@@ -69,16 +70,23 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
     setCustomerSearch(c.name || '');
     setShowCustomerDropdown(false);
     // Auto-fill form with customer data
-    const nameParts = (c.name || '').trim().split(' ');
-    const lastName = nameParts.pop() || '';
-    const firstName = nameParts.join(' ') || c.name || '';
+    const nameParts = (c.name || '').trim().split(/\s+/).filter(Boolean);
+    let firstName = '';
+    let lastName = '';
+    if (nameParts.length === 1) {
+      firstName = nameParts[0];
+      lastName = '';
+    } else if (nameParts.length > 1) {
+      lastName = nameParts.pop() || '';
+      firstName = nameParts.join(' ');
+    }
     setFormData(prev => ({
       ...prev,
-      email: c.email || prev.email,
-      phone: c.phone || prev.phone,
+      email: c.email || '',
+      phone: c.phone || '',
       firstName,
       lastName,
-      address: c.address || prev.address,
+      address: c.address || '',
     }));
   };
 
@@ -372,55 +380,104 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
     }
     return 0;
   };
-  const discount = calculateDiscount();
-  const total = subtotal + shippingCost - discount;
 
-  // Validate coupon from Firestore
+  const discount = calculateDiscount();
+  const tax = subtotal * 0.08;
+  const total = Math.max(0, subtotal + shippingCost + tax - discount);
+
+  // Sinh nội dung chuyển khoản tự động
+  const bankTransferContent = `DH ${orderNumber}`;
+
+  // Chuỗi QR VietQR chuẩn: https://img.vietqr.io/image/<BANK_CODE>-<ACCOUNT_NUMBER>-<TEMPLATE>.png?amount=<AMOUNT>&addInfo=<CONTENT>&accountName=<NAME>
+  const vietQrUrl = shopBankInfo.bankCode && shopBankInfo.accountNumber
+    ? `https://img.vietqr.io/image/${shopBankInfo.bankCode}-${shopBankInfo.accountNumber}-compact.png?amount=${Math.round(total)}&addInfo=${encodeURIComponent(bankTransferContent)}&accountName=${encodeURIComponent(shopBankInfo.accountName)}`
+    : null;
+
+  // Lắng nghe giao dịch chuyển khoản realtime nếu đang ở bước QR
+  useEffect(() => {
+    if (paymentStep !== 2) return;
+    
+    // Tìm kiếm giao dịch khớp nội dung chuyển khoản (có chứa orderNumber)
+    const q = query(
+      collection(db, 'bankTransactions'),
+      where('content', '>=', bankTransferContent),
+      where('content', '<=', bankTransferContent + '\uf8ff')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'added') {
+          const transaction = change.doc.data();
+          if (transaction.amount >= total) {
+            setBankTransactionInfo({
+              transactionId: transaction.id || change.doc.id,
+              amount: transaction.amount,
+              content: transaction.content,
+              timestamp: transaction.createdAt || new Date()
+            });
+            // Cập nhật trạng thái thanh toán thành công
+            setPaymentStatus('success');
+            // Cập nhật trạng thái đơn hàng thành "confirmed"
+            if (generatedOrder?.id) {
+              const orderRef = doc(db, 'orders', generatedOrder.id);
+              updateDoc(orderRef, {
+                status: 'confirmed',
+                paymentStatus: 'paid',
+                paidAt: serverTimestamp(),
+                bankTransaction: {
+                  id: transaction.id || change.doc.id,
+                  amount: transaction.amount,
+                  content: transaction.content
+                }
+              }).catch(e => console.error("Error updating order payment status:", e));
+            }
+          }
+        }
+      });
+    }, (error) => {
+      console.warn("Lắng nghe giao dịch tự động không khả dụng hoặc bị từ chối quyền (Firestore Rules):", error);
+    });
+
+    return () => unsubscribe();
+  }, [paymentStep, bankTransferContent, total, generatedOrder]);
+
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
-    setCouponError('');
     setCouponLoading(true);
+    setCouponError('');
     try {
-      const q = query(collection(db, 'coupons'), where('code', '==', couponCode.toUpperCase().trim()));
-      const snapshot = await getDocs(q);
-      if (snapshot.empty) {
-        setCouponError('Mã giảm giá không tồn tại.');
-        setAppliedCoupon(null);
+      const q = query(collection(db, 'coupons'), where('code', '==', couponCode.trim().toUpperCase()));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        setCouponError('Mã giảm giá không tồn tại');
         setCouponLoading(false);
         return;
       }
-      const couponDoc = snapshot.docs[0];
-      const coupon = { id: couponDoc.id, ...couponDoc.data() };
-
-      // Validate active
-      if (!coupon.active) {
-        setCouponError('Mã giảm giá đã bị vô hiệu hóa.');
+      const c = { id: snap.docs[0].id, ...snap.docs[0].data() };
+      if (!c.active) {
+        setCouponError('Mã giảm giá đã bị vô hiệu hóa');
         setCouponLoading(false);
         return;
       }
-      // Validate expiry
-      if (coupon.expiryDate && new Date(coupon.expiryDate) < new Date()) {
-        setCouponError('Mã giảm giá đã hết hạn.');
+      if (c.expiryDate && new Date(c.expiryDate) < new Date()) {
+        setCouponError('Mã giảm giá đã hết hạn');
         setCouponLoading(false);
         return;
       }
-      // Validate usage limit
-      if (coupon.maxUses > 0 && (coupon.usedCount || 0) >= coupon.maxUses) {
-        setCouponError('Mã giảm giá đã hết lượt sử dụng.');
+      if (c.maxUses > 0 && (c.usedCount || 0) >= c.maxUses) {
+        setCouponError('Mã giảm giá đã hết lượt sử dụng');
         setCouponLoading(false);
         return;
       }
-      // Validate min order
-      if (coupon.minOrder > 0 && subtotal < coupon.minOrder) {
-        setCouponError(`Đơn hàng tối thiểu ${Number(coupon.minOrder).toLocaleString('vi-VN')}₫ để sử dụng mã này.`);
+      if (c.minOrder > 0 && subtotal < c.minOrder) {
+        setCouponError(`Đơn hàng tối thiểu ${Number(c.minOrder).toLocaleString('vi-VN')}₫ để áp dụng`);
         setCouponLoading(false);
         return;
       }
-      setAppliedCoupon(coupon);
-      setCouponError('');
+      setAppliedCoupon(c);
+      setCouponSuccess(`Đã áp dụng mã "${c.code}"`);
     } catch (err) {
-      console.error('Coupon validation error:', err);
-      setCouponError('Lỗi khi kiểm tra mã giảm giá.');
+      setCouponError('Lỗi kiểm tra mã giảm giá');
     } finally {
       setCouponLoading(false);
     }
@@ -429,16 +486,16 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
   const handleRemoveCoupon = () => {
     setAppliedCoupon(null);
     setCouponCode('');
+    setCouponSuccess('');
     setCouponError('');
   };
 
   const validateForm = () => {
     const errors = {};
-    if (!formData.email.trim()) errors.email = 'Vui lòng nhập email hoặc SĐT';
-    if (!formData.firstName.trim()) errors.firstName = 'Vui lòng nhập họ';
-    if (!formData.lastName.trim()) errors.lastName = 'Vui lòng nhập tên';
+    if (!formData.firstName.trim()) errors.firstName = 'Vui lòng nhập tên';
+    if (!formData.lastName.trim()) errors.lastName = 'Vui lòng nhập họ';
     if (!formData.address.trim()) errors.address = 'Vui lòng nhập địa chỉ';
-    if (!formData.city.trim()) errors.city = 'Vui lòng nhập thành phố';
+    if (!formData.city.trim()) errors.city = 'Vui lòng nhập Tỉnh / Thành phố';
     if (!formData.phone.trim()) errors.phone = 'Vui lòng nhập số điện thoại';
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -456,148 +513,86 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
     isSubmittingRef.current = true;
     setIsSubmitting(true);
     try {
-      // Validate items before proceeding
-      const orderRef = doc(collection(db, 'orders'));
-      
-      let newTotal = 0;
+      // 1. Tính toán giá trị và chuẩn bị sản phẩm
       let newSubtotal = 0;
+      const itemsToBuy = cartItems.map(item => {
+        const buyQty = Number(item.quantity) || 1;
+        const realPrice = Number(item.price) || 0;
+        newSubtotal += realPrice * buyQty;
+        return {
+          id: item.productId || item.id,
+          dunvexId: item.dunvexId || null,
+          name: item.name,
+          price: realPrice,
+          quantity: buyQty,
+          image: item.image || '',
+          weight: Number(item.weight) || 0,
+          variant: item.variant || 'Default'
+        };
+      });
+
+      // 2. Tính giảm giá coupon
       let realDiscount = 0;
-      let finalOrderData = null;
+      if (appliedCoupon) {
+        if (appliedCoupon.type === 'percent') realDiscount = Math.round(newSubtotal * appliedCoupon.value / 100);
+        else if (appliedCoupon.type === 'fixed') realDiscount = Math.min(appliedCoupon.value, newSubtotal);
+        else if (appliedCoupon.type === 'free_shipping') realDiscount = shippingCost;
+      }
 
-      await runTransaction(db, async (transaction) => {
-        // 1. Read all products (dùng productId cho cart mới, fallback id cho cart cũ)
-        const productRefs = cartItems.map(item => doc(db, 'products', item.productId || item.id));
-        const productSnaps = await Promise.all(productRefs.map(ref => transaction.get(ref)));
-        
-        // Read coupon if applied
-        let couponSnap = null;
-        if (appliedCoupon) {
-          couponSnap = await transaction.get(doc(db, 'coupons', appliedCoupon.id));
-        }
+      const newTax = newSubtotal * 0.08;
+      const newTotal = Math.max(0, newSubtotal + shippingCost + newTax - realDiscount);
 
-        // 2. Validate and calculate
-        const itemsToBuy = [];
-        
-        for (let i = 0; i < productSnaps.length; i++) {
-          const pSnap = productSnaps[i];
-          if (!pSnap.exists()) {
-            throw new Error(`Sản phẩm "${cartItems[i].name}" không còn tồn tại hoặc đã bị xóa.`);
-          }
-          const pData = pSnap.data();
-          const buyQty = cartItems[i].quantity;
-          
-          // Stock validation
-          let newStock = undefined;
-          if (pData.stock !== undefined && pData.trackInventory !== false) {
-            const currentStock = Number(pData.stock);
-            // [UX] Không chặn đặt hàng khi hết tồn kho để tránh mất Sale. 
-            // Cửa hàng có thể nhập thêm hàng và giao trễ cho khách.
-            newStock = currentStock - buyQty;
-          }
-          
-          // Price validation (use discountPrice if > 0, else basePrice)
-          let realPrice = Number(pData.discountPrice);
-          if (!realPrice || realPrice <= 0) {
-            realPrice = Number(pData.basePrice) || 0;
-          }
-          
-          newSubtotal += realPrice * buyQty;
-          
-          itemsToBuy.push({
-            ref: productRefs[i],
-            newStock: newStock,
-            id: cartItems[i].id,
-            dunvexId: pData.dunvexId || cartItems[i].dunvexId || null,
-            name: pData.title,
-            price: realPrice,
-            quantity: buyQty,
-            image: cartItems[i].image || '',
-            weight: Number(pData.weight) || 0,
-            variant: cartItems[i].variant || 'Default'
-          });
-        }
+      const shippingAddress = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        country: formData.country,
+        phone: formData.phone
+      };
 
-        // Coupon validation
-        if (appliedCoupon && couponSnap && couponSnap.exists()) {
-          const cData = couponSnap.data();
-          if (!cData.active) throw new Error("Mã giảm giá đã bị vô hiệu hóa.");
-          if (cData.maxUses > 0 && (cData.usedCount || 0) >= cData.maxUses) throw new Error("Mã giảm giá đã hết lượt sử dụng.");
-          if (cData.minOrder > 0 && newSubtotal < cData.minOrder) throw new Error(`Đơn hàng tối thiểu ${Number(cData.minOrder).toLocaleString('vi-VN')}₫ để sử dụng mã này.`);
-          if (cData.expiryDate && new Date(cData.expiryDate) < new Date()) throw new Error("Mã giảm giá đã hết hạn.");
-          
-          if (cData.type === 'percent') realDiscount = Math.round(newSubtotal * cData.value / 100);
-          else if (cData.type === 'fixed') realDiscount = Math.min(cData.value, newSubtotal);
-          else if (cData.type === 'free_shipping') realDiscount = shippingCost;
-        }
+      const orderDocData = {
+        id: orderNumber,
+        orderNumber,
+        userId: user?.uid || 'guest',
+        userEmail: user?.email || formData.email,
+        userName: selectedCustomerForOrder?.name || user?.name || `${formData.firstName} ${formData.lastName}`.trim() || 'Khách vãng lai',
+        userPhone: formData.phone || '',
+        items: itemsToBuy,
+        shippingAddress,
+        bankTransaction: bankTransactionInfo || null,
+        subtotal: newSubtotal,
+        shippingCost,
+        tax: newTax,
+        total: newTotal,
+        shippingMethod: formData.shippingMethod,
+        paymentMethod: formData.paymentMethod,
+        coupon: appliedCoupon ? { code: appliedCoupon.code, type: appliedCoupon.type, value: appliedCoupon.value, discount: realDiscount } : null,
+        discount: realDiscount,
+        status: 'pending'
+      };
 
-        const newTax = newSubtotal * 0.08;
-        newTotal = newSubtotal + shippingCost + newTax - realDiscount;
+      // 3. Lưu đơn hàng vào SQLite qua VPS API
+      await apiCreateOrder(orderDocData);
 
-        const shippingAddress = {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          zipCode: formData.zipCode,
-          country: formData.country,
-          phone: formData.phone
-        };
-
-        // 3. Writes
-        // Cập nhật tồn kho và mã giảm giá (Firestore Rules đã được cấu hình allow update if hasOnly(['stock']) và ['usedCount'])
-        itemsToBuy.forEach(item => {
-          if (item.newStock !== undefined) {
-            transaction.update(item.ref, { stock: item.newStock });
-          }
-        });
-        
-        if (appliedCoupon && couponSnap && couponSnap.exists()) {
-          transaction.update(couponSnap.ref, { usedCount: (couponSnap.data().usedCount || 0) + 1 });
-        }
-        const orderDocData = {
-          orderNumber,
-          userId: user?.uid || 'guest',
-          userEmail: user?.email || formData.email,
-          userName: user?.name || `${formData.firstName} ${formData.lastName}`,
-          items: itemsToBuy.map(({ id, dunvexId, name, price, quantity, image, variant, weight }) => ({
-            id, dunvexId, name, price, quantity, image, variant, weight: weight || 0
-          })),
-          shippingAddress,
-          bankTransaction: bankTransactionInfo || null,
-          subtotal: newSubtotal,
-          shippingCost,
-          tax: newTax,
-          total: newTotal,
-          shippingMethod: formData.shippingMethod,
-          paymentMethod: formData.paymentMethod,
-          coupon: appliedCoupon ? { code: appliedCoupon.code, type: appliedCoupon.type, value: appliedCoupon.value, discount: realDiscount } : null,
-          discount: realDiscount,
-          status: 'pending',
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        };
-
-        transaction.set(orderRef, orderDocData);
-
-        finalOrderData = {
-          id: orderRef.id,
-          orderNumber,
-          cartItems: itemsToBuy, // Use items with real prices
-          formData,
-          total: newTotal,
-          shippingCost,           // 🔧 Fix: thêm phí vận chuyển
-          tax: newTax,            // 🔧 Fix: thêm thuế
-          shippingMethod: formData.shippingMethod,  // 🔧 Fix: thêm phương thức ship
-          paymentMethod: formData.paymentMethod,    // 🔧 Fix: thêm phương thức thanh toán
-          shippingAddress
-        };
-      }); // End transaction
+      const finalOrderData = {
+        id: orderNumber,
+        orderNumber,
+        cartItems: itemsToBuy,
+        formData,
+        total: newTotal,
+        shippingCost,
+        tax: newTax,
+        shippingMethod: formData.shippingMethod,
+        paymentMethod: formData.paymentMethod,
+        shippingAddress
+      };
 
       // Send webhook to Dunvex (non-blocking)
       try {
         if (openClawConfig && openClawConfig.ownerId) {
-          const apiKey = openClawConfig.dunvexApiKey || openClawConfig.apiKey || openClawConfig.botApiKey || '';
           let webhookUrl = openClawConfig.dunvexWebhookUrl;
           if (!webhookUrl) {
             const dunvexBase = getDunvexBaseUrl(openClawConfig);
@@ -628,12 +623,14 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
               rawDeliveryLocation ? `📍 Vị trí giao hàng: ${rawDeliveryLocation}` : ''
             ].filter(Boolean).join('\n');
 
+            const customerFullName = selectedCustomerForOrder?.name || `${formData.firstName || ''} ${formData.lastName || ''}`.trim() || user?.name || user?.displayName || 'Khách Web';
             const webhookBody = {
               ownerId: openClawConfig.ownerId,
-              customerName: `${formData.firstName} ${formData.lastName}`.trim(),
-              customerPhone: formData.phone || '',
-              customerEmail: formData.email || user?.email || '',
-              customerAddress: `${formData.address}, ${formData.city}`.trim(),
+              customerId: selectedCustomerForOrder?.dunvexId || selectedCustomerForOrder?.id || user?.dunvexId || null,
+              customerName: customerFullName,
+              customerPhone: formData.phone || selectedCustomerForOrder?.phone || user?.phone || '',
+              customerEmail: formData.email || selectedCustomerForOrder?.email || user?.email || '',
+              customerAddress: `${formData.address || ''}${formData.city ? `, ${formData.city}` : ''}`.trim() || selectedCustomerForOrder?.address || '',
               deliveryLocation: deliveryLocation || null,
               rawDeliveryLocation: rawDeliveryLocation || '',
               items: webhookItems,
@@ -670,8 +667,8 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
         console.error('Failed to trigger Dunvex webhook:', webhookErr);
       }
 
-      // Save profile data for future auto-fill if user is logged in
-      if (user && user.uid) {
+      // Save profile data for future auto-fill only for regular customers (not admin ordering on behalf of customer)
+      if (user && user.uid && !isAdmin && !selectedCustomerForOrder) {
         try {
           const userRef = doc(db, 'users', user.uid);
           await setDoc(userRef, {

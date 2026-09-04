@@ -3,6 +3,7 @@ import { db, auth } from '../firebase';
 import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, limit } from 'firebase/firestore';
 import Fuse from 'fuse.js';
 import { ADMIN_AI_FUNCTIONS, executeFunction } from '../services/aiFunctions';
+import { apiTriggerAiBulkEnrich } from '../services/sqliteApi';
 
 /**
  * Custom hook to manage AI Advisor state and logic (Admin).
@@ -297,36 +298,36 @@ export const useAdminAI = () => {
 
     if (isBulkDraftRequest || isSelectedProductsRequest) {
       try {
-        let response = await fetch("http://localhost:5678/webhook/dong-bo-sp-ai", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: msgText })
+        // Trích xuất danh sách tên sản phẩm nếu người dùng chọn cụ thể
+        const lines = (msgText || "").split("\n");
+        const selectedTitles = lines
+          .filter(l => l.trim().startsWith("- "))
+          .map(l => l.replace(/^-\s*/, "").trim());
+
+        const bulkResult = await apiTriggerAiBulkEnrich({
+          status: isBulkDraftRequest ? 'Draft' : undefined,
+          limit: selectedTitles.length > 0 ? selectedTitles.length : 5,
+          instructions: msgText
         });
-        
-        if (response.status === 404) {
-          // Thử gọi webhook-test nếu workflow chưa được Active trong n8n
-          response = await fetch("http://localhost:5678/webhook-test/dong-bo-sp-ai", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: msgText })
-          });
-        }
-        
-        if (response.ok) {
-          const data = await response.json();
-          const reply = data.response || "Đã kích hoạt sơ đồ n8n xử lý viết bài thành công! Bạn hãy tải lại trang sau ít phút để kiểm tra sản phẩm.";
+
+        if (bulkResult && bulkResult.success) {
+          const prods = bulkResult.products || [];
+          const listText = prods.map((p, idx) => `${idx + 1}. **${p.title}** (${p.category}) - ${p.aiGenerated ? '⚡ DeepSeek AI đã viết bài (' + p.descLength + ' ký tự)' : 'Đã chuẩn hóa'}`).join('\n');
+          const reply = `✅ **Thực thi AI Agent thành công!**\n\n${bulkResult.message}\n\n**Danh sách sản phẩm vừa được cập nhật vào SQLite:**\n${listText}\n\n💡 Bạn có thể tải lại bảng sản phẩm hoặc mở chi tiết từng sản phẩm để xem nội dung bài viết.`;
           setMessages(prev => [...prev, { id: Date.now() + 1, text: reply, isBot: true, time: "Vừa xong" }]);
           setIsTyping(false);
+          // Phát sự kiện reload sản phẩm
+          window.dispatchEvent(new CustomEvent('AI_PRODUCTS_UPDATED'));
           return;
         } else {
-          console.warn("n8n Webhook response error:", response.status);
-          setMessages(prev => [...prev, { id: Date.now() + 1, text: `⚠️ n8n Webhook trả về lỗi (Mã: ${response.status}). Vui lòng kiểm tra trạng thái workflow trên n8n.`, isBot: true, time: "Vừa xong" }]);
+          const errMsg = bulkResult?.error || "Không thể xử lý yêu cầu viết bài tự động.";
+          setMessages(prev => [...prev, { id: Date.now() + 1, text: `⚠️ Hệ thống AI báo lỗi: ${errMsg}`, isBot: true, time: "Vừa xong" }]);
           setIsTyping(false);
           return;
         }
       } catch (err) {
-        console.warn("Failed to connect to local n8n Webhook:", err.message);
-        setMessages(prev => [...prev, { id: Date.now() + 1, text: `⚠️ Không thể kết nối hoặc yêu cầu quá hạn (timeout) tới n8n local. Lỗi: ${err.message}. Vui lòng đảm bảo Docker/n8n đang chạy, hoặc tải lại danh sách sản phẩm để kiểm tra tiến trình chạy ngầm.`, isBot: true, time: "Vừa xong" }]);
+        console.warn("Failed to connect to AI Bulk Enrich API:", err.message);
+        setMessages(prev => [...prev, { id: Date.now() + 1, text: `⚠️ Lỗi kết nối tới hệ thống AI Zbuild VPS: ${err.message}. Vui lòng kiểm tra lại dịch vụ zbuild-api trên VPS.`, isBot: true, time: "Vừa xong" }]);
         setIsTyping(false);
         return;
       }

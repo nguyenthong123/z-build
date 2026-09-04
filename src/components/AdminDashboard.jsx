@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { db } from '../firebase';
+import { apiGetOrders, apiGetProducts } from '../services/sqliteApi';
 import './AdminDashboard.css';
 
 import AdminHeader from './AdminHeader';
@@ -32,105 +31,130 @@ const AdminDashboard = () => {
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
+    
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
     ctx.scale(dpr, dpr);
-    const W = rect.width;
-    const H = rect.height;
 
-    let days = 7;
-    if (chartPeriod === '30days') days = 30;
-    if (chartPeriod === '90days') days = 90;
+    const w = rect.width;
+    const h = rect.height;
+    const padding = { top: 20, right: 20, bottom: 40, left: 60 };
+    const chartW = w - padding.left - padding.right;
+    const chartH = h - padding.top - padding.bottom;
 
+    ctx.clearRect(0, 0, w, h);
+
+    // Group orders by date
+    const days = chartPeriod === '7days' ? 7 : 30;
+    const dataPoints = [];
     const now = new Date();
-    const labels = [];
-    const values = [];
     
-    const revenueByDay = {};
-    orders.forEach(o => {
-      if (o.status === 'cancelled' || !o.createdAt) return;
-      try {
-        const dateKey = o.createdAt instanceof Date ? o.createdAt.toISOString().split('T')[0] : '';
-        if(dateKey) revenueByDay[dateKey] = (revenueByDay[dateKey] || 0) + (o.total || 0);
-      } catch (err) {
-        console.warn('Invalid order date:', o.id, err);
-      }
-    });
-
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      const isoKey = d.toISOString().split('T')[0];
-      labels.push(d.getDate() + '/' + (d.getMonth() + 1));
-      values.push(revenueByDay[isoKey] || 0);
+      const dateStr = d.toISOString().split('T')[0];
+      const label = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+      
+      const dayRevenue = orders
+        .filter(o => {
+          if (!o.createdAt || o.status === 'cancelled') return false;
+          const oDate = (o.createdAt instanceof Date ? o.createdAt : new Date(o.createdAt)).toISOString().split('T')[0];
+          return oDate === dateStr;
+        })
+        .reduce((sum, o) => sum + (o.total || 0), 0);
+
+      dataPoints.push({ label, value: dayRevenue });
     }
 
-    const maxVal = Math.max(...values, 1);
-    const padding = { top: 30, right: 20, bottom: 40, left: 10 };
-    const chartW = W - padding.left - padding.right;
-    const chartH = H - padding.top - padding.bottom;
-
-    ctx.clearRect(0, 0, W, H);
-
-    ctx.strokeStyle = '#f0f0f0';
-    ctx.lineWidth = 0.5;
+    const maxVal = Math.max(...dataPoints.map(d => d.value), 1000000);
+    
+    // Grid lines
+    ctx.strokeStyle = '#f1f5f9';
+    ctx.lineWidth = 1;
     for (let i = 0; i <= 4; i++) {
       const y = padding.top + (chartH / 4) * i;
       ctx.beginPath();
       ctx.moveTo(padding.left, y);
-      ctx.lineTo(W - padding.right, y);
+      ctx.lineTo(w - padding.right, y);
       ctx.stroke();
+
+      // Y labels
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'right';
+      const val = maxVal - (maxVal / 4) * i;
+      ctx.fillText(formatCurrency(val), padding.left - 8, y + 4);
     }
 
-    if (values.length < 2) return;
+    if (dataPoints.length < 2) return;
 
-    const stepX = chartW / (values.length - 1);
-
-    const gradient = ctx.createLinearGradient(0, padding.top, 0, H - padding.bottom);
-    gradient.addColorStop(0, 'rgba(67, 97, 238, 0.15)');
-    gradient.addColorStop(1, 'rgba(67, 97, 238, 0)');
+    // Draw area gradient
+    const gradient = ctx.createLinearGradient(0, padding.top, 0, h - padding.bottom);
+    gradient.addColorStop(0, 'rgba(30, 41, 59, 0.2)');
+    gradient.addColorStop(1, 'rgba(30, 41, 59, 0.0)');
 
     ctx.beginPath();
-    ctx.moveTo(padding.left, padding.top + chartH - (values[0] / maxVal) * chartH);
-    for (let i = 1; i < values.length; i++) {
-      const x = padding.left + i * stepX;
-      const y = padding.top + chartH - (values[i] / maxVal) * chartH;
-      const prevX = padding.left + (i - 1) * stepX;
-      const prevY = padding.top + chartH - (values[i - 1] / maxVal) * chartH;
-      const cpX = (prevX + x) / 2;
-      ctx.bezierCurveTo(cpX, prevY, cpX, y, x, y);
+    const getX = (idx) => padding.left + (chartW / (dataPoints.length - 1)) * idx;
+    const getY = (val) => padding.top + chartH - (val / maxVal) * chartH;
+
+    ctx.moveTo(getX(0), getY(dataPoints[0].value));
+    for (let i = 1; i < dataPoints.length; i++) {
+      const prevX = getX(i - 1);
+      const prevY = getY(dataPoints[i - 1].value);
+      const curX = getX(i);
+      const curY = getY(dataPoints[i].value);
+      const cX1 = prevX + (curX - prevX) / 2;
+      const cX2 = curX - (curX - prevX) / 2;
+      ctx.bezierCurveTo(cX1, prevY, cX2, curY, curX, curY);
     }
-    ctx.lineTo(padding.left + (values.length - 1) * stepX, padding.top + chartH);
-    ctx.lineTo(padding.left, padding.top + chartH);
+
+    // Fill area
+    ctx.lineTo(getX(dataPoints.length - 1), h - padding.bottom);
+    ctx.lineTo(getX(0), h - padding.bottom);
     ctx.closePath();
     ctx.fillStyle = gradient;
     ctx.fill();
 
+    // Draw line
     ctx.beginPath();
-    ctx.moveTo(padding.left, padding.top + chartH - (values[0] / maxVal) * chartH);
-    for (let i = 1; i < values.length; i++) {
-      const x = padding.left + i * stepX;
-      const y = padding.top + chartH - (values[i] / maxVal) * chartH;
-      const prevX = padding.left + (i - 1) * stepX;
-      const prevY = padding.top + chartH - (values[i - 1] / maxVal) * chartH;
-      const cpX = (prevX + x) / 2;
-      ctx.bezierCurveTo(cpX, prevY, cpX, y, x, y);
+    ctx.moveTo(getX(0), getY(dataPoints[0].value));
+    for (let i = 1; i < dataPoints.length; i++) {
+      const prevX = getX(i - 1);
+      const prevY = getY(dataPoints[i - 1].value);
+      const curX = getX(i);
+      const curY = getY(dataPoints[i].value);
+      const cX1 = prevX + (curX - prevX) / 2;
+      const cX2 = curX - (curX - prevX) / 2;
+      ctx.bezierCurveTo(cX1, prevY, cX2, curY, curX, curY);
     }
-    ctx.strokeStyle = '#4361ee';
+    ctx.strokeStyle = '#0F172A';
     ctx.lineWidth = 2.5;
     ctx.stroke();
 
-    values.forEach((v, i) => {
-      if (v > 0) {
-        const x = padding.left + i * stepX;
-        const y = padding.top + chartH - (v / maxVal) * chartH;
-        ctx.beginPath();
-        ctx.arc(x, y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#4361ee';
-        ctx.fill();
+    // Dots and X labels
+    const step = days === 30 ? 5 : 1;
+    dataPoints.forEach((d, i) => {
+      const x = getX(i);
+      const y = getY(d.value);
+
+      // Dot
+      ctx.beginPath();
+      ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#0F172A';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // X Label
+      if (i % step === 0 || i === dataPoints.length - 1) {
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(d.label, x, h - padding.bottom + 20);
       }
     });
-  }, [orders, chartPeriod]);
+  }, [chartPeriod, orders]);
 
   useEffect(() => {
     fetchData();
@@ -143,21 +167,18 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [ordersSnap, productsSnap] = await Promise.all([
-        getDocs(query(collection(db, 'orders'), orderBy('createdAt', 'desc'))),
-        getDocs(collection(db, 'products'))
+      const [ordersDataRaw, productsData] = await Promise.all([
+        apiGetOrders(),
+        apiGetProducts()
       ]);
       
-      const ordersData = ordersSnap.docs.map(d => ({
-        id: d.id,
-        ...d.data(),
-        createdAt: d.data().createdAt?.toDate ? d.data().createdAt.toDate() : new Date()
+      const ordersData = (ordersDataRaw || []).map(d => ({
+        ...d,
+        createdAt: d.createdAt ? new Date(d.createdAt) : new Date()
       }));
       
-      const productsData = productsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      
       setOrders(ordersData);
-      setProducts(productsData);
+      setProducts(productsData || []);
     } catch (err) {
       console.error('Dashboard fetch error:', err);
     } finally {

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { apiUpdateOrder } from '../services/sqliteApi';
 import './OrderDetail.css';
 
 const OrderDetail = ({ order, onBack, onCancelSuccess, onEditOrder, onReturnSuccess }) => {
@@ -62,11 +61,8 @@ const OrderDetail = ({ order, onBack, onCancelSuccess, onEditOrder, onReturnSucc
     if (cancelling) return;
     setCancelling(true);
     try {
-      const orderRef = doc(db, 'orders', order.id);
-      await updateDoc(orderRef, {
-        status: 'cancelled',
-        updatedAt: serverTimestamp(),
-        cancelledAt: serverTimestamp()
+      await apiUpdateOrder(order.id, {
+        status: 'cancelled'
       });
       if (onCancelSuccess) onCancelSuccess(order.id);
     } catch (error) {
@@ -82,11 +78,8 @@ const OrderDetail = ({ order, onBack, onCancelSuccess, onEditOrder, onReturnSucc
     if (cancelling) return;
     setCancelling(true);
     try {
-      const orderRef = doc(db, 'orders', order.id);
-      await updateDoc(orderRef, {
-        status: 'cancelled',
-        updatedAt: serverTimestamp(),
-        cancelledAt: serverTimestamp()
+      await apiUpdateOrder(order.id, {
+        status: 'cancelled'
       });
       if (onCancelSuccess) onCancelSuccess(order.id);
       if (onEditOrder) onEditOrder(order.items || []);
@@ -104,11 +97,8 @@ const OrderDetail = ({ order, onBack, onCancelSuccess, onEditOrder, onReturnSucc
     }
     setReturning(true);
     try {
-      const orderRef = doc(db, 'orders', order.id);
-      await updateDoc(orderRef, {
-        status: 'return_requested',
-        returnReason: returnReason.trim(),
-        updatedAt: serverTimestamp(),
+      await apiUpdateOrder(order.id, {
+        status: 'return_requested'
       });
       if (onReturnSuccess) onReturnSuccess(order.id, returnReason.trim());
     } catch (error) {

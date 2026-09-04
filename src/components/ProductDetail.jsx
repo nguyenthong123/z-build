@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
-import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { db, auth } from '../firebase';
+import { apiGetProduct, apiGetProducts } from '../services/sqliteApi';
+import { auth } from '../firebase';
 import './ProductDetail.css';
 import ProductReview from './ProductReview';
 import SEOHead from './SEOHead';
@@ -66,23 +66,8 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
       
       setLoading(true);
       try {
-        // Run standard ID fetch and Slug fetch in parallel for maximum speed
-        const docRef = doc(db, 'products', idToFetch);
-        const slugQuery = query(collection(db, "products"), where("slug", "==", idToFetch), limit(1));
-        
-        const [docSnap, slugSnap] = await Promise.all([
-          getDoc(docRef),
-          getDocs(slugQuery)
-        ]);
-        
-        if (docSnap.exists()) {
-          setFetchedProduct({ id: docSnap.id, ...docSnap.data() });
-        } else if (!slugSnap.empty) {
-          const firstDoc = slugSnap.docs[0];
-          setFetchedProduct({ id: firstDoc.id, ...firstDoc.data() });
-        } else {
-          setFetchedProduct(null);
-        }
+        const prod = await apiGetProduct(idToFetch);
+        setFetchedProduct(prod);
       } catch (error) {
         console.error('Error fetching product:', error);
       } finally {
@@ -129,14 +114,8 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
     const fetchRelated = async () => {
       if (product?.category) {
         try {
-          const q = query(
-            collection(db, "products"),
-            where("category", "==", product.category),
-            limit(10) // Tăng limit lên một chút để bù đắp các sản phẩm bản nháp bị lọc đi
-          );
-          const snap = await getDocs(q);
-          const list = snap.docs
-            .map(doc => ({ id: doc.id, ...doc.data() }))
+          const prods = await apiGetProducts({ category: product.category, limit: 10 });
+          const list = prods
             .filter(p => p.id !== product?.id && p.status !== 'Draft' && p.status !== 'Inactive')
             .slice(0, 4);
           setRelatedProducts(list);

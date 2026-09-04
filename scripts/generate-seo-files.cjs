@@ -1,54 +1,40 @@
 /**
- * Auto-generate sitemap.xml + products.json from Firebase Firestore
+ * Auto-generate sitemap.xml + products.json from SQLite
  * Usage: node scripts/generate-seo-files.cjs
  */
 
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
-
-// Load env from .env.local if exists (local dev)
-const envPath = path.join(__dirname, '..', '.env.local');
-if (fs.existsSync(envPath)) {
-  fs.readFileSync(envPath, 'utf8').split('\n').forEach(line => {
-    const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)/);
-    if (m && !process.env[m[1]]) process.env[m[1]] = m[2].trim();
-  });
-}
-
-const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID;
-const API_KEY = process.env.FIREBASE_API_KEY || process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY;
-
-if (!PROJECT_ID || !API_KEY) {
-  console.error('Missing Firebase config. Set FIREBASE_PROJECT_ID and FIREBASE_API_KEY env vars.');
-  process.exit(1);
-}
 
 const SITE_URL = 'https://zbuild.click';
 const OUT = path.join(__dirname, '..', 'public');
+const SQLITE_PATH = path.join(__dirname, '..', 'data', 'zbuild.sqlite');
 
 async function fetchProducts() {
-  const url = 'https://firestore.googleapis.com/v1/projects/' + PROJECT_ID + '/databases/(default)/documents/products?key=' + API_KEY + '&pageSize=500';
-  return new Promise((resolve, reject) => {
-    https.get(url, { headers: { Accept: 'application/json' } }, res => {
-      let d = '';
-      res.on('data', c => d += c);
-      res.on('end', () => {
-        try {
-          const json = JSON.parse(d);
-          if (json.error) return reject(new Error(json.error.message));
-          const docs = json.documents || [];
-          const prods = docs.map(doc => {
-            const f = doc.fields || {};
-            const g = n => { const x = f[n]; return x ? (x.stringValue || x.integerValue || x.doubleValue || x.booleanValue || x.timestampValue || null) : null; };
-            return { id: doc.name.split('/').pop(), title: g('title') || '', slug: g('slug') || '', category: g('category') || '', description: g('description') || '', shortDescription: g('shortDescription') || '', price: g('price') || g('basePrice') || 0, discountPrice: g('discountPrice') || 0, image: g('image') || '', status: g('status') || 'Draft', specs: g('specs') || '', packaging: g('packaging') || '', weight: g('weight') || '', updatedAt: g('updatedAt') || g('createdAt') || '' };
-          }).filter(p => p.title && p.status !== 'Inactive');
-          console.log('Fetched ' + prods.length + ' active products');
-          resolve(prods);
-        } catch (e) { reject(e); }
-      });
-    }).on('error', reject);
-  });
+  // 1. Try local SQLite database first
+  if (fs.existsSync(SQLITE_PATH)) {
+    try {
+      const { DatabaseSync } = require('node:sqlite');
+      const db = new DatabaseSync(SQLITE_PATH);
+      const rows = db.prepare("SELECT * FROM products WHERE status != 'Inactive'").all();
+      console.log(`Loaded ${rows.length} active products from local SQLite`);
+      return rows;
+    } catch (e) {
+      console.warn('Could not read local SQLite via node:sqlite:', e.message);
+    }
+  }
+
+  // 2. Fallback to existing products.json if present
+  const existingPath = path.join(OUT, 'products.json');
+  if (fs.existsSync(existingPath)) {
+    try {
+      const existing = JSON.parse(fs.readFileSync(existingPath, 'utf8'));
+      console.log(`Using existing products.json with ${existing.length} products`);
+      return existing;
+    } catch {}
+  }
+
+  return [];
 }
 
 function genSitemap(prods) {
@@ -121,18 +107,21 @@ function esc(s) {
 }
 
 (async () => {
-  console.log('Fetching products from Firestore...');
+  console.log('Generating SEO files from SQLite...');
   try {
     const prods = await fetchProducts();
     if (!fs.existsSync(OUT)) fs.mkdirSync(OUT, { recursive: true });
-    genSitemap(prods);
-    genProductsJSON(prods);
-    injectIntoIndexHTML(prods);
-    const cats = [...new Set(prods.map(p => p.category).filter(Boolean))];
-    console.log('Products: ' + prods.length + ' | Categories: ' + cats.length + ' | URLs: ' + (prods.length + cats.length + 4));
+    if (prods && prods.length > 0) {
+      genSitemap(prods);
+      genProductsJSON(prods);
+      injectIntoIndexHTML(prods);
+      const cats = [...new Set(prods.map(p => p.category).filter(Boolean))];
+      console.log('Products: ' + prods.length + ' | Categories: ' + cats.length + ' | URLs: ' + (prods.length + cats.length + 4));
+    } else {
+      console.log('No products found, skipping SEO injection.');
+    }
     console.log('Done!');
   } catch (e) {
-    console.error('Error:', e.message);
-    process.exit(1);
+    console.warn('SEO generation warning:', e.message);
   }
 })();

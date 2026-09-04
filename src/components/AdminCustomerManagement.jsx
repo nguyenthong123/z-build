@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, orderBy, doc, setDoc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
-import { getDunvexBaseUrl } from '../utils/dunvexSync';
+import { 
+  apiGetCustomers, 
+  apiGetOrders, 
+  apiSaveCustomer, 
+  apiDeleteCustomer, 
+  apiDunvexSyncCustomers 
+} from '../services/sqliteApi';
 import './AdminCustomerManagement.css';
 
 // Màu sắc theo loại khách hàng
@@ -24,38 +28,19 @@ const AdminCustomerManagement = ({ onBack }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [adminEmails, setAdminEmails] = useState([]);
+  const [adminEmails] = useState(['nbt1024@gmail.com']);
   const [stats, setStats] = useState({ total: 0 });
 
   useEffect(() => {
-    loadAdminEmailsThenFetch();
+    fetchCustomers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const loadAdminEmailsThenFetch = async () => {
-    try {
-      const adminSnap = await getDoc(doc(db, 'settings', 'admins'));
-      const emails = adminSnap.exists() ? (adminSnap.data().emails || []) : [];
-      setAdminEmails(emails);
-      fetchCustomers(emails);
-    } catch {
-      fetchCustomers([]);
-    }
-  };
 
   const fetchCustomers = async (admins = adminEmails) => {
     setLoading(true);
     try {
-      const ordersSnap = await getDocs(query(collection(db, 'orders'), orderBy('createdAt', 'desc')));
-      const ordersData = ordersSnap.docs.map(d => ({
-        id: d.id,
-        ...d.data(),
-        createdAt: d.data().createdAt?.toDate ? d.data().createdAt.toDate() : new Date()
-      }));
-
-      // Fetch synced customers from 'customers' collection
-      const syncedSnap = await getDocs(collection(db, 'customers'));
-      const syncedCustomers = syncedSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const ordersData = await apiGetOrders();
+      const syncedCustomers = await apiGetCustomers();
 
       // Helper: determine customer type
       const resolveType = (email, dunvexType) => {
@@ -98,6 +83,7 @@ const AdminCustomerManagement = ({ onBack }) => {
         const email = sc.email || `dunvex_${sc.id}`;
         if (!customerMap[email]) {
           customerMap[email] = {
+            id: sc.id,
             email: sc.email || '',
             name: sc.name || 'Khách hàng từ Dunvex',
             phone: sc.phone || '',
@@ -109,6 +95,7 @@ const AdminCustomerManagement = ({ onBack }) => {
             dunvexType: sc.type || ''
           };
         } else {
+          if (!customerMap[email].id) customerMap[email].id = sc.id;
           if (!customerMap[email].dunvexType) customerMap[email].dunvexType = sc.type || '';
           if (!customerMap[email].name || customerMap[email].name === 'Khách vãng lai') customerMap[email].name = sc.name;
           if (!customerMap[email].phone) customerMap[email].phone = sc.phone;
@@ -133,77 +120,34 @@ const AdminCustomerManagement = ({ onBack }) => {
   };
 
   const handleSyncFromDunvex = async () => {
-    if (!window.confirm("Bắt đầu đồng bộ khách hàng từ phần mềm Dunvex? Quá trình này có thể mất vài phút.")) return;
+    if (!window.confirm("Bắt đầu đồng bộ khách hàng từ phần mềm Dunvex vào SQLite?")) return;
     
     setSyncing(true);
     try {
-      const docRef = doc(db, "storeSettings", "main");
-      const docSnap = await getDoc(docRef);
-      if (!docSnap.exists() || !docSnap.data().openClawConfig) {
-        alert("Chưa cấu hình API Endpoint và API Key của Dunvex trong Admin Settings!");
-        setSyncing(false);
-        return;
-      }
-
-      const config = docSnap.data().openClawConfig;
-      if (!(config.dunvexWebhookUrl || config.dunvexApiUrl || config.apiUrl) || !(config.dunvexApiKey || config.apiKey || config.botApiKey) || !config.ownerId) {
-        alert("Vui lòng cấu hình đầy đủ Webhook URL, API Key và Owner ID của Dunvex trong Admin Settings!");
-        setSyncing(false);
-        return;
-      }
-
-      const dunvexBase = getDunvexBaseUrl(config);
-      if (!dunvexBase) {
-        throw new Error("Không thể xác định URL của Dunvex. Vui lòng cấu hình Webhook URL trong Cài đặt.");
-      }
-      const customersUrl = `${dunvexBase}/api/customers`;
-
-      const response = await fetch(customersUrl, {
-        method: 'GET',
-        headers: {
-          'x-api-key': config.dunvexApiKey || config.apiKey || config.botApiKey,
-          'x-owner-id': config.ownerId
-        }
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Lỗi kết nối API: ${response.status} ${errText}`);
-      }
-
-      const data = await response.json();
-      if (!data.success || !Array.isArray(data.customers)) {
-        throw new Error("Dữ liệu API trả về không hợp lệ");
-      }
-
-      let syncedCount = 0;
-      for (const c of data.customers) {
-        if (!c.name && !c.phone && !c.email) continue;
-        
-        // Use email as ID if available, else phone, else dunvexId
-        const docId = c.email ? c.email.replace(/[^a-zA-Z0-9]/g, '_') : (c.phone || c.id);
-        
-        await setDoc(doc(db, 'customers', docId), {
-          dunvexId: c.id,
-          name: c.name || '',
-          email: c.email || '',
-          phone: c.phone || '',
-          address: c.address || '',
-          type: c.type || '',
-          status: c.status || '',
-          syncedAt: new Date()
-        }, { merge: true });
-        
-        syncedCount++;
-      }
-
-      alert(`Đồng bộ thành công ${syncedCount} khách hàng từ Dunvex.`);
-      fetchCustomers();
+      const res = await apiDunvexSyncCustomers();
+      alert(`Đồng bộ thành công! Thêm mới: ${res.created || 0}, Cập nhật: ${res.updated || 0} khách hàng.`);
+      await fetchCustomers();
     } catch (err) {
       console.error('Error syncing customers:', err);
       alert("Đồng bộ thất bại: " + err.message);
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleDeleteCustomer = async (c) => {
+    if (!c.id) {
+      alert("Khách hàng này chưa có ID trong SQLite để xóa.");
+      return;
+    }
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa khách hàng "${c.name}" khỏi SQLite?`)) return;
+    try {
+      await apiDeleteCustomer(c.id);
+      alert("Đã xóa khách hàng thành công!");
+      if (selectedCustomer?.email === c.email) setSelectedCustomer(null);
+      await fetchCustomers();
+    } catch (err) {
+      alert("Lỗi khi xóa khách hàng: " + err.message);
     }
   };
 
@@ -360,9 +304,21 @@ const AdminCustomerManagement = ({ onBack }) => {
                           <td className="price-text">{formatCurrency(c.totalSpent)}</td>
                           <td className="acm-date">{formatDate(c.lastOrder)}</td>
                           <td className="text-right">
-                            <button className="acm-detail-btn" onClick={() => setSelectedCustomer(selectedCustomer?.email === c.email ? null : c)}>
-                              {selectedCustomer?.email === c.email ? 'Đóng' : 'Xem'}
-                            </button>
+                            <div style={{ display: 'inline-flex', gap: '6px' }}>
+                              <button className="acm-detail-btn" onClick={() => setSelectedCustomer(selectedCustomer?.email === c.email ? null : c)}>
+                                {selectedCustomer?.email === c.email ? 'Đóng' : 'Xem'}
+                              </button>
+                              {c.id && (
+                                <button 
+                                  className="acm-detail-btn" 
+                                  style={{ color: '#d32f2f', borderColor: '#ffcdd2', background: '#ffebee', padding: '4px 8px' }} 
+                                  onClick={(e) => { e.stopPropagation(); handleDeleteCustomer(c); }}
+                                  title="Xóa khách hàng khỏi SQLite"
+                                >
+                                  🗑️
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );

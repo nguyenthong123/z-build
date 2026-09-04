@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
+import { apiGetOrders } from '../services/sqliteApi';
 import './OrderHistory.css';
 import AccountSidebar from './AccountSidebar';
 
@@ -18,17 +17,13 @@ const OrderHistory = ({ user, onBack, onViewDetails, onNavigate, onLogout }) => 
       }
       
       try {
-        const q = query(
-          collection(db, 'orders'),
-          where('userId', '==', user.uid)
-        );
-        const snapshot = await getDocs(q);
-        const orderData = snapshot.docs.map(doc => {
-          const data = doc.data();
+        const rawOrders = await apiGetOrders(user.uid);
+        const orderData = (rawOrders || []).map(data => {
+          const createdAtDate = data.createdAt ? new Date(data.createdAt) : null;
           return {
-            id: doc.id,
-            orderNumber: data.orderNumber || doc.id,
-            date: data.createdAt?.toDate ? data.createdAt.toDate().toLocaleDateString('vi-VN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A',
+            id: data.id,
+            orderNumber: data.orderNumber || data.id,
+            date: createdAtDate ? createdAtDate.toLocaleDateString('vi-VN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A',
             status: data.status || 'pending',
             total: data.total || 0,
             itemCount: data.items?.length || 0,
@@ -48,21 +43,15 @@ const OrderHistory = ({ user, onBack, onViewDetails, onNavigate, onLogout }) => 
             discount: data.discount || 0,
             coupon: data.coupon || null,
             bankTransaction: data.bankTransaction || null,
-            createdAt: data.createdAt,
+            createdAt: createdAtDate,
             returnReason: data.returnReason || ''
           };
         });
         
-        // Sort by createdAt descending in memory to avoid requiring a composite index
-        orderData.sort((a, b) => {
-          const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-          const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-          return timeB - timeA;
-        });
-
+        orderData.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
         setOrders(orderData);
       } catch (error) {
-        console.error('Error fetching orders:', error);
+        console.error("Error fetching order history:", error);
       } finally {
         setLoading(false);
       }

@@ -42,3 +42,8 @@ out/
 .npm/
 .cache/
 .vercel
+
+# Secrets & local data — KHÔNG push lên GitHub
+# (Dunvex API key, DeepSeek key, Telegram token, customer DB)
+data/
+server/

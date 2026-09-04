@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, getDoc, query, orderBy, doc, updateDoc, serverTimestamp, addDoc, limit, startAfter } from 'firebase/firestore';
-import { db } from '../firebase';
+import { apiGetOrders, apiUpdateOrder, apiDeleteOrder, apiGetSettings } from '../services/sqliteApi';
 import './AdminOrderManagement.css';
 
 import AdminHeader from './AdminHeader';
@@ -19,32 +18,24 @@ const AdminOrderManagement = ({ onViewOrderDetail }) => {
     fetchOrders();
   }, []);
 
-  const ITEMS_PER_PAGE = 20;
-  const [lastVisible, setLastVisible] = useState(null);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(ITEMS_PER_PAGE));
-      const snapshot = await getDocs(q);
-      
-      const lastDoc = snapshot.docs[snapshot.docs.length - 1];
-      setLastVisible(lastDoc || null);
-      setHasMore(snapshot.docs.length === ITEMS_PER_PAGE);
-
-      const data = snapshot.docs.map(d => ({
-        id: d.id,
-        ...d.data(),
-        createdAt: d.data().createdAt?.toDate ? d.data().createdAt.toDate() : new Date()
+      const data = await apiGetOrders();
+      const parsedOrders = (data || []).map(d => ({
+        ...d,
+        createdAt: d.createdAt ? new Date(d.createdAt) : new Date()
       }));
-      setOrders(data);
+      setOrders(parsedOrders);
+      setHasMore(false);
       
       // Tính stats (Dựa trên dữ liệu đang hiển thị)
-      const s = { total: data.length, pending: 0, confirmed: 0, shipping: 0, delivered: 0, cancelled: 0, return_requested: 0, returned: 0, revenue: 0 };
-      data.forEach(o => {
+      const s = { total: parsedOrders.length, pending: 0, confirmed: 0, shipping: 0, delivered: 0, cancelled: 0, return_requested: 0, returned: 0, revenue: 0 };
+      parsedOrders.forEach(o => {
         if (s[o.status] !== undefined) s[o.status]++;
         if (o.status === 'delivered') s.revenue += (o.total || 0);
       });
@@ -57,67 +48,15 @@ const AdminOrderManagement = ({ onViewOrderDetail }) => {
   };
 
   const loadMoreOrders = async () => {
-    if (!lastVisible || !hasMore || loadingMore) return;
-    setLoadingMore(true);
-    try {
-      const q = query(
-        collection(db, 'orders'), 
-        orderBy('createdAt', 'desc'), 
-        startAfter(lastVisible),
-        limit(ITEMS_PER_PAGE)
-      );
-      const snapshot = await getDocs(q);
-      
-      const lastDoc = snapshot.docs[snapshot.docs.length - 1];
-      setLastVisible(lastDoc || null);
-      setHasMore(snapshot.docs.length === ITEMS_PER_PAGE);
-
-      const newData = snapshot.docs.map(d => ({
-        id: d.id,
-        ...d.data(),
-        createdAt: d.data().createdAt?.toDate ? d.data().createdAt.toDate() : new Date()
-      }));
-      
-      const updatedOrders = [...orders, ...newData];
-      setOrders(updatedOrders);
-      
-      // Recalc stats
-      const s = { total: updatedOrders.length, pending: 0, confirmed: 0, shipping: 0, delivered: 0, cancelled: 0, return_requested: 0, returned: 0, revenue: 0 };
-      updatedOrders.forEach(o => {
-        if (s[o.status] !== undefined) s[o.status]++;
-        if (o.status === 'delivered') s.revenue += (o.total || 0);
-      });
-      setStats(s);
-    } catch (err) {
-      console.error('Error loading more orders:', err);
-    } finally {
-      setLoadingMore(false);
-    }
+    // Orders already loaded from SQLite
   };
 
   const updateOrderStatus = async (orderId, newStatus) => {
     setUpdatingId(orderId);
     try {
-      await updateDoc(doc(db, 'orders', orderId), {
-        status: newStatus,
-        updatedAt: serverTimestamp()
-      });
-      
-      // Tạo thông báo cho user
-      const order = orders.find(o => o.id === orderId);
-      if (order && order.userId) {
-        await addDoc(collection(db, 'notifications'), {
-          userId: order.userId,
-          title: 'Cập nhật đơn hàng',
-          message: `Đơn hàng #${order.orderNumber || orderId.substring(0, 8)} của bạn đã chuyển sang trạng thái: ${getStatusLabel(newStatus)}.`,
-          type: 'order_update',
-          link: `/order/${orderId}`,
-          read: false,
-          createdAt: serverTimestamp()
-        });
-      }
+      await apiUpdateOrder(orderId, { status: newStatus });
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-      // Recalc stats
+      
       const updated = orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
       const s = { total: updated.length, pending: 0, confirmed: 0, shipping: 0, delivered: 0, cancelled: 0, return_requested: 0, returned: 0, revenue: 0 };
       updated.forEach(o => {
@@ -127,9 +66,20 @@ const AdminOrderManagement = ({ onViewOrderDetail }) => {
       setStats(s);
     } catch (err) {
       console.error('Error updating:', err);
-      alert('Lỗi cập nhật trạng thái!');
+      alert('Lỗi cập nhật trạng thái: ' + err.message);
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId) => {
+    if (!window.confirm(`Bạn có chắc muốn xóa đơn hàng #${orderId} khỏi SQLite?`)) return;
+    try {
+      await apiDeleteOrder(orderId);
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+      alert("Đã xóa đơn hàng thành công!");
+    } catch (err) {
+      alert("Lỗi khi xóa đơn hàng: " + err.message);
     }
   };
 
@@ -180,14 +130,8 @@ const AdminOrderManagement = ({ onViewOrderDetail }) => {
   const handleSyncBank = async () => {
     setIsSyncing(true);
     try {
-      const docSnap = await getDoc(doc(db, 'storeSettings', 'main'));
-      let apiUrl = '';
-      if (docSnap.exists() && docSnap.data().googleSheetUrl) {
-        apiUrl = docSnap.data().googleSheetUrl;
-      }
-      if (!apiUrl) {
-        apiUrl = 'https://script.google.com/macros/s/AKfycbwKEEu9Yapfdpt_MpCneQvR4BRORrIK9NHv6EJYoJbtH9ocOrxeh-1tOzI3lmFLaT41/exec';
-      }
+      const settings = await apiGetSettings('main');
+      let apiUrl = settings?.googleSheetUrl || 'https://script.google.com/macros/s/AKfycbwKEEu9Yapfdpt_MpCneQvR4BRORrIK9NHv6EJYoJbtH9ocOrxeh-1tOzI3lmFLaT41/exec';
 
       const res = await fetch(apiUrl);
       const dataObj = await res.json();
@@ -207,11 +151,9 @@ const AdminOrderManagement = ({ onViewOrderDetail }) => {
           });
 
           if (match) {
-            const orderRef = doc(db, 'orders', order.id);
-            await updateDoc(orderRef, {
-              status: 'processing',
-              paymentStatus: 'paid',
-              updatedAt: serverTimestamp()
+            await apiUpdateOrder(order.id, {
+              status: 'confirmed',
+              paymentStatus: 'paid'
             });
             syncedCount++;
           }
@@ -220,7 +162,7 @@ const AdminOrderManagement = ({ onViewOrderDetail }) => {
 
       if (syncedCount > 0) {
         alert(`Đã đồng bộ thành công! Tìm thấy và tự động duyệt ${syncedCount} đơn hàng chuyển khoản.`);
-        fetchOrders(true);
+        fetchOrders();
       } else {
         alert('Không tìm thấy giao dịch ngân hàng nào khớp với các đơn hàng đang chờ duyệt.');
       }
@@ -260,6 +202,17 @@ const AdminOrderManagement = ({ onViewOrderDetail }) => {
       await updateOrderStatus(id, newStatus);
     }
     setSelectedOrders([]);
+  };
+
+  const bulkDeleteOrders = async () => {
+    if (selectedOrders.length === 0) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedOrders.length} đơn hàng đã chọn khỏi SQLite?`)) return;
+    for (const id of selectedOrders) {
+      await apiDeleteOrder(id);
+    }
+    setOrders(prev => prev.filter(o => !selectedOrders.includes(o.id)));
+    setSelectedOrders([]);
+    alert("Đã xóa các đơn hàng thành công!");
   };
 
   const exportToCSV = () => {
@@ -400,6 +353,7 @@ const AdminOrderManagement = ({ onViewOrderDetail }) => {
                 <button onClick={() => bulkUpdateStatus('confirmed')} className="aom-bulk-btn confirm">Xác nhận</button>
                 <button onClick={() => bulkUpdateStatus('shipping')} className="aom-bulk-btn ship">Giao hàng</button>
                 <button onClick={() => bulkUpdateStatus('delivered')} className="aom-bulk-btn deliver">Đã giao</button>
+                <button onClick={bulkDeleteOrders} className="aom-bulk-btn cancel" style={{ background: '#d32f2f', color: '#fff', borderColor: '#b71c1c' }}>🗑️ Xóa đã chọn</button>
                 <button onClick={() => setSelectedOrders([])} className="aom-bulk-btn cancel">Bỏ chọn</button>
               </div>
             </div>
@@ -485,6 +439,9 @@ const AdminOrderManagement = ({ onViewOrderDetail }) => {
                             )}
                             <button className="aom-action-btn view" onClick={() => onViewOrderDetail && onViewOrderDetail(order)} title="Xem chi tiết">
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </button>
+                            <button className="aom-action-btn view" style={{ color: '#d32f2f' }} onClick={() => handleDeleteOrder(order.id)} title="Xóa đơn hàng khỏi SQLite">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                             </button>
                           </div>
                         </td>

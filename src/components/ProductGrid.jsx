@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query } from 'firebase/firestore';
-import { db } from '../firebase';
+import { apiGetProducts } from '../services/sqliteApi';
 import { useWishlist } from '../context/WishlistContext';
 import { useStore } from '../context/StoreContext';
 import { useAppContext } from '../context/AppContext';
@@ -30,25 +29,16 @@ const ProductGrid = ({ onProductClick, onAddToCart: propOnAddToCart }) => {
     const fetchAllProducts = async () => {
       setLoading(true);
       try {
-        const q = query(collection(db, "products"));
-        const snapshot = await getDocs(q);
+        const rawProducts = await apiGetProducts();
         
-        const loadedProducts = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          tag: doc.data().category || 'NỔI BẬT',
-          name: doc.data().title,
-          price: doc.data().discountPrice || doc.data().basePrice,
-          oldPrice: doc.data().basePrice,
-          img: doc.data().image ? doc.data().image.replace('/upload/', '/upload/f_auto,q_auto,w_500,c_fill/') : (doc.data().extraImages?.[0] ? doc.data().extraImages[0].replace('/upload/', '/upload/f_auto,q_auto,w_500,c_fill/') : 'https://placehold.co/400x400.png?text=ZBUILD')
+        const loadedProducts = rawProducts.map(p => ({
+          ...p,
+          tag: p.category || 'NỔI BẬT',
+          name: p.title,
+          price: p.discountPrice || p.basePrice || p.price,
+          oldPrice: p.basePrice || p.price,
+          img: p.image ? p.image.replace('/upload/', '/upload/f_auto,q_auto,w_500,c_fill/') : (p.extraImages?.[0] ? p.extraImages[0].replace('/upload/', '/upload/f_auto,q_auto,w_500,c_fill/') : 'https://placehold.co/400x400.png?text=ZBUILD')
         })).filter(p => p.status === 'active' || (p.status !== 'Draft' && p.status !== 'Inactive'));
-        
-        // Sort products by createdAt desc
-        loadedProducts.sort((a, b) => {
-          const dateA = a.createdAt?.seconds || 0;
-          const dateB = b.createdAt?.seconds || 0;
-          return dateB - dateA;
-        });
         
         setProducts(loadedProducts);
         

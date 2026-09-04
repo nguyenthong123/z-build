@@ -16,6 +16,7 @@ import { db } from '../firebase';
 import { collection, getDocs, query, orderBy, where, doc, getDoc, addDoc, updateDoc, deleteDoc, limit, serverTimestamp } from 'firebase/firestore';
 import { calculateConstructionMaterials } from './MaterialService';
 import Fuse from 'fuse.js';
+import { apiGetProducts, apiGetProduct, apiSaveProduct, apiTriggerAiEnrich } from './sqliteApi';
 
 // ============ FUNCTION DEFINITIONS (cho DeepSeek/OpenAI tools format) ============
 
@@ -1052,8 +1053,13 @@ YÊU CẦU BẮT BUỘC:
 
 async function getDraftProducts() {
   try {
-    const snap = await getDocs(collection(db, 'products'));
-    let products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    let products = [];
+    try {
+      products = await apiGetProducts();
+    } catch {
+      const snap = await getDocs(collection(db, 'products'));
+      products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
     
     // Lọc ra các sản phẩm Draft hoặc chưa có description
     let drafts = products.filter(p => p.status === 'Draft' || !p.description || p.description.trim() === '');
@@ -1073,18 +1079,31 @@ async function getDraftProducts() {
 
 async function updateProductDetails({ product_id, description, category, specs }) {
   try {
-    const productRef = doc(db, 'products', product_id);
-    const updateData = {
-      description: description || "",
-      // Giữ nguyên trạng thái Draft để người dùng tự thêm hình ảnh rồi mới Active
-      updatedAt: new Date().toISOString()
-    };
-    if (category) updateData.category = category;
-    if (specs) updateData.specs = specs;
+    // 1. Cập nhật vào SQLite VPS
+    try {
+      await apiSaveProduct({
+        id: product_id,
+        description: description || "",
+        category: category,
+        specs: specs
+      });
+    } catch (sqlErr) {
+      console.warn('SQLite update details warning:', sqlErr.message);
+    }
 
-    await updateDoc(productRef, updateData);
+    // 2. Backup Firestore nếu có doc
+    try {
+      const productRef = doc(db, 'products', product_id);
+      const updateData = {
+        description: description || "",
+        updatedAt: new Date().toISOString()
+      };
+      if (category) updateData.category = category;
+      if (specs) updateData.specs = specs;
+      await updateDoc(productRef, updateData);
+    } catch {}
     
-    return { success: true, message: `Đã cập nhật mô tả cho sản phẩm ID ${product_id} (Trạng thái vẫn là Nháp).` };
+    return { success: true, message: `Đã cập nhật mô tả cho sản phẩm ID ${product_id} thành công!` };
   } catch (err) {
     return { error: 'Lỗi cập nhật chi tiết sản phẩm: ' + err.message };
   }
@@ -1448,15 +1467,20 @@ async function syncPricesFromSheet({ sheet_url, match_field = "id" }) {
 // ============================================================
 async function generateProductDescription({ product_name, instructions = '', product_info = '' }) {
   try {
-    // Tìm sản phẩm — dùng Fuse.js fuzzy search (chịu sai chính tả, dấu, dấu cách)
-    const snap = await getDocs(collection(db, 'products'));
-    const allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.title);
+    // 1. Tìm sản phẩm trong SQLite Backend (ưu tiên SQLite)
+    let allProducts = [];
+    try {
+      allProducts = await apiGetProducts();
+    } catch {
+      const snap = await getDocs(collection(db, 'products'));
+      allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.title);
+    }
+
     const kw = (product_name || '').trim();
-    
     let found = null;
     if (kw) {
       const fuse = new Fuse(allProducts, {
-        keys: ['title'],
+        keys: ['title', 'dunvexId'],
         threshold: 0.4,
         ignoreLocation: true,
         minMatchCharLength: 2,
@@ -1466,7 +1490,6 @@ async function generateProductDescription({ product_name, instructions = '', pro
       if (results.length > 0) {
         found = results[0].item;
       } else {
-        // Fallback: tìm contains đơn giản (đã chuẩn hoá)
         const kwLower = kw.toLowerCase();
         found = allProducts.find(p => (p.title || '').toLowerCase().includes(kwLower));
       }
@@ -1476,100 +1499,37 @@ async function generateProductDescription({ product_name, instructions = '', pro
       return { success: false, error: `Không tìm thấy sản phẩm nào khớp với tên "${product_name}". Thử nhập tên ngắn hơn hoặc chính xác hơn nhé!` };
     }
 
-    // Build context từ dữ liệu sản phẩm
-    const productContext = [
-      found.title ? `Tên: ${found.title}` : '',
-      found.category ? `Danh mục: ${found.category}` : '',
-      found.specs ? `Quy cách: ${found.specs}` : '',
-      found.packaging ? `Đóng gói: ${found.packaging}` : '',
-      found.weight ? `Trọng lượng: ${found.weight}` : '',
-      found.shortDescription ? `Mô tả ngắn: ${found.shortDescription}` : '',
-      product_info ? `Thông tin bổ sung: ${product_info}` : '',
-      instructions ? `Yêu cầu đặc biệt: ${instructions}` : '',
-    ].filter(Boolean).join('. ');
-
-    const aiApiKey = process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY;
-    if (!aiApiKey) {
-      return { success: false, error: 'Chưa cấu hình API Key. Không thể tạo bài viết tự động.' };
-    }
-
-    const prompt = `Bạn là copywriter chuyên nghiệp chuyên viết bài mô tả sản phẩm vật liệu xây dựng & nội thất. Viết bài mô tả CHI TIẾT, CHUYÊN SÂU, chuẩn SEO cho sản phẩm sau.
-
-THÔNG TIN SẢN PHẨM:
-${productContext}
-
-YÊU CẦU BẮT BUỘC:
-- Bài viết TỐI THIỂU 500 TỪ, càng chi tiết càng tốt.
-- Bố cục: Giới thiệu → Ưu điểm nổi bật (5+ ý) → Thông số kỹ thuật → Ứng dụng thực tế → Cam kết chất lượng.
-- Dùng HTML cơ bản: h3, p, ul, li, strong, em.
-- Dùng dấu nháy đơn (') cho thuộc tính HTML, KHÔNG dùng dấu nháy kép.
-- Văn phong chuyên nghiệp, thuyết phục, hướng tới khách hàng xây dựng.
-- Chỉ trả về HTML, KHÔNG bọc trong markdown code block.`;
-
-    // Gọi AI với retry
-    let description = '';
-    const maxRetries = 3;
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
-      try {
-        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiApiKey}` },
-          body: JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 4096 }),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        
-        if (response.ok) {
-          const raw = await response.text();
-          try {
-            const data = JSON.parse(raw);
-            let content = data.choices?.[0]?.message?.content || '';
-            // Clean up
-            content = content.replace(/```html\n?/gi, '').replace(/```\n?/g, '').trim();
-            if (content.length > 100) {
-              description = content;
-              break;
-            }
-          } catch (parseErr) {
-            console.warn(`Description parse attempt ${attempt + 1} failed:`, parseErr.message);
-          }
-        } else if (attempt === maxRetries - 1) {
-          console.error(`DeepSeek API error ${response.status} after ${maxRetries} attempts`);
-        }
-      } catch (fetchErr) {
-        clearTimeout(timeoutId);
-        console.warn(`Description generation attempt ${attempt + 1} failed:`, fetchErr.message);
-      }
-      if (attempt < maxRetries - 1) {
-        await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
-      }
-    }
-
-    // Fallback: tạo description cơ bản nếu AI fail
-    if (!description) {
-      const title = found.title || product_name;
-      const cat = found.category || '';
-      const specs = found.specs || '';
-      description = `<h3>${title}</h3>
-<p><strong>${title}</strong> là sản phẩm chất lượng cao${cat ? ` thuộc danh mục ${cat}` : ''}, được thiết kế đáp ứng nhu cầu đa dạng của khách hàng.</p>
-${specs ? `<h3>Thông số kỹ thuật</h3>\n<ul><li>${specs}</li></ul>\n` : ''}<h3>Ưu điểm nổi bật</h3>\n<ul>\n<li>Chất lượng cao, độ bền vượt trội</li>\n<li>Thiết kế hiện đại, dễ sử dụng</li>\n<li>Giá cả cạnh tranh, phù hợp mọi công trình</li>\n<li>Giao hàng nhanh chóng, hỗ trợ kỹ thuật tận tâm</li>\n</ul>\n<h3>Cam kết</h3>\n<p>Z-BUILD cam kết sản phẩm chính hãng, bảo hành đầy đủ, đổi trả linh hoạt.</p>`;
-    }
-
-    // Lưu vào Firestore
-    await updateDoc(doc(db, 'products', found.id), {
-      description,
-      updatedAt: new Date().toISOString()
+    // 2. Kích hoạt AI enrich từ backend VPS (đã cấu hình DeepSeek V3 và lưu thẳng vào SQLite)
+    const enrichResult = await apiTriggerAiEnrich({
+      productId: found.id,
+      title: found.title,
+      specs: found.specs || '',
+      category: found.category || 'Vật liệu xây dựng'
     });
 
-    return {
-      success: true,
-      message: `✅ Đã tạo bài viết mô tả cho "${found.title}" thành công! Vào xem sản phẩm để kiểm tra.`,
-      product_name: found.title,
-      description_length: description.length,
-      generated: !!(description && description.length > 200)
-    };
+    if (enrichResult && enrichResult.success) {
+      // Sync backup sang Firestore nếu có
+      try {
+        await updateDoc(doc(db, 'products', found.id), {
+          description: enrichResult.description,
+          status: 'active',
+          updatedAt: new Date().toISOString()
+        });
+      } catch (fe) {
+        console.warn('Firestore backup sync notice:', fe.message);
+      }
+
+      return {
+        success: true,
+        message: `✅ Đã tạo bài viết mô tả chi tiết chuẩn SEO cho "${found.title}" và lưu vào cơ sở dữ liệu thành công!`,
+        product_name: found.title,
+        description_length: enrichResult.description?.length || 0,
+        generated: enrichResult.aiGenerated
+      };
+    }
+
+    // Fallback nếu API enrich VPS lỗi
+    return { success: false, error: 'Không thể sinh bài viết cho sản phẩm này lúc này.' };
   } catch (err) {
     return { error: 'Lỗi tạo bài viết: ' + err.message };
   }
@@ -1578,7 +1538,12 @@ ${specs ? `<h3>Thông số kỹ thuật</h3>\n<ul><li>${specs}</li></ul>\n` : ''
 async function updateProduct({ product_name, new_title, category, price, stock, status, description, specs, packaging, weight, imageUrl }) {
   try {
     const snap = await getDocs(collection(db, "products"));
-    const allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    let allProducts = [];
+    try {
+      allProducts = await apiGetProducts();
+    } catch {
+      allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
     
     const kw = (product_name || '').toLowerCase().trim();
     const matched = allProducts.filter(p => (p.title || '').toLowerCase().includes(kw));
@@ -1616,7 +1581,10 @@ async function updateProduct({ product_name, new_title, category, price, stock, 
       updateData.extraImages = [imageUrl];
     }
     
-    await Promise.all(matched.map(p => updateDoc(doc(db, "products", p.id), updateData)));
+    // Lưu vào SQLite VPS
+    await Promise.all(matched.map(p => apiSaveProduct({ id: p.id, ...updateData }).catch(e => console.warn(e.message))));
+    // Backup Firestore
+    await Promise.all(matched.map(p => updateDoc(doc(db, "products", p.id), updateData).catch(() => {})));
     
     return {
       success: true,

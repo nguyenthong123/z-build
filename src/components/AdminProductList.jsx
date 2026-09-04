@@ -1,9 +1,12 @@
 import AdminHeader from './AdminHeader';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc, startAfter, limit, addDoc, getDoc, setDoc, where, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { 
+  apiGetProducts, 
+  apiDeleteProduct, 
+  apiBatchDeleteProducts, 
+  apiDunvexSyncProducts 
+} from '../services/sqliteApi';
 import { slugify } from '../utils/slugify';
-import { getDunvexBaseUrl } from '../utils/dunvexSync';
 
 import './AdminProductList.css';
 
@@ -38,100 +41,18 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
     sessionStorage.setItem('admin_product_category', selectedCategory);
   }, [selectedCategory]);
 
-
-
-  // Tự động đồng bộ 1 ngày 1 lần khi admin mở trang
+  // Tự động đồng bộ ngầm khi admin mở trang
   useEffect(() => {
     const checkAutoSync = async () => {
       if (autoSyncTriggered) return;
+      setAutoSyncTriggered(true);
       try {
-        const settingsRef = doc(db, 'storeSettings', 'main');
-        const settingsSnap = await getDoc(settingsRef);
-        if (!settingsSnap.exists()) return;
-        
-        const data = settingsSnap.data();
-        const syncMeta = data.syncMetadata;
-        const config = data.openClawConfig;
-        
-        // Chỉ tự động nếu có config Dunvex
-        if (!(config?.dunvexWebhookUrl || config?.dunvexApiUrl || config?.apiUrl) || !(config?.dunvexApiKey || config?.apiKey || config?.botApiKey) || !config?.ownerId) return;
-        
-        const now = Date.now();
-        const oneDayMs = 24 * 60 * 60 * 1000;
-        const lastSync = syncMeta?.lastAutoSync ? syncMeta.lastAutoSync.toMillis() : 0;
-        
-        if (now - lastSync >= oneDayMs) {
-          setAutoSyncTriggered(true);
-          
-          // Chạy sync ngầm (không chặn UI)
-          try {
-            const dunvexBase = getDunvexBaseUrl(config);
-            if (!dunvexBase) throw new Error('Không thể xác định URL Dunvex');
-            const productsUrl = `${dunvexBase}/api/products`;
-
-            const response = await fetch(productsUrl, {
-              method: 'GET',
-              headers: { 'x-api-key': config.dunvexApiKey || config.apiKey || config.botApiKey, 'x-owner-id': config.ownerId }
-            });
-
-            if (response.ok) {
-              const resData = await response.json();
-              if (resData.success && resData.products) {
-                let updatedCount = 0, deletedCount = 0;
-                
-                for (const dunvexProd of resData.products) {
-                  if (!dunvexProd.name) continue;
-                  const dunvexId = dunvexProd.id;
-                  
-                  let q = query(collection(db, "products"), where("dunvexId", "==", dunvexId), limit(1));
-                  let snap = await getDocs(q);
-                  let productRef = null;
-
-                  if (!snap.empty) {
-                    productRef = doc(db, "products", snap.docs[0].id);
-                  }
-
-                  if (productRef) {
-                    // CHỈ update giá + tồn kho, giữ mô tả/hình ảnh
-                    await updateDoc(productRef, {
-                      dunvexId, basePrice: Number(dunvexProd.priceSell)||0, discountPrice: Number(dunvexProd.priceSell)||0,
-                      price: Number(dunvexProd.priceSell)||0, priceBuy: Number(dunvexProd.priceImport)||0,
-                      stock: Number(dunvexProd.stock)||0, trackInventory: true, updatedAt: serverTimestamp()
-                    });
-                    updatedCount++;
-                  }
-                  // KHÔNG tạo SP mới khi sync — chỉ cập nhật SP đã có dunvexId
-                }
-                
-                // Xoá SP không còn trên app
-                const allSnap = await getDocs(collection(db, "products"));
-                const activeIds = new Set(resData.products.map(p => p.id));
-                for (const ds of allSnap.docs) {
-                  if (ds.data().dunvexId && !activeIds.has(ds.data().dunvexId)) {
-                    await deleteDoc(doc(db, "products", ds.id));
-                    deletedCount++;
-                  }
-                }
-                
-                // Lưu thời gian sync
-                await setDoc(doc(db, 'storeSettings', settingsRef.id), 
-                  { syncMetadata: { lastAutoSync: serverTimestamp(), lastResult: `Đồng bộ tự động: ${updatedCount} cập nhật, ${deletedCount} xoá` } }, 
-                  { merge: true }
-                );
-                
-                console.log(`🔄 Auto-sync: ${updatedCount} updated, ${deletedCount} deleted`);
-                refreshProducts();
-              }
-            }
-          } catch (e) {
-            console.warn('Auto-sync failed (non-blocking):', e.message);
-          }
-        }
-      } catch {
-        // Silent fail for auto-sync
+        await apiDunvexSyncProducts();
+        fetchProducts();
+      } catch (e) {
+        console.warn('Auto-sync notice:', e.message);
       }
     };
-    
     checkAutoSync();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoSyncTriggered]);
@@ -145,117 +66,18 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
 
 
   /**
-   * Helper: lấy config Dunvex từ Firestore + fetch products từ API
-   * Trả về { config, products } hoặc null nếu lỗi
-   */
-  const getDunvexConfigAndProducts = async () => {
-    const docRef = doc(db, 'storeSettings', 'main');
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists() || !docSnap.data().openClawConfig) {
-      alert("Chưa cấu hình API Endpoint và API Key của Dunvex trong Admin Settings!");
-      return null;
-    }
-    const config = docSnap.data().openClawConfig;
-    if (!(config.dunvexWebhookUrl || config.dunvexApiUrl || config.apiUrl) || !(config.dunvexApiKey || config.apiKey || config.botApiKey) || !config.ownerId) {
-      alert("Vui lòng cấu hình đầy đủ Webhook URL, API Key và Owner ID của Dunvex trong Admin Settings!");
-      return null;
-    }
-    const dunvexBase2 = getDunvexBaseUrl(config);
-    if (!dunvexBase2) throw new Error('Không thể xác định URL Dunvex');
-    const productsUrl = `${dunvexBase2}/api/products`;
-    try {
-      const response = await fetch(productsUrl, {
-        method: 'GET',
-        headers: { 'x-api-key': config.dunvexApiKey || config.apiKey || config.botApiKey, 'x-owner-id': config.ownerId }
-      });
-      if (!response.ok) throw new Error(`Server returned status ${response.status}`);
-      const data = await response.json();
-      if (!data.success || !data.products) {
-        alert("Lỗi từ Dunvex App: " + (data.error || "Không xác định"));
-        return null;
-      }
-      return { config, products: data.products };
-    } catch (error) {
-      alert("Lỗi kết nối đến Dunvex App: " + error.message);
-      return null;
-    }
-  };
-
-  /**
-   * 🔄 NÚT 1: Đồng bộ sản phẩm — CHỈ cập nhật sản phẩm đã có dunvexId
-   * Cập nhật: title, price, stock, specs, weight, category, v.v.
-   * KHÔNG tạo mới, KHÔNG xoá
+   * 🔄 NÚT 1: Đồng bộ sản phẩm từ Dunvex vào SQLite
    */
   const handleSyncExistingProducts = async () => {
     setIsSyncingExisting(true);
     try {
-      const result = await getDunvexConfigAndProducts();
-      if (!result) { setIsSyncingExisting(false); return; }
-      const { products: dunvexProducts } = result;
-
-      let updatedCount = 0;
-      const newlySyncedIds = [];
-
-      for (const dunvexProd of dunvexProducts) {
-        if (!dunvexProd.name) continue;
-        const dunvexId = dunvexProd.id;
-
-        // Tìm sản phẩm có dunvexId tương ứng trên Web
-        let snap = await getDocs(query(collection(db, "products"), where("dunvexId", "==", dunvexId), limit(1)));
-        // Fallback: SP sync cũ có thể thiếu dunvexId → tìm bằng tên
-        if (snap.empty) {
-          snap = await getDocs(query(collection(db, "products"), where("title", "==", dunvexProd.name), limit(1)));
-        }
-        if (snap.empty) continue; // Không tìm thấy → bỏ qua (không tạo mới)
-
-        const productRef = doc(db, "products", snap.docs[0].id);
-
-        const priceVal = Number(dunvexProd.priceSell) || 0;
-        const priceBuyVal = Number(dunvexProd.priceImport) || 0;
-        const stockVal = Number(dunvexProd.stock) || 0;
-        const dunvexSpecs = dunvexProd.specs || dunvexProd.spec || dunvexProd.quyCach || dunvexProd.specification || dunvexProd.attributes || dunvexProd.size || '';
-        const dunvexUnit = dunvexProd.unit || '';
-        const dunvexWeight = dunvexProd.weight || dunvexProd.netWeight || '';
-        const dunvexPackaging = dunvexProd.packaging || dunvexProd.packing || '';
-
-        let exactCategory = 'Chưa phân loại';
-        if (typeof dunvexProd.category === 'object' && dunvexProd.category !== null && dunvexProd.category.name) {
-          exactCategory = dunvexProd.category.name;
-        } else if (typeof dunvexProd.category === 'string' && dunvexProd.category.trim() !== '') {
-          exactCategory = dunvexProd.category;
-        }
-
-        await updateDoc(productRef, {
-          title: dunvexProd.name,
-          dunvexId,
-          category: exactCategory,
-          basePrice: priceVal,
-          discountPrice: priceVal,
-          price: priceVal,
-          priceBuy: priceBuyVal,
-          stock: stockVal,
-          trackInventory: true,
-          specs: dunvexSpecs,
-          unit: dunvexUnit,
-          weight: dunvexWeight,
-          packaging: dunvexPackaging,
-          updatedAt: serverTimestamp()
-        });
-        updatedCount++;
-        newlySyncedIds.push(productRef.id);
-      }
-
-      setSyncedProductIds(newlySyncedIds);
-      await setDoc(doc(db, 'storeSettings', 'main'),
-        { syncMetadata: { lastAutoSync: serverTimestamp(), lastResult: `Cập nhật: ${updatedCount} sản phẩm` } },
-        { merge: true }
-      );
+      const res = await apiDunvexSyncProducts();
       setSyncSuccessMessage({
         title: "✅ Đồng bộ sản phẩm thành công!",
-        body: `Đã cập nhật ${updatedCount} sản phẩm (tên, giá, tồn kho, quy cách, danh mục).`
+        body: res.message || `Đã đồng bộ ${res.updated || 0} cập nhật, ${res.created || 0} tạo mới từ Dunvex vào SQLite.`
       });
       setShowSyncSuccessModal(true);
-      refreshProducts();
+      fetchProducts();
     } catch (error) {
       console.error("Lỗi đồng bộ sản phẩm:", error);
       alert("Lỗi: " + error.message);
@@ -265,113 +87,18 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
   };
 
   /**
-   * 🆕 NÚT 2: Lấy sản phẩm mới — CHỈ tạo sản phẩm có trên Dunvex mà chưa có trên Web
-   * KHÔNG cập nhật sản phẩm cũ, KHÔNG xoá
+   * 🆕 NÚT 2: Lấy sản phẩm mới từ Dunvex vào SQLite
    */
   const handleFetchNewProducts = async () => {
     setIsFetchingNew(true);
     try {
-      const result = await getDunvexConfigAndProducts();
-      if (!result) { setIsFetchingNew(false); return; }
-      const { products: dunvexProducts } = result;
-
-      // Lấy toàn bộ dunvexId và tên SP hiện có trên Web
-      const allSnap = await getDocs(collection(db, "products"));
-      const existingDunvexIds = new Set();
-      const existingNames = new Set();
-      allSnap.docs.forEach(docSnap => {
-        const d = docSnap.data();
-        if (d.dunvexId) existingDunvexIds.add(d.dunvexId);
-        if (d.title) existingNames.add(d.title.toLowerCase().trim());
-      });
-
-      // Lọc sản phẩm mới (có trên Dunvex nhưng chưa có trên Web)
-      const newProducts = dunvexProducts.filter(p =>
-        p.id && !existingDunvexIds.has(p.id) && !existingNames.has((p.name || '').toLowerCase().trim())
-      );
-
-      if (newProducts.length === 0) {
-        setSyncSuccessMessage({
-          title: "ℹ️ Không có sản phẩm mới",
-          body: "Tất cả sản phẩm trên Dunvex App đã có trên Web."
-        });
-        setShowSyncSuccessModal(true);
-        setIsFetchingNew(false);
-        return;
-      }
-
-      let createdCount = 0;
-      const newlyCreatedIds = [];
-
-      for (const dunvexProd of newProducts) {
-        if (!dunvexProd.name) continue;
-        const dunvexId = dunvexProd.id;
-        let slug = slugify(dunvexProd.name);
-
-        // Resolve slug collision
-        let slugCount = 0;
-        let tempSlug = slug;
-        let collision = true;
-        while (collision) {
-          const testQ = query(collection(db, "products"), where("slug", "==", tempSlug), limit(1));
-          const testSnap = await getDocs(testQ);
-          if (testSnap.empty) { collision = false; slug = tempSlug; }
-          else { slugCount++; tempSlug = `${slugify(dunvexProd.name)}-${slugCount}`; }
-        }
-
-        const priceVal = Number(dunvexProd.priceSell) || 0;
-        const priceBuyVal = Number(dunvexProd.priceImport) || 0;
-        const stockVal = Number(dunvexProd.stock) || 0;
-        const dunvexSpecs = dunvexProd.specs || dunvexProd.spec || dunvexProd.quyCach || dunvexProd.specification || dunvexProd.attributes || dunvexProd.size || '';
-        const dunvexUnit = dunvexProd.unit || '';
-        const dunvexWeight = dunvexProd.weight || dunvexProd.netWeight || '';
-        const dunvexPackaging = dunvexProd.packaging || dunvexProd.packing || '';
-        const dunvexImage = dunvexProd.image || dunvexProd.imageUrl || dunvexProd.thumbnail || '';
-
-        let exactCategory = 'Chưa phân loại';
-        if (typeof dunvexProd.category === 'object' && dunvexProd.category !== null && dunvexProd.category.name) {
-          exactCategory = dunvexProd.category.name;
-        } else if (typeof dunvexProd.category === 'string' && dunvexProd.category.trim() !== '') {
-          exactCategory = dunvexProd.category;
-        }
-
-        const newDocRef = await addDoc(collection(db, "products"), {
-          dunvexId,
-          title: dunvexProd.name,
-          slug,
-          category: exactCategory,
-          basePrice: priceVal,
-          discountPrice: priceVal,
-          price: priceVal,
-          priceBuy: priceBuyVal,
-          stock: stockVal,
-          trackInventory: true,
-          specs: dunvexSpecs,
-          unit: dunvexUnit,
-          weight: dunvexWeight,
-          packaging: dunvexPackaging,
-          image: dunvexImage,
-          shortDescription: dunvexProd.shortDesc || dunvexProd.shortDescription || '',
-          description: dunvexProd.note || '',
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          status: 'Draft',
-        });
-        createdCount++;
-        newlyCreatedIds.push(newDocRef.id);
-      }
-
-      setSyncedProductIds(newlyCreatedIds);
-      await setDoc(doc(db, 'storeSettings', 'main'),
-        { syncMetadata: { lastAutoSync: serverTimestamp(), lastResult: `Tạo mới: ${createdCount} sản phẩm` } },
-        { merge: true }
-      );
+      const res = await apiDunvexSyncProducts();
       setSyncSuccessMessage({
         title: "🆕 Lấy sản phẩm mới thành công!",
-        body: `Đã tạo mới ${createdCount} sản phẩm từ Dunvex App lên Web.`
+        body: res.message || `Đã cập nhật sản phẩm mới từ Dunvex vào SQLite.`
       });
       setShowSyncSuccessModal(true);
-      refreshProducts();
+      fetchProducts();
     } catch (error) {
       console.error("Lỗi lấy sản phẩm mới:", error);
       alert("Lỗi: " + error.message);
@@ -381,81 +108,22 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
   };
 
   /**
-   * 🗑️ NÚT 3: Xoá sản phẩm cũ — so sánh toàn bộ ID, xoá SP có trên Web nhưng không có trên Dunvex
-   * CHỈ xoá sản phẩm có dunvexId, KHÔNG cập nhật, KHÔNG tạo mới
+   * 🗑️ NÚT 3: Xoá sản phẩm
    */
   const handleDeleteMissingProducts = async () => {
-    if (!window.confirm("⚠️ Thao tác này sẽ XOÁ VĨNH VIỄN các sản phẩm không còn tồn tại trên Dunvex App.\n\nBạn có chắc chắn muốn tiếp tục?")) {
+    if (!window.confirm("Hệ thống tự động đồng bộ trạng thái sản phẩm với Dunvex. Bạn có muốn làm mới dữ liệu từ Dunvex ngay bây giờ không?")) {
       return;
     }
     setIsDeletingOld(true);
     try {
-      const result = await getDunvexConfigAndProducts();
-      if (!result) { setIsDeletingOld(false); return; }
-      const { products: dunvexProducts } = result;
-
-      const dunvexIds = new Set(dunvexProducts.map(p => p.id));
-      const dunvexNames = new Set(dunvexProducts.map(p => p.name?.toLowerCase().trim()));
-      const allSnap = await getDocs(collection(db, "products"));
-      
-      // Gom danh sách SP cần xoá trước, để hiển thị cho user review
-      const toDelete = [];
-      for (const docSnap of allSnap.docs) {
-        const data = docSnap.data();
-        let isOrphan = false;
-        if (data.dunvexId) {
-          // Có dunvexId nhưng không còn trên Dunvex App
-          isOrphan = !dunvexIds.has(data.dunvexId);
-        } else if (data.title) {
-          // Không có dunvexId → match bằng tên (đã trim, lowercase)
-          // SP sync cũ có thể thiếu dunvexId
-          isOrphan = !dunvexNames.has(data.title.toLowerCase().trim());
-        }
-        // SP không có title → SP lỗi → cũng xoá
-        // (SP tạo thủ công luôn có title nên an toàn)
-        if (isOrphan) {
-          toDelete.push({ id: docSnap.id, name: data.title || '(không tên)' });
-        }
-      }
-
-      if (toDelete.length === 0) {
-        setSyncSuccessMessage({
-          title: "ℹ️ Không có sản phẩm cũ",
-          body: "Tất cả sản phẩm trên Web đều khớp với Dunvex App."
-        });
-        setShowSyncSuccessModal(true);
-        setIsDeletingOld(false);
-        return;
-      }
-
-      // Hiển thị danh sách SP sẽ xoá để user confirm
-      const previewList = toDelete.slice(0, 10).map(p => `• ${p.name}`).join('\n');
-      const extra = toDelete.length > 10 ? `\n... và ${toDelete.length - 10} sản phẩm khác` : '';
-      if (!window.confirm(`⚠️ Sẽ XOÁ VĨNH VIỄN ${toDelete.length} sản phẩm không còn trên Dunvex App:\n\n${previewList}${extra}\n\nBạn có chắc chắn muốn tiếp tục?`)) {
-        setIsDeletingOld(false);
-        return;
-      }
-
-      let deletedCount = 0;
-      for (const item of toDelete) {
-        await deleteDoc(doc(db, "products", item.id));
-        deletedCount++;
-      }
-
-      await setDoc(doc(db, 'storeSettings', 'main'),
-        { syncMetadata: { lastAutoSync: serverTimestamp(), lastResult: `Xoá: ${deletedCount} sản phẩm không còn trên app` } },
-        { merge: true }
-      );
+      const res = await apiDunvexSyncProducts();
       setSyncSuccessMessage({
-        title: "🗑️ Dọn dẹp hoàn tất!",
-        body: deletedCount > 0
-          ? `Đã xoá ${deletedCount} sản phẩm không còn tồn tại trên Dunvex App.`
-          : "Không có sản phẩm nào cần xoá. Tất cả đều khớp với Dunvex App."
+        title: "🗑️ Dọn dẹp & làm mới hoàn tất!",
+        body: res.message || "Dữ liệu SQLite đã đồng bộ với Dunvex."
       });
       setShowSyncSuccessModal(true);
-      refreshProducts();
+      fetchProducts();
     } catch (error) {
-      console.error("Lỗi xoá sản phẩm cũ:", error);
       alert("Lỗi: " + error.message);
     } finally {
       setIsDeletingOld(false);
@@ -494,25 +162,23 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
   // Load tất cả SP vào cache (dùng cho search local)
   const loadAllProductsCache = async () => {
     try {
-      const q = query(collection(db, "products"));
-      const snapshot = await getDocs(q);
-      allProductsCache.current = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        price: (doc.data().discountPrice || doc.data().basePrice) 
-                ? Number(doc.data().discountPrice || doc.data().basePrice).toLocaleString('vi-VN') + '₫' 
+      const rawProducts = await apiGetProducts();
+      allProductsCache.current = rawProducts.map(p => ({
+        ...p,
+        price: (p.discountPrice || p.basePrice || p.price) 
+                ? Number(p.discountPrice || p.basePrice || p.price).toLocaleString('vi-VN') + '₫' 
                 : 'Liên hệ',
-        name: doc.data().title || doc.data().dunvexId || doc.id.substring(0, 12),
-        sku: doc.data().sku || doc.id.substring(0, 8).toUpperCase(),
-        dunvexId: doc.data().dunvexId,
-        title: doc.data().title
+        name: p.title || p.dunvexId || p.id.substring(0, 12),
+        sku: p.sku || p.id.substring(0, 8).toUpperCase(),
+        dunvexId: p.dunvexId,
+        title: p.title
       }));
     } catch (error) {
       console.error("Error loading product cache:", error);
     }
   };
 
-  // Search từ cache (không gọi Firestore)
+  // Search từ cache
   const searchFromCache = useCallback((query) => {
     setLoading(true);
     const removeAccents = (str) => {
@@ -534,7 +200,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
     setLoading(false);
   }, [activeTab, selectedCategory]);
 
-  // Refresh cache + reload list (dùng sau sync/delete)
+  // Refresh cache + reload list
   const refreshProducts = async () => {
     await loadAllProductsCache();
     fetchProducts();
@@ -543,42 +209,33 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      let q;
-      if (selectedCategory === 'All') {
-        q = query(collection(db, "products"), orderBy("createdAt", "desc"), limit(ITEMS_PER_PAGE));
-      } else {
-        q = query(collection(db, "products"), where("category", "==", selectedCategory), limit(ITEMS_PER_PAGE));
-      }
-      const querySnapshot = await getDocs(q);
+      const rawProducts = await apiGetProducts({
+        category: selectedCategory === 'All' ? null : selectedCategory,
+        search: searchQuery
+      });
       
-      const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
-      setLastVisible(lastDoc || null);
-      setHasMore(querySnapshot.docs.length === ITEMS_PER_PAGE);
+      setHasMore(false);
 
-      const productData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        price: (doc.data().discountPrice || doc.data().basePrice) 
-                ? Number(doc.data().discountPrice || doc.data().basePrice).toLocaleString('vi-VN') + '₫' 
+      const productData = rawProducts.map(p => ({
+        ...p,
+        price: (p.discountPrice || p.basePrice || p.price) 
+                ? Number(p.discountPrice || p.basePrice || p.price).toLocaleString('vi-VN') + '₫' 
                 : 'Liên hệ',
-        name: doc.data().title || doc.data().dunvexId || doc.id.substring(0, 12),
-        sku: doc.data().sku || doc.id.substring(0, 8).toUpperCase(),
-        dunvexId: doc.data().dunvexId,
-        title: doc.data().title
+        name: p.title || p.dunvexId || p.id.substring(0, 12),
+        sku: p.sku || p.id.substring(0, 8).toUpperCase(),
+        dunvexId: p.dunvexId,
+        title: p.title
       }));
-
-      if (selectedCategory !== 'All') {
-        productData.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-      }
 
       // Cập nhật categories
       setAllCategories(prev => {
-          const newSet = new Set(prev);
-          productData.forEach(p => newSet.add(p.category || 'Chưa phân loại'));
-          return newSet;
-        });
+        const newSet = new Set(prev);
+        rawProducts.forEach(p => newSet.add(p.category || 'Chưa phân loại'));
+        return newSet;
+      });
 
       setProducts(productData);
+      allProductsCache.current = productData;
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
@@ -587,65 +244,13 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
   };
 
   const loadMoreProducts = async () => {
-    if (!lastVisible || !hasMore || loadingMore) return;
-    setLoadingMore(true);
-    try {
-      let q;
-      if (selectedCategory === 'All') {
-        q = query(
-          collection(db, "products"), 
-          orderBy("createdAt", "desc"), 
-          startAfter(lastVisible),
-          limit(ITEMS_PER_PAGE)
-        );
-      } else {
-        q = query(
-          collection(db, "products"), 
-          where("category", "==", selectedCategory), 
-          startAfter(lastVisible),
-          limit(ITEMS_PER_PAGE)
-        );
-      }
-      const querySnapshot = await getDocs(q);
-      
-      const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
-      setLastVisible(lastDoc || null);
-      setHasMore(querySnapshot.docs.length === ITEMS_PER_PAGE);
-
-      const productData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        price: (doc.data().discountPrice || doc.data().basePrice) 
-                ? Number(doc.data().discountPrice || doc.data().basePrice).toLocaleString('vi-VN') + '₫' 
-                : 'Liên hệ',
-        name: doc.data().title || doc.data().dunvexId || doc.id.substring(0, 12),
-        sku: doc.data().sku || doc.id.substring(0, 8).toUpperCase(),
-        dunvexId: doc.data().dunvexId,
-        title: doc.data().title
-      }));
-
-      if (selectedCategory !== 'All') {
-        productData.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-      }
-
-      setAllCategories(prev => {
-        const newSet = new Set(prev);
-        productData.forEach(p => newSet.add(p.category || 'Chưa phân loại'));
-        return newSet;
-      });
-
-      setProducts(prev => [...prev, ...productData]);
-    } catch (error) {
-      console.error("Error loading more products:", error);
-    } finally {
-      setLoadingMore(false);
-    }
+    // With SQLite API returning full filtered sets fast, loadMore is not needed
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) {
+    if (window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này khỏi cơ sở dữ liệu SQLite?")) {
       try {
-        await deleteDoc(doc(db, "products", id));
+        await apiDeleteProduct(id);
         setSelectedProducts(prev => prev.filter(pId => pId !== id));
         refreshProducts();
       } catch (error) {
@@ -656,10 +261,10 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
 
   const handleBatchDelete = async () => {
     if (selectedProducts.length === 0) return;
-    if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedProducts.length} sản phẩm đã chọn không? Hành động này không thể hoàn tác!`)) {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedProducts.length} sản phẩm đã chọn khỏi cơ sở dữ liệu SQLite?`)) {
       try {
         setLoading(true);
-        await Promise.all(selectedProducts.map(id => deleteDoc(doc(db, "products", id))));
+        await apiBatchDeleteProducts(selectedProducts);
         setSelectedProducts([]);
         refreshProducts();
       } catch (error) {
