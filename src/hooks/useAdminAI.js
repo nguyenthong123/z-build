@@ -304,9 +304,19 @@ export const useAdminAI = () => {
           .filter(l => l.trim().startsWith("- "))
           .map(l => l.replace(/^-\s*/, "").trim());
 
+        // Lấy danh sách ID sản phẩm đã chọn từ sessionStorage (do AdminProductList lưu)
+        let selectedIds = [];
+        try {
+          selectedIds = JSON.parse(sessionStorage.getItem('ai-product-ids') || '[]');
+          sessionStorage.removeItem('ai-product-ids');
+        } catch (e) {
+          selectedIds = [];
+        }
+
         const bulkResult = await apiTriggerAiBulkEnrich({
           status: isBulkDraftRequest ? 'Draft' : undefined,
-          limit: selectedTitles.length > 0 ? selectedTitles.length : 5,
+          limit: selectedIds.length > 0 ? selectedIds.length : (selectedTitles.length > 0 ? selectedTitles.length : 5),
+          productIds: selectedIds,
           instructions: msgText
         });
 
