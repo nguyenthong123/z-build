@@ -35,9 +35,16 @@ const AdminAIAssistant = () => {
       if (savedPrompt) {
         sessionStorage.removeItem('ai-prompt');
         setIsOpen(true);
+        setInput(savedPrompt);
         setTimeout(() => {
-          handleSend(savedPrompt);
-        }, 300);
+          if (textareaRef.current) {
+            textareaRef.current.focus();
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 220)}px`;
+            const textLen = savedPrompt.length;
+            textareaRef.current.setSelectionRange(textLen, textLen);
+          }
+        }, 200);
       }
     };
 

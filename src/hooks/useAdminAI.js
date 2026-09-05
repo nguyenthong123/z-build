@@ -3,7 +3,7 @@ import { db, auth } from '../firebase';
 import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, limit } from 'firebase/firestore';
 import Fuse from 'fuse.js';
 import { ADMIN_AI_FUNCTIONS, executeFunction } from '../services/aiFunctions';
-import { apiTriggerAiBulkEnrich } from '../services/sqliteApi';
+import { apiTriggerAiBulkEnrich, apiSendAdminAiMessage } from '../services/sqliteApi';
 
 /**
  * Custom hook to manage AI Advisor state and logic (Admin).
@@ -141,6 +141,27 @@ export const useAdminAI = () => {
   }, [knowledgeBase.all_units]);
 
   const callAI = useCallback(async (msgText, systemPrompt, imageUrls = [], allowedTools = ADMIN_AI_FUNCTIONS) => {
+    // 1. Ưu tiên điều phối qua n8n Webhook & AI Agent VPS
+    try {
+      const chatHistory = messages.map(m => ({
+        role: m.isBot ? "assistant" : "user",
+        content: m.text
+      }));
+      
+      const n8nRes = await apiSendAdminAiMessage({
+        message: msgText,
+        history: chatHistory.slice(-10),
+        instructions: systemPrompt
+      });
+
+      if (n8nRes && (n8nRes.reply || n8nRes.message)) {
+        setActiveModel('n8n-Orchestrator-DeepSeek');
+        return n8nRes.reply || n8nRes.message;
+      }
+    } catch (n8nErr) {
+      console.warn('[AdminAI] n8n Webhook notice, attempting direct fallback:', n8nErr.message);
+    }
+
     const aiApiKey = process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY;
     console.log('[AdminAI] API Key exists:', !!aiApiKey, 'length:', aiApiKey?.length || 0);
     

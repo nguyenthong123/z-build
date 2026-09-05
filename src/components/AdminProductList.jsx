@@ -159,11 +159,20 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory]);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  // Reset to page 1 on filter change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory]);
+
   // Load tất cả SP vào cache (dùng cho search local)
   const loadAllProductsCache = async () => {
     try {
       const rawProducts = await apiGetProducts();
-      allProductsCache.current = rawProducts.map(p => ({
+      const mapped = rawProducts.map(p => ({
         ...p,
         price: (p.discountPrice || p.basePrice || p.price) 
                 ? Number(p.discountPrice || p.basePrice || p.price).toLocaleString('vi-VN') + '₫' 
@@ -173,6 +182,16 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
         dunvexId: p.dunvexId,
         title: p.title
       }));
+      allProductsCache.current = mapped;
+
+      // Extract all distinct categories across ALL products
+      const catSet = new Set(['All']);
+      mapped.forEach(p => {
+        if (p.category && p.category.trim()) {
+          catSet.add(p.category.trim());
+        }
+      });
+      setAllCategories(catSet);
     } catch (error) {
       console.error("Error loading product cache:", error);
     }
@@ -209,11 +228,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const rawProducts = await apiGetProducts({
-        category: selectedCategory === 'All' ? null : selectedCategory,
-        search: searchQuery
-      });
-      
+      const rawProducts = await apiGetProducts();
       setHasMore(false);
 
       const productData = rawProducts.map(p => ({
@@ -227,12 +242,14 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
         title: p.title
       }));
 
-      // Cập nhật categories
-      setAllCategories(prev => {
-        const newSet = new Set(prev);
-        rawProducts.forEach(p => newSet.add(p.category || 'Chưa phân loại'));
-        return newSet;
+      // Cập nhật categories đầy đủ từ toàn bộ sản phẩm
+      const catSet = new Set(['All']);
+      productData.forEach(p => {
+        if (p.category && p.category.trim()) {
+          catSet.add(p.category.trim());
+        }
       });
+      setAllCategories(catSet);
 
       setProducts(productData);
       allProductsCache.current = productData;
@@ -310,13 +327,28 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
     return 0;
   });
 
+  // Pagination calculation
+  const totalItems = filteredProducts.length;
+  const totalPages = pageSize === 'All' ? 1 : Math.max(1, Math.ceil(totalItems / pageSize));
+  const validCurrentPage = Math.min(currentPage, totalPages);
+  const currentDisplayProducts = pageSize === 'All' 
+    ? filteredProducts 
+    : filteredProducts.slice((validCurrentPage - 1) * pageSize, validCurrentPage * pageSize);
+
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory('All');
+    sessionStorage.removeItem('admin_product_search');
+    sessionStorage.removeItem('admin_product_category');
+  };
+
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      const newSelected = new Set([...selectedProducts, ...filteredProducts.map(p => p.id)]);
+      const newSelected = new Set([...selectedProducts, ...currentDisplayProducts.map(p => p.id)]);
       setSelectedProducts(Array.from(newSelected));
     } else {
-      const filteredIds = new Set(filteredProducts.map(p => p.id));
-      setSelectedProducts(selectedProducts.filter(id => !filteredIds.has(id)));
+      const currentIds = new Set(currentDisplayProducts.map(p => p.id));
+      setSelectedProducts(selectedProducts.filter(id => !currentIds.has(id)));
     }
   };
 
@@ -355,10 +387,12 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                 Đồng bộ
               </button>
               <button className="ai-btn" onClick={() => {
-                let prompt = 'Hãy quét danh sách sản phẩm và tự động viết mô tả chi tiết, phân loại danh mục, thông số cho tất cả các sản phẩm đang ở trạng thái Draft';
+                let prompt = '';
                 if (selectedProducts.length > 0) {
                   const selectedNames = products.filter(p => selectedProducts.includes(p.id)).map(p => `- ${p.name || p.id}`).join('\n');
-                  prompt = `Tôi có danh sách các sản phẩm sau cần viết hoặc cập nhật nội dung chi tiết:\n${selectedNames}\n\nHãy hỏi tôi xem tôi muốn bạn TỰ ĐỘNG VIẾT LUÔN cho các sản phẩm này, hay tôi muốn CUNG CẤP THÊM THÔNG TIN (như tính năng, thành phần, ưu điểm...) để bạn dựa vào đó viết cho chính xác hơn.\n\nLưu ý:\n- Đừng viết nội dung sản phẩm vội, hãy chờ quyết định của tôi.\n- Khi tôi yêu cầu viết (có hoặc không có thông tin thêm), hãy cập nhật TỪNG SẢN PHẨM MỘT bằng công cụ update_product. Hãy viết bài mô tả (description) thật DÀI, CHĂM CHÚT, HẤP DẪN bằng mã HTML. Hãy khéo léo chèn tên của từng sản phẩm vào nội dung mô tả nhiều lần để bài viết trông tự nhiên và giống như được viết riêng cho sản phẩm đó.`;
+                  prompt = `Tôi có danh sách sản phẩm sau cần viết bài mô tả chi tiết, chuẩn SEO:\n${selectedNames}\n\n[Thông số kỹ thuật & Ưu điểm bổ sung]:\n(Nhập thông số kỹ thuật, mác nhôm, độ dày, xuất xứ, bảo hành... vào đây trước khi nhấn gửi)\n\n[Yêu cầu bài viết]:\n- Viết bài chuẩn SEO bằng mã HTML dài, hấp dẫn cho từng sản phẩm.\n- Có bảng thông số kỹ thuật, hướng dẫn thi công và câu hỏi thường gặp.`;
+                } else {
+                  prompt = 'Hãy quét danh sách sản phẩm và tự động viết mô tả chi tiết, phân loại danh mục, thông số cho các sản phẩm đang ở trạng thái Draft.\n\n[Thông tin & Yêu cầu bổ sung]:\n(Nhập thông tin hoặc yêu cầu bổ sung vào đây nếu có)\n\n[Yêu cầu]:\n- Viết bài chuẩn SEO bằng mã HTML có đầy đủ bảng thông số kỹ thuật.';
                 }
                 sessionStorage.setItem('ai-prompt', prompt);
                 sessionStorage.setItem('ai-product-ids', JSON.stringify(selectedProducts));
@@ -397,7 +431,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
           toolbar={
             <>
               <div style={{ display: 'flex', gap: '8px', flex: 1, minWidth: 0, flexWrap: 'wrap' }}>
-                <div className="search-box" style={{ flex: 1, maxWidth: '340px', backgroundColor: '#fff', border: '1px solid #e2e8f0', margin: 0, padding: '0 12px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', height: '38px' }}>
+                <div className="search-box" style={{ flex: 1, maxWidth: '340px', backgroundColor: '#fff', border: '1px solid #e2e8f0', margin: 0, padding: '0 10px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', height: '38px', position: 'relative' }}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                   <input 
                     type="text" 
@@ -406,15 +440,24 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                     onChange={(e) => setSearchQuery(e.target.value)}
                     style={{ fontSize: '13px', background: 'transparent', border: 'none', outline: 'none', flex: 1, minWidth: 0 }}
                   />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => { setSearchQuery(''); sessionStorage.removeItem('admin_product_search'); }}
+                      title="Xóa tìm kiếm"
+                      style={{ background: '#e2e8f0', border: 'none', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '11px', color: '#475569', padding: 0 }}
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
-                <div className="category-filter" style={{ width: '170px', flexShrink: 0, backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                <div className="category-filter" style={{ minWidth: '180px', flexShrink: 0, backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
                   <select 
                     value={selectedCategory} 
                     onChange={(e) => setSelectedCategory(e.target.value)}
                     style={{ width: '100%', height: '38px', border: 'none', background: 'transparent', outline: 'none', cursor: 'pointer', color: '#334155', fontWeight: 500, fontSize: '13px', padding: '0 10px' }}
                   >
                     {Array.from(allCategories).map(cat => (
-                      <option key={cat} value={cat}>{cat === 'All' ? 'Tất cả danh mục' : cat}</option>
+                      <option key={cat} value={cat}>{cat === 'All' ? `Tất cả danh mục (${allProductsCache.current.length || products.length})` : cat}</option>
                     ))}
                   </select>
                 </div>
@@ -440,6 +483,24 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
           }
         />
 
+        {/* Filter status banner */}
+        {(searchQuery || selectedCategory !== 'All') && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '12px', color: '#475569', flexWrap: 'wrap' }}>
+            <span>
+              🔍 Đang lọc: {searchQuery && <span>Từ khóa <strong>"{searchQuery}"</strong> </span>}
+              {searchQuery && selectedCategory !== 'All' && <span>• </span>}
+              {selectedCategory !== 'All' && <span>Danh mục <strong>"{selectedCategory}"</strong></span>}
+              {' '}— <strong>{filteredProducts.length}</strong> sản phẩm phù hợp.
+            </span>
+            <button 
+              onClick={handleClearFilters}
+              style={{ marginLeft: 'auto', background: '#fee2e2', color: '#ef4444', border: '1px solid #fca5a5', borderRadius: '6px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
+            >
+              ✕ Xóa lọc (Xem tất cả {allProductsCache.current.length || products.length} SP)
+            </button>
+          </div>
+        )}
+
         <div className="admin-content-body">
           {loading ? (
             <div className="loading-container">Đang tải dữ liệu...</div>
@@ -453,7 +514,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                       <th style={{ width: '40px', textAlign: 'center' }}>
                         <input 
                           type="checkbox" 
-                          checked={filteredProducts.length > 0 && filteredProducts.every(p => selectedProducts.includes(p.id))}
+                          checked={currentDisplayProducts.length > 0 && currentDisplayProducts.every(p => selectedProducts.includes(p.id))}
                           onChange={handleSelectAll}
                           style={{ cursor: 'pointer', width: '16px', height: '16px' }}
                         />
@@ -467,14 +528,14 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredProducts.length === 0 ? (
+                    {currentDisplayProducts.length === 0 ? (
                       <tr>
                         <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
                           Không tìm thấy sản phẩm nào. Vui lòng kiểm tra lại từ khóa tìm kiếm.
                         </td>
                       </tr>
                     ) : (
-                      filteredProducts.map(product => (
+                      currentDisplayProducts.map(product => (
                         <tr key={product.id} onClick={() => onPreviewProduct(product)} className={syncedProductIds.includes(product.id) ? 'highlight-row' : ''} style={{ cursor: 'pointer', backgroundColor: selectedProducts.includes(product.id) ? 'rgba(212, 175, 55, 0.05)' : 'transparent' }}>
                           <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                             <input 
@@ -526,10 +587,10 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                 }}>
                   <button
                     onClick={() => {
-                      if (filteredProducts.length > 0 && filteredProducts.every(p => selectedProducts.includes(p.id))) {
+                      if (currentDisplayProducts.length > 0 && currentDisplayProducts.every(p => selectedProducts.includes(p.id))) {
                         setSelectedProducts([]);
                       } else {
-                        setSelectedProducts(filteredProducts.map(p => p.id));
+                        setSelectedProducts(currentDisplayProducts.map(p => p.id));
                       }
                     }}
                     style={{
@@ -542,13 +603,13 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                   >
                     <input
                       type="checkbox"
-                      checked={filteredProducts.length > 0 && filteredProducts.every(p => selectedProducts.includes(p.id))}
+                      checked={currentDisplayProducts.length > 0 && currentDisplayProducts.every(p => selectedProducts.includes(p.id))}
                       readOnly
                       style={{ width: '14px', height: '14px', cursor: 'pointer', margin: 0 }}
                     />
-                    {filteredProducts.length > 0 && filteredProducts.every(p => selectedProducts.includes(p.id))
+                    {currentDisplayProducts.length > 0 && currentDisplayProducts.every(p => selectedProducts.includes(p.id))
                       ? `Bỏ chọn (${selectedProducts.length})`
-                      : `Chọn tất cả (${filteredProducts.length})`}
+                      : `Chọn trang này (${currentDisplayProducts.length})`}
                   </button>
                   {selectedProducts.length > 0 && (
                     <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 600 }}>
@@ -556,7 +617,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                     </span>
                   )}
                 </div>
-                {filteredProducts.map(product => (
+                {currentDisplayProducts.map(product => (
                   <div className="mobile-card" key={product.id} onClick={() => onPreviewProduct(product)} style={{ position: 'relative' }}>
                     {/* Selection checkbox — top-right corner */}
                     <div
@@ -607,23 +668,74 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                 ))}
               </div>
 
-              {hasMore && !searchQuery && (
-                <div style={{ textAlign: 'center', padding: '24px 0' }}>
-                  <button 
-                    onClick={loadMoreProducts} 
-                    disabled={loadingMore}
-                    style={{ 
-                      padding: '10px 24px', 
-                      background: '#fff', 
-                      border: '1px solid #d1d5db', 
-                      borderRadius: '8px', 
-                      cursor: 'pointer',
-                      fontWeight: 500,
-                      color: '#4b5563'
-                    }}
-                  >
-                    {loadingMore ? 'Đang tải...' : 'Tải thêm sản phẩm'}
-                  </button>
+              {/* Pagination Controls */}
+              {totalItems > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 8px', borderTop: '1px solid #e2e8f0', flexWrap: 'wrap', gap: '12px' }}>
+                  <div style={{ fontSize: '13px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span>
+                      Hiển thị {pageSize === 'All' ? `tất cả ${totalItems}` : `${(validCurrentPage - 1) * pageSize + 1} - ${Math.min(validCurrentPage * pageSize, totalItems)}`} trong tổng số <strong>{totalItems}</strong> sản phẩm
+                    </span>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '12px' }}>| Số lượng mỗi trang:</span>
+                      <select 
+                        value={pageSize} 
+                        onChange={(e) => {
+                          const val = e.target.value === 'All' ? 'All' : Number(e.target.value);
+                          setPageSize(val);
+                          setCurrentPage(1);
+                        }}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '6px', padding: '2px 6px', fontSize: '12px', background: '#fff', outline: 'none', cursor: 'pointer' }}
+                      >
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                        <option value="All">Tất cả ({totalItems})</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {pageSize !== 'All' && totalPages > 1 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <button 
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={validCurrentPage <= 1}
+                        style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', background: validCurrentPage <= 1 ? '#f1f5f9' : '#fff', color: validCurrentPage <= 1 ? '#94a3b8' : '#1e293b', cursor: validCurrentPage <= 1 ? 'not-allowed' : 'pointer', fontWeight: 500, fontSize: '12px' }}
+                      >
+                        ← Trang trước
+                      </button>
+
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(p => p === 1 || p === totalPages || Math.abs(p - validCurrentPage) <= 2)
+                        .map((p, idx, arr) => {
+                          const prev = arr[idx - 1];
+                          return (
+                            <React.Fragment key={p}>
+                              {prev && p - prev > 1 && <span style={{ color: '#94a3b8', padding: '0 4px' }}>...</span>}
+                              <button 
+                                onClick={() => setCurrentPage(p)}
+                                style={{ 
+                                  width: '32px', height: '32px', borderRadius: '6px', 
+                                  border: p === validCurrentPage ? '1px solid #1a1a2e' : '1px solid #e2e8f0', 
+                                  background: p === validCurrentPage ? '#1a1a2e' : '#fff', 
+                                  color: p === validCurrentPage ? '#fff' : '#334155', 
+                                  cursor: 'pointer', fontWeight: 600, fontSize: '12px' 
+                                }}
+                              >
+                                {p}
+                              </button>
+                            </React.Fragment>
+                          );
+                        })}
+
+                      <button 
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={validCurrentPage >= totalPages}
+                        style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', background: validCurrentPage >= totalPages ? '#f1f5f9' : '#fff', color: validCurrentPage >= totalPages ? '#94a3b8' : '#1e293b', cursor: validCurrentPage >= totalPages ? 'not-allowed' : 'pointer', fontWeight: 500, fontSize: '12px' }}
+                      >
+                        Trang sau →
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </>

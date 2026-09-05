@@ -110,10 +110,17 @@ export async function apiGetOrders(userId = null) {
 }
 
 export async function apiCreateOrder(orderData) {
-  return await fetchJson(`${API_BASE}/orders`, {
-    method: 'POST',
-    body: JSON.stringify(orderData)
-  });
+  try {
+    return await fetchJson(`${N8N_WEBHOOK_BASE}/zbuild-order`, {
+      method: 'POST',
+      body: JSON.stringify(orderData)
+    });
+  } catch {
+    return await fetchJson(`${API_BASE}/orders`, {
+      method: 'POST',
+      body: JSON.stringify(orderData)
+    });
+  }
 }
 
 export async function apiUpdateOrder(orderId, updateData) {
@@ -154,28 +161,68 @@ export async function apiSaveSettings(key, value) {
 // ==========================================
 
 export async function apiDunvexSyncProducts() {
-  return await fetchJson(`${API_BASE}/sync/dunvex-products`, {
-    method: 'POST'
-  });
+  try {
+    return await fetchJson(`${N8N_WEBHOOK_BASE}/zbuild-sync-products`, {
+      method: 'POST'
+    });
+  } catch {
+    return await fetchJson(`${API_BASE}/sync/dunvex-products`, {
+      method: 'POST'
+    });
+  }
 }
 
 export async function apiDunvexSyncCustomers() {
-  return await fetchJson(`${API_BASE}/sync/dunvex-customers`, {
-    method: 'POST'
-  });
+  try {
+    return await fetchJson(`${N8N_WEBHOOK_BASE}/zbuild-sync-customers`, {
+      method: 'POST'
+    });
+  } catch {
+    return await fetchJson(`${API_BASE}/sync/dunvex-customers`, {
+      method: 'POST'
+    });
+  }
 }
 
 export async function apiTriggerAiEnrich({ productId, title, specs, category, tavilyApiKey }) {
-  return await fetchJson(`${API_BASE}/ai/enrich`, {
-    method: 'POST',
-    body: JSON.stringify({ productId, title, specs, category, tavilyApiKey })
-  });
+  try {
+    return await fetchJson(`${N8N_WEBHOOK_BASE}/zbuild-ai-enrich`, {
+      method: 'POST',
+      body: JSON.stringify({ productId, title, specs, category, tavilyApiKey })
+    });
+  } catch {
+    return await fetchJson(`${API_BASE}/ai/enrich`, {
+      method: 'POST',
+      body: JSON.stringify({ productId, title, specs, category, tavilyApiKey })
+    });
+  }
 }
 
 export async function apiTriggerAiBulkEnrich({ status = 'Draft', limit = 5, productIds = [], instructions = '', tavilyApiKey = '' } = {}) {
-  return await fetchJson(`${API_BASE}/ai/bulk-enrich`, {
-    method: 'POST',
-    body: JSON.stringify({ status, limit, productIds, instructions, tavilyApiKey })
-  });
+  try {
+    return await fetchJson(`${N8N_WEBHOOK_BASE}/dong-bo-sp-ai`, {
+      method: 'POST',
+      body: JSON.stringify({ status, limit, productIds, instructions, tavilyApiKey })
+    });
+  } catch {
+    return await fetchJson(`${API_BASE}/ai/bulk-enrich`, {
+      method: 'POST',
+      body: JSON.stringify({ status, limit, productIds, instructions, tavilyApiKey })
+    });
+  }
+}
+
+export async function apiSendAdminAiMessage({ message, history = [], productIds = [], instructions = '' } = {}) {
+  try {
+    return await fetchJson(`${N8N_WEBHOOK_BASE}/zbuild-admin-chat`, {
+      method: 'POST',
+      body: JSON.stringify({ message, history, productIds, instructions })
+    });
+  } catch {
+    return await fetchJson(`${API_BASE}/ai/chat`, {
+      method: 'POST',
+      body: JSON.stringify({ message, history, productIds, instructions })
+    });
+  }
 }
 
