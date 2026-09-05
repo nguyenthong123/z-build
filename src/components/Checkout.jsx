@@ -69,24 +69,66 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
     setSelectedCustomerForOrder(c);
     setCustomerSearch(c.name || '');
     setShowCustomerDropdown(false);
+    
     // Auto-fill form with customer data
-    const nameParts = (c.name || '').trim().split(/\s+/).filter(Boolean);
+    const rawName = (c.name || '').trim();
+    const nameParts = rawName.split(/\s+/).filter(Boolean);
     let firstName = '';
     let lastName = '';
     if (nameParts.length === 1) {
       firstName = nameParts[0];
-      lastName = '';
+      lastName = 'Khách';
     } else if (nameParts.length > 1) {
-      lastName = nameParts.pop() || '';
-      firstName = nameParts.join(' ');
+      firstName = nameParts.slice(0, -1).join(' ');
+      lastName = nameParts[nameParts.length - 1];
+    } else {
+      firstName = 'Khách';
+      lastName = 'Hàng';
     }
+
+    // Tách địa chỉ thông minh: ví dụ "Đường tỉnh 685, Xã Quảng Thành, Huyện Kiến Đức, Tỉnh Lâm Đồng, Việt Nam"
+    let addressStr = (c.address || '').trim();
+    let specificAddress = addressStr;
+    let cityStr = 'Kiến Đức';
+    let stateStr = 'Lâm Đồng';
+
+    if (rawName === 'Khách vãng lai' || !addressStr) {
+      if (rawName === 'Khách vãng lai') {
+        specificAddress = 'Mua trực tiếp tại kho Zbuild (Khách vãng lai)';
+        cityStr = 'Kho Zbuild';
+        stateStr = 'Lâm Đồng';
+      }
+    } else if (addressStr) {
+      const parts = addressStr.split(',').map(s => s.trim()).filter(Boolean);
+      // Lọc bỏ phần 'Việt Nam' ở cuối nếu có
+      const cleanParts = parts.filter(p => !p.toLowerCase().includes('việt nam') && !p.toLowerCase().includes('vietnam'));
+      
+      if (cleanParts.length >= 3) {
+        stateStr = cleanParts[cleanParts.length - 1]; // Tỉnh / Thành phố
+        cityStr = cleanParts[cleanParts.length - 2];  // Quận / Huyện / Xã
+        specificAddress = cleanParts.slice(0, cleanParts.length - 2).join(', '); // Địa chỉ số nhà / đường
+      } else if (cleanParts.length === 2) {
+        stateStr = cleanParts[1];
+        cityStr = cleanParts[0];
+        specificAddress = cleanParts[0];
+      } else {
+        specificAddress = cleanParts[0] || addressStr;
+      }
+    }
+
+    // Số điện thoại & Email
+    const phoneClean = (c.phone || '').trim() || (rawName === 'Khách vãng lai' ? '0900000000' : '');
+    const emailAuto = c.email || (phoneClean ? `${phoneClean.replace(/\D/g, '') || 'customer'}@zbuild.vn` : 'khachhang@zbuild.vn');
+
     setFormData(prev => ({
       ...prev,
-      email: c.email || '',
-      phone: c.phone || '',
+      email: emailAuto,
+      phone: phoneClean,
       firstName,
       lastName,
-      address: c.address || '',
+      address: specificAddress,
+      city: cityStr,
+      state: stateStr,
     }));
   };
 
