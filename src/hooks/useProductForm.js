@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { slugify } from '../utils/slugify';
+import { apiSaveProduct } from '../services/sqliteApi';
 
 /**
  * Custom hook to manage product form state, image uploads, and saving.
@@ -12,8 +13,8 @@ export const useProductForm = (editData, onSave) => {
     slug: '',
     shortDescription: '',
     description: '',
-    status: 'Active',
-    category: 'Electronics',
+    status: 'Draft',
+    category: 'Vật liệu xây dựng',
     basePrice: '',
     discountPrice: '',
     stock: '',
@@ -52,8 +53,8 @@ export const useProductForm = (editData, onSave) => {
         slug: editData.slug || '',
         shortDescription: editData.shortDescription || '',
         description: editData.description || '',
-        status: editData.status || 'Active',
-        category: editData.category || 'Electronics',
+        status: editData.status || 'Draft',
+        category: editData.category || 'Vật liệu xây dựng',
         basePrice: editData.basePrice || '',
         discountPrice: editData.discountPrice || '',
         stock: editData.stock !== undefined ? editData.stock : '',
@@ -190,17 +191,34 @@ export const useProductForm = (editData, onSave) => {
         slug: product.slug || slugify(product.title),
         image: imageUrl,
         extraImages: extraUrls,
+        status: product.status || 'Draft',
         updatedAt: new Date().toISOString()
       };
 
       if (editData?.id) {
-        await updateDoc(doc(db, "products", editData.id), finalData);
+        // Save to SQLite database on VPS
+        await apiSaveProduct({ id: editData.id, ...finalData });
+        // Optional Firestore backup (merge: true will not throw error if doc doesn't exist)
+        try {
+          await setDoc(doc(db, "products", editData.id), finalData, { merge: true });
+        } catch (fbErr) {
+          console.warn("Firestore sync backup skipped:", fbErr.message);
+        }
       } else {
-        await addDoc(collection(db, "products"), {
+        const newProduct = {
           ...finalData,
           createdBy: auth.currentUser?.email || 'Hệ thống',
           createdAt: new Date().toISOString()
-        });
+        };
+        const res = await apiSaveProduct(newProduct);
+        const newId = res?.id || res?.product?.id;
+        if (newId) {
+          try {
+            await setDoc(doc(db, "products", newId), newProduct, { merge: true });
+          } catch (fbErr) {
+            console.warn("Firestore sync backup skipped:", fbErr.message);
+          }
+        }
       }
 
       if (onSave) onSave();

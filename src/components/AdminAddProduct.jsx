@@ -11,8 +11,7 @@ import InventorySection from './admin/product/InventorySection';
 
 import './AdminAddProduct.css';
 
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
+import { apiGetProducts } from '../services/sqliteApi';
 
 const AdminAddProduct = ({ onBack, onSave, editData }) => {
   const [existingCategories, setExistingCategories] = React.useState([]);
@@ -20,10 +19,10 @@ const AdminAddProduct = ({ onBack, onSave, editData }) => {
   React.useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "products"));
+        const prods = await apiGetProducts();
         const cats = new Set();
-        querySnapshot.forEach((doc) => {
-          if (doc.data().category) cats.add(doc.data().category);
+        prods.forEach((p) => {
+          if (p.category && p.category.trim()) cats.add(p.category.trim());
         });
         setExistingCategories(Array.from(cats).sort());
       } catch (error) {

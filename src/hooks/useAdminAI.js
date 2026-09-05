@@ -309,13 +309,25 @@ export const useAdminAI = () => {
       } : m));
     }
 
-    // Intercept and redirect to local n8n Webhook if it's a request to write descriptions for draft products
+    // Intercept and execute AI bulk/selected enrich directly via VPS & SQLite API
     const lowerMsg = (msgText || "").toLowerCase();
+    
+    // Lấy danh sách ID sản phẩm đã chọn từ sessionStorage (do AdminProductList lưu)
+    let selectedIds = [];
+    try {
+      selectedIds = JSON.parse(sessionStorage.getItem('ai-product-ids') || '[]');
+      sessionStorage.removeItem('ai-product-ids');
+    } catch {
+      selectedIds = [];
+    }
+
     const isBulkDraftRequest = (lowerMsg.includes("quét") || lowerMsg.includes("quet") || lowerMsg.includes("n8n")) && 
-                               (lowerMsg.includes("draft") || lowerMsg.includes("nháp") || lowerMsg.includes("nhap"));
-    const isSelectedProductsRequest = lowerMsg.includes("danh sách các sản phẩm") && 
-                                      lowerMsg.includes("cần viết") && 
-                                      lowerMsg.includes("nội dung chi tiết");
+                               (lowerMsg.includes("draft") || lowerMsg.includes("nháp") || lowerMsg.includes("nhap") || lowerMsg.includes("sản phẩm"));
+    
+    const isSelectedProductsRequest = (selectedIds.length > 0) ||
+                                      (lowerMsg.includes("danh sách") && (lowerMsg.includes("sản phẩm") || lowerMsg.includes("sp")) && (lowerMsg.includes("viết") || lowerMsg.includes("mô tả") || lowerMsg.includes("seo"))) ||
+                                      (lowerMsg.includes("viết bài") && lowerMsg.includes("chuẩn seo")) ||
+                                      (lowerMsg.includes("thông số kỹ thuật & ưu điểm bổ sung"));
 
     if (isBulkDraftRequest || isSelectedProductsRequest) {
       try {
@@ -325,30 +337,22 @@ export const useAdminAI = () => {
           .filter(l => l.trim().startsWith("- "))
           .map(l => l.replace(/^-\s*/, "").trim());
 
-        // Lấy danh sách ID sản phẩm đã chọn từ sessionStorage (do AdminProductList lưu)
-        let selectedIds = [];
-        try {
-          selectedIds = JSON.parse(sessionStorage.getItem('ai-product-ids') || '[]');
-          sessionStorage.removeItem('ai-product-ids');
-        } catch (e) {
-          selectedIds = [];
-        }
-
         const bulkResult = await apiTriggerAiBulkEnrich({
-          status: isBulkDraftRequest ? 'Draft' : undefined,
-          limit: selectedIds.length > 0 ? selectedIds.length : (selectedTitles.length > 0 ? selectedTitles.length : 5),
+          status: isBulkDraftRequest && selectedIds.length === 0 ? 'Draft' : undefined,
+          limit: selectedIds.length > 0 ? selectedIds.length : (selectedTitles.length > 0 ? selectedTitles.length : 10),
           productIds: selectedIds,
           instructions: msgText
         });
 
         if (bulkResult && bulkResult.success) {
           const prods = bulkResult.products || [];
-          const listText = prods.map((p, idx) => `${idx + 1}. **${p.title}** (${p.category}) - ${p.aiGenerated ? '⚡ DeepSeek AI đã viết bài (' + p.descLength + ' ký tự)' : 'Đã chuẩn hóa'}`).join('\n');
-          const reply = `✅ **Thực thi AI Agent thành công!**\n\n${bulkResult.message}\n\n**Danh sách sản phẩm vừa được cập nhật vào SQLite:**\n${listText}\n\n💡 Bạn có thể tải lại bảng sản phẩm hoặc mở chi tiết từng sản phẩm để xem nội dung bài viết.`;
+          const listText = prods.map((p, idx) => `${idx + 1}. **${p.title}** (${p.category}) - ${p.aiGenerated ? '⚡ DeepSeek AI đã viết bài HTML chuẩn SEO (' + p.descLength + ' ký tự)' : 'Đã cập nhật bài viết'}`).join('\n');
+          const reply = `✅ **Thực thi AI Agent thành công!**\n\n${bulkResult.message}\n\n**Danh sách sản phẩm vừa được tạo bài viết HTML chuẩn SEO & lưu vào SQLite:**\n${listText}\n\n💡 Bạn có thể làm mới bảng sản phẩm hoặc click vào từng sản phẩm để xem bài viết hoàn chỉnh.`;
           setMessages(prev => [...prev, { id: Date.now() + 1, text: reply, isBot: true, time: "Vừa xong" }]);
           setIsTyping(false);
           // Phát sự kiện reload sản phẩm
           window.dispatchEvent(new CustomEvent('AI_PRODUCTS_UPDATED'));
+          window.dispatchEvent(new CustomEvent('PRODUCTS_CHANGED'));
           return;
         } else {
           const errMsg = bulkResult?.error || "Không thể xử lý yêu cầu viết bài tự động.";

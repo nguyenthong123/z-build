@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import { useAdminAI } from '../context/AdminAIContext';
 import './AdminAIAssistant.css';
 
@@ -147,7 +148,7 @@ const AdminAIAssistant = () => {
                       ))}
                     </div>
                   )}
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                     {m.text}
                   </ReactMarkdown>
                 </div>

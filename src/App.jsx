@@ -134,7 +134,21 @@ function App() {
   
   const [intendedDestination, setIntendedDestination] = useState(null);
   const [orderData, setOrderData] = useState(null);
-  const [editingProduct, setEditingProduct] = useState(null);
+  const [editingProduct, setEditingProductState] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('admin_editing_product');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
+
+  const setEditingProduct = (prod) => {
+    if (prod) {
+      sessionStorage.setItem('admin_editing_product', JSON.stringify(prod));
+    } else {
+      sessionStorage.removeItem('admin_editing_product');
+    }
+    setEditingProductState(prod);
+  };
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isChatBotOpen, setIsChatBotOpen] = useState(false);
   const [detailProduct, setDetailProduct] = useState(null);

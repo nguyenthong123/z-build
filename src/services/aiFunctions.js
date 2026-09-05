@@ -1504,7 +1504,9 @@ async function generateProductDescription({ product_name, instructions = '', pro
       productId: found.id,
       title: found.title,
       specs: found.specs || '',
-      category: found.category || 'Vật liệu xây dựng'
+      category: found.category || 'Vật liệu xây dựng',
+      instructions: instructions || '',
+      productInfo: product_info || ''
     });
 
     if (enrichResult && enrichResult.success) {
@@ -1519,9 +1521,14 @@ async function generateProductDescription({ product_name, instructions = '', pro
         console.warn('Firestore backup sync notice:', fe.message);
       }
 
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('AI_PRODUCTS_UPDATED'));
+        window.dispatchEvent(new CustomEvent('PRODUCTS_CHANGED'));
+      }
+
       return {
         success: true,
-        message: `✅ Đã tạo bài viết mô tả chi tiết chuẩn SEO cho "${found.title}" và lưu vào cơ sở dữ liệu thành công!`,
+        message: `✅ Đã tạo bài viết mô tả chi tiết chuẩn SEO bằng HTML cho "${found.title}" và lưu vào cơ sở dữ liệu thành công!`,
         product_name: found.title,
         description_length: enrichResult.description?.length || 0,
         generated: enrichResult.aiGenerated
@@ -1572,7 +1579,19 @@ async function updateProduct({ product_name, new_title, category, price, stock, 
       const validStatuses = ["Draft", "Active", "Inactive"];
       updateData.status = validStatuses.find(s => s.toLowerCase() === status.toLowerCase()) || status;
     }
-    if (description !== undefined) updateData.description = description;
+    if (description !== undefined) {
+      const lowerDesc = String(description).toLowerCase().trim();
+      const isConversationalFiller = (
+        lowerDesc.startsWith('chào bạn') || 
+        lowerDesc.startsWith('chào sếp') || 
+        lowerDesc.includes('bạn muốn tôi xử lý theo hướng nào') || 
+        lowerDesc.includes('hãy cho tôi biết lựa chọn của bạn') || 
+        lowerDesc.includes('tôi đã nhận được yêu cầu')
+      );
+      if (!isConversationalFiller) {
+        updateData.description = description;
+      }
+    }
     if (specs !== undefined) updateData.specs = specs;
     if (packaging !== undefined) updateData.packaging = packaging;
     if (weight !== undefined) updateData.weight = weight;

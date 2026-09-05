@@ -160,14 +160,16 @@ export async function apiSaveSettings(key, value) {
 // 5. ĐỒNG BỘ TỪ DUNVEX QUA SQLITE & n8n
 // ==========================================
 
-export async function apiDunvexSyncProducts() {
+export async function apiDunvexSyncProducts(mode = 'sync_existing') {
   try {
     return await fetchJson(`${N8N_WEBHOOK_BASE}/zbuild-sync-products`, {
-      method: 'POST'
+      method: 'POST',
+      body: JSON.stringify({ mode })
     });
   } catch {
     return await fetchJson(`${API_BASE}/sync/dunvex-products`, {
-      method: 'POST'
+      method: 'POST',
+      body: JSON.stringify({ mode })
     });
   }
 }
@@ -184,16 +186,16 @@ export async function apiDunvexSyncCustomers() {
   }
 }
 
-export async function apiTriggerAiEnrich({ productId, title, specs, category, tavilyApiKey }) {
+export async function apiTriggerAiEnrich({ productId, title, specs = '', category = '', instructions = '', productInfo = '', tavilyApiKey = '' } = {}) {
   try {
     return await fetchJson(`${N8N_WEBHOOK_BASE}/zbuild-ai-enrich`, {
       method: 'POST',
-      body: JSON.stringify({ productId, title, specs, category, tavilyApiKey })
+      body: JSON.stringify({ productId, title, specs, category, instructions, productInfo, tavilyApiKey })
     });
   } catch {
     return await fetchJson(`${API_BASE}/ai/enrich`, {
       method: 'POST',
-      body: JSON.stringify({ productId, title, specs, category, tavilyApiKey })
+      body: JSON.stringify({ productId, title, specs, category, instructions, productInfo, tavilyApiKey })
     });
   }
 }

@@ -77,7 +77,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
         body: res.message || `Đã cập nhật ${res.updated || 0} sản phẩm từ Dunvex vào SQLite.`
       });
       setShowSyncSuccessModal(true);
-      fetchProducts();
+      await refreshProducts();
     } catch (error) {
       console.error("Lỗi đồng bộ sản phẩm:", error);
       alert("Lỗi: " + error.message);
@@ -98,7 +98,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
         body: res.message || `Đã thêm ${res.created || 0} sản phẩm mới từ Dunvex vào SQLite.`
       });
       setShowSyncSuccessModal(true);
-      fetchProducts();
+      await refreshProducts();
     } catch (error) {
       console.error("Lỗi lấy sản phẩm mới:", error);
       alert("Lỗi: " + error.message);
@@ -119,10 +119,10 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
       const res = await apiDunvexSyncProducts('clean_deleted');
       setSyncSuccessMessage({
         title: "🗑️ Dọn dẹp & làm mới hoàn tất!",
-        body: res.message || "Dữ liệu SQLite đã được dọn dẹp đồng bộ với Dunvex."
+        body: res.message || `Đã xóa ${res.deleted || 0} sản phẩm không còn tồn tại trên Dunvex.`
       });
       setShowSyncSuccessModal(true);
-      fetchProducts();
+      await refreshProducts();
     } catch (error) {
       alert("Lỗi: " + error.message);
     } finally {
