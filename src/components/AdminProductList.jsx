@@ -71,10 +71,10 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
   const handleSyncExistingProducts = async () => {
     setIsSyncingExisting(true);
     try {
-      const res = await apiDunvexSyncProducts();
+      const res = await apiDunvexSyncProducts('sync_existing');
       setSyncSuccessMessage({
         title: "✅ Đồng bộ sản phẩm thành công!",
-        body: res.message || `Đã đồng bộ ${res.updated || 0} cập nhật, ${res.created || 0} tạo mới từ Dunvex vào SQLite.`
+        body: res.message || `Đã cập nhật ${res.updated || 0} sản phẩm từ Dunvex vào SQLite.`
       });
       setShowSyncSuccessModal(true);
       fetchProducts();
@@ -92,10 +92,10 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
   const handleFetchNewProducts = async () => {
     setIsFetchingNew(true);
     try {
-      const res = await apiDunvexSyncProducts();
+      const res = await apiDunvexSyncProducts('fetch_new');
       setSyncSuccessMessage({
         title: "🆕 Lấy sản phẩm mới thành công!",
-        body: res.message || `Đã cập nhật sản phẩm mới từ Dunvex vào SQLite.`
+        body: res.message || `Đã thêm ${res.created || 0} sản phẩm mới từ Dunvex vào SQLite.`
       });
       setShowSyncSuccessModal(true);
       fetchProducts();
@@ -111,15 +111,15 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
    * 🗑️ NÚT 3: Xoá sản phẩm
    */
   const handleDeleteMissingProducts = async () => {
-    if (!window.confirm("Hệ thống tự động đồng bộ trạng thái sản phẩm với Dunvex. Bạn có muốn làm mới dữ liệu từ Dunvex ngay bây giờ không?")) {
+    if (!window.confirm("Hệ thống sẽ đối soát với Dunvex và dọn dẹp các sản phẩm không còn tồn tại trên Dunvex App. Bạn có muốn thực hiện không?")) {
       return;
     }
     setIsDeletingOld(true);
     try {
-      const res = await apiDunvexSyncProducts();
+      const res = await apiDunvexSyncProducts('clean_deleted');
       setSyncSuccessMessage({
         title: "🗑️ Dọn dẹp & làm mới hoàn tất!",
-        body: res.message || "Dữ liệu SQLite đã đồng bộ với Dunvex."
+        body: res.message || "Dữ liệu SQLite đã được dọn dẹp đồng bộ với Dunvex."
       });
       setShowSyncSuccessModal(true);
       fetchProducts();
