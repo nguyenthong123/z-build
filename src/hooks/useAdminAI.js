@@ -359,7 +359,7 @@ export const useAdminAI = () => {
               const res = await apiTriggerAiBulkEnrich({
                 limit: 1,
                 productIds: [pid],
-                instructions: msgText
+                instructions: `Viết bài mô tả chi tiết chuẩn SEO bằng mã HTML cho sản phẩm: ${pTitle} (Mã SP: ${pid})`
               });
 
               const isItemSuccess = res && (res.success === true || res.message || res.output || !res.error);
@@ -400,9 +400,9 @@ export const useAdminAI = () => {
               ]);
             }
 
-            // Nghỉ nhẹ 2 giây giữa các sản phẩm để API ổn định
+            // Nghỉ 6 giây giữa các sản phẩm để Groq hồi token 100%
             if (i < total - 1) {
-              await new Promise(r => setTimeout(r, 2000));
+              await new Promise(r => setTimeout(r, 6000));
             }
           }
 
