@@ -337,10 +337,93 @@ export const useAdminAI = () => {
           .filter(l => l.trim().startsWith("- ") || /^\d+[\.\)]\s*/.test(l.trim()))
           .map(l => l.replace(/^(-\s*|\d+[\.\)]\s*)/, "").trim());
 
+        // Nếu có danh sách ID sản phẩm được chọn: Xử lý lần lượt từng SP và báo cáo realtime vào chat
+        if (selectedIds.length > 0) {
+          const total = selectedIds.length;
+          setMessages(prev => [
+            ...prev,
+            {
+              id: Date.now() + 1,
+              text: `🚀 **Bắt đầu quy trình AI viết bài cho ${total} sản phẩm...**\nTrợ lý sẽ cập nhật kết quả từng sản phẩm trực tiếp vào khung chat này!`,
+              isBot: true,
+              time: "Vừa xong"
+            }
+          ]);
+
+          let successCount = 0;
+          for (let i = 0; i < total; i++) {
+            const pid = selectedIds[i];
+            const pTitle = selectedTitles[i] || `Sản phẩm mã ${pid}`;
+
+            try {
+              const res = await apiTriggerAiBulkEnrich({
+                limit: 1,
+                productIds: [pid],
+                instructions: msgText
+              });
+
+              const isItemSuccess = res && (res.success === true || res.message || res.output || !res.error);
+
+              if (isItemSuccess) {
+                successCount++;
+                setMessages(prev => [
+                  ...prev,
+                  {
+                    id: Date.now() + i + 100,
+                    text: `✅ **[${i + 1}/${total}] Đã viết xong & lưu vào SQLite:**\n• Sản phẩm: **${pTitle}**\n• Mã SP: \`${pid}\``,
+                    isBot: true,
+                    time: "Vừa xong"
+                  }
+                ]);
+                window.dispatchEvent(new CustomEvent('AI_PRODUCTS_UPDATED'));
+                window.dispatchEvent(new CustomEvent('PRODUCTS_CHANGED'));
+              } else {
+                setMessages(prev => [
+                  ...prev,
+                  {
+                    id: Date.now() + i + 100,
+                    text: `⚠️ **[${i + 1}/${total}] Chưa cập nhật được:** ${pTitle} (${res?.error || 'Lỗi phản hồi'})`,
+                    isBot: true,
+                    time: "Vừa xong"
+                  }
+                ]);
+              }
+            } catch (pErr) {
+              setMessages(prev => [
+                ...prev,
+                {
+                  id: Date.now() + i + 100,
+                  text: `⚠️ **[${i + 1}/${total}] Lỗi kết nối:** ${pTitle} (${pErr.message})`,
+                  isBot: true,
+                  time: "Vừa xong"
+                }
+              ]);
+            }
+
+            // Nghỉ nhẹ 2 giây giữa các sản phẩm để API ổn định
+            if (i < total - 1) {
+              await new Promise(r => setTimeout(r, 2000));
+            }
+          }
+
+          setMessages(prev => [
+            ...prev,
+            {
+              id: Date.now() + total + 500,
+              text: `🎉 **HOÀN TẤT TOÀN BỘ!** Đã hoàn thành viết bài chuẩn SEO cho **${successCount}/${total}** sản phẩm. Bạn có thể mở chi tiết sản phẩm để xem ngay.`,
+              isBot: true,
+              time: "Vừa xong"
+            }
+          ]);
+          setIsTyping(false);
+          return;
+        }
+
+        // Trường hợp quét toàn bộ Draft không chọn trước
         const bulkResult = await apiTriggerAiBulkEnrich({
-          status: isBulkDraftRequest && selectedIds.length === 0 ? 'Draft' : undefined,
-          limit: selectedIds.length > 0 ? selectedIds.length : (selectedTitles.length > 0 ? selectedTitles.length : 10),
-          productIds: selectedIds,
+          status: 'Draft',
+          limit: 10,
+          productIds: [],
           instructions: msgText
         });
 
