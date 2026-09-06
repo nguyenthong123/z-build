@@ -660,7 +660,65 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
             <div 
               className="product-description-content"
               dangerouslySetInnerHTML={{ 
-                __html: product.description.replace(/&nbsp;/g, ' ').replace(/[\u00a0\u1680\u180e\u2000-\u200a\u202f\u205f\u3000\ufeff\u200b\r]/g, ' ') 
+                __html: (() => {
+                  let text = (product.description || '').replace(/&nbsp;/g, ' ').replace(/[\u00a0\u1680\u180e\u2000-\u200a\u202f\u205f\u3000\ufeff\u200b\r]/g, ' ');
+                  
+                  // If already contains rich HTML tags like <table>, <h3>, <p>, return cleaned HTML
+                  const hasHtmlTags = /<\/?(h[1-6]|table|p|ul|ol|li|div|article)[^>]*>/i.test(text);
+                  
+                  if (!hasHtmlTags || text.includes('###') || text.includes('####') || text.includes('**')) {
+                    // Convert markdown tables to HTML table
+                    text = text.replace(/((?:\|[^\n]+\|\n?)+)/g, (match) => {
+                      const rows = match.trim().split('\n').filter(r => r.includes('|') && !r.match(/^\|?\s*[-:]+[-| :]*\|?$/));
+                      if (rows.length === 0) return '';
+                      let html = '<div class="table-responsive"><table class="product-specs-table"><thead><tr>';
+                      const headers = rows[0].split('|').map(c => c.trim()).filter(c => c);
+                      headers.forEach(h => html += `<th>${h}</th>`);
+                      html += '</tr></thead><tbody>';
+                      for (let i = 1; i < rows.length; i++) {
+                        const cols = rows[i].split('|').map(c => c.trim()).filter(c => c);
+                        if (cols.length > 0) {
+                          html += '<tr>';
+                          cols.forEach(c => html += `<td>${c}</td>`);
+                          html += '</tr>';
+                        }
+                      }
+                      html += '</tbody></table></div>';
+                      return html;
+                    });
+
+                    // Convert markdown headings
+                    text = text.replace(/^####\s+(.+)$/gm, '<h4>$1</h4>');
+                    text = text.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
+                    text = text.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
+                    text = text.replace(/^#\s+(.+)$/gm, '<h2>$1</h2>');
+                    
+                    // Convert inline markdown bold
+                    text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+                    
+                    // Convert inline bullet lists
+                    text = text.replace(/^\s*[-*]\s+(.+)$/gm, '<li>$1</li>');
+                    text = text.replace(/(<li>.*<\/li>)/gs, (match) => `<ul>${match}</ul>`);
+                    // Clean duplicate wrapping ul
+                    text = text.replace(/<\/ul>\s*<ul>/g, '');
+
+                    // Convert numbered lists
+                    text = text.replace(/^\s*(\d+)\.\s+(.+)$/gm, '<li><strong>$1.</strong> $2</li>');
+                    
+                    // Wrap remaining loose text blocks in <p>
+                    const blocks = text.split(/\n\n+/);
+                    text = blocks.map(b => {
+                      b = b.trim();
+                      if (!b) return '';
+                      if (b.startsWith('<h') || b.startsWith('<table') || b.startsWith('<div') || b.startsWith('<ul') || b.startsWith('<ol') || b.startsWith('<li')) {
+                        return b;
+                      }
+                      return `<p>${b.replace(/\n/g, '<br/>')}</p>`;
+                    }).join('\n');
+                  }
+                  
+                  return text;
+                })()
               }}
             ></div>
           </div>
