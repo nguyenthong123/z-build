@@ -334,8 +334,8 @@ export const useAdminAI = () => {
         // Trích xuất danh sách tên sản phẩm nếu người dùng chọn cụ thể
         const lines = (msgText || "").split("\n");
         const selectedTitles = lines
-          .filter(l => l.trim().startsWith("- "))
-          .map(l => l.replace(/^-\s*/, "").trim());
+          .filter(l => l.trim().startsWith("- ") || /^\d+[\.\)]\s*/.test(l.trim()))
+          .map(l => l.replace(/^(-\s*|\d+[\.\)]\s*)/, "").trim());
 
         const bulkResult = await apiTriggerAiBulkEnrich({
           status: isBulkDraftRequest && selectedIds.length === 0 ? 'Draft' : undefined,

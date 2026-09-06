@@ -389,8 +389,9 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
               <button className="ai-btn" onClick={() => {
                 let prompt = '';
                 if (selectedProducts.length > 0) {
-                  const selectedNames = products.filter(p => selectedProducts.includes(p.id)).map(p => `- ${p.name || p.id}`).join('\n');
-                  prompt = `Tôi có danh sách sản phẩm sau cần viết bài mô tả chi tiết, chuẩn SEO:\n${selectedNames}\n\n[Thông số kỹ thuật & Ưu điểm bổ sung]:\n(Nhập thông số kỹ thuật, mác nhôm, độ dày, xuất xứ, bảo hành... vào đây trước khi nhấn gửi)\n\n[Yêu cầu bài viết]:\n- Viết bài chuẩn SEO bằng mã HTML dài, hấp dẫn cho từng sản phẩm.\n- Có bảng thông số kỹ thuật, hướng dẫn thi công và câu hỏi thường gặp.`;
+                  const selectedProds = products.filter(p => selectedProducts.includes(p.id));
+                  const selectedNames = selectedProds.map((p, idx) => `${idx + 1}. ${p.name || p.title || p.id} (Mã SP: ${p.id || p.dunvexId || ''})`).join('\n');
+                  prompt = `Tôi có danh sách ${selectedProds.length} sản phẩm sau cần viết bài mô tả chi tiết, chuẩn SEO:\n${selectedNames}\n\n[Thông số kỹ thuật & Ưu điểm bổ sung]:\n(Nhập thông số kỹ thuật, mác nhôm, độ dày, xuất xứ, bảo hành... vào đây trước khi nhấn gửi)\n\n[Yêu cầu bài viết]:\n- Viết bài chuẩn SEO bằng mã HTML dài, hấp dẫn cho từng sản phẩm.\n- Có bảng thông số kỹ thuật, hướng dẫn thi công và câu hỏi thường gặp.`;
                 } else {
                   prompt = 'Hãy quét danh sách sản phẩm và tự động viết mô tả chi tiết, phân loại danh mục, thông số cho các sản phẩm đang ở trạng thái Draft.\n\n[Thông tin & Yêu cầu bổ sung]:\n(Nhập thông tin hoặc yêu cầu bổ sung vào đây nếu có)\n\n[Yêu cầu]:\n- Viết bài chuẩn SEO bằng mã HTML có đầy đủ bảng thông số kỹ thuật.';
                 }
