@@ -137,8 +137,19 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
   };
 
   const images = React.useMemo(() => {
+    let extraList = [];
+    if (Array.isArray(product?.extraImages)) {
+      extraList = product.extraImages;
+    } else if (typeof product?.extraImages === 'string' && product.extraImages.trim()) {
+      try {
+        const parsed = JSON.parse(product.extraImages);
+        extraList = Array.isArray(parsed) ? parsed : [product.extraImages.trim()];
+      } catch {
+        extraList = [product.extraImages.trim()];
+      }
+    }
     const optimizedMain = getOptimizedUrl(product?.image, 1000);
-    const optimizedExtras = (product?.extraImages || []).filter(img => img).map(img => getOptimizedUrl(img, 1000));
+    const optimizedExtras = extraList.filter(img => img && typeof img === 'string').map(img => getOptimizedUrl(img, 1000));
     if (!optimizedMain && optimizedExtras.length > 0) {
       return optimizedExtras;
     }

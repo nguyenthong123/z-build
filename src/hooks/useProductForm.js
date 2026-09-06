@@ -48,6 +48,18 @@ export const useProductForm = (editData, onSave) => {
 
   useEffect(() => {
     if (editData && !isInitialized) {
+      let parsedExtra = [];
+      if (Array.isArray(editData.extraImages)) {
+        parsedExtra = editData.extraImages.filter(Boolean);
+      } else if (typeof editData.extraImages === 'string' && editData.extraImages.trim()) {
+        try {
+          const parsed = JSON.parse(editData.extraImages);
+          parsedExtra = Array.isArray(parsed) ? parsed.filter(Boolean) : [editData.extraImages.trim()];
+        } catch {
+          parsedExtra = [editData.extraImages.trim()];
+        }
+      }
+
       setProduct({
         title: editData.title || '',
         slug: editData.slug || '',
@@ -65,7 +77,7 @@ export const useProductForm = (editData, onSave) => {
         specs: editData.specs || '',
         unit: editData.unit || '',
         variants: editData.variants || [],
-        extraImages: editData.extraImages || [],
+        extraImages: parsedExtra,
         videoUrl: editData.videoUrl || '',
         extraVideoUrl: editData.extraVideoUrl || '',
         demoUrl: editData.demoUrl || '',
@@ -77,10 +89,8 @@ export const useProductForm = (editData, onSave) => {
         image: editData.image || '',
       });
       if (editData.image) setImagePreview(editData.image);
-      if (editData.extraImages) {
-        setExtraPreviews(editData.extraImages);
-        setExtraFiles(new Array(editData.extraImages.length).fill(null));
-      }
+      setExtraPreviews(parsedExtra);
+      setExtraFiles(new Array(parsedExtra.length).fill(null));
       setIsInitialized(true);
     }
   }, [editData, isInitialized]);
@@ -181,16 +191,20 @@ export const useProductForm = (editData, onSave) => {
             body: formData
           });
           const d = await res.json();
-          if (res.ok && d.secure_url) extraUrls[i] = d.secure_url;
+          if (res.ok && d.secure_url) {
+            extraUrls[i] = d.secure_url;
+          }
         }
       }
+
+      const cleanExtraImages = extraUrls.filter(u => u && typeof u === 'string' && u.trim().length > 0);
 
       const { id: _id, ...cleanData } = product;
       const finalData = {
         ...cleanData,
         slug: product.slug || slugify(product.title),
         image: imageUrl,
-        extraImages: extraUrls,
+        extraImages: cleanExtraImages,
         status: product.status || 'Draft',
         updatedAt: new Date().toISOString()
       };

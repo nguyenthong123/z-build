@@ -548,7 +548,26 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                           </td>
                           <td>
                             <div className="product-cell">
-                              <img src={product.image ? product.image.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/') : (product.extraImages?.[0] ? product.extraImages[0].replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/') : 'https://placehold.co/100')} alt="" />
+                              <img 
+                                src={(() => {
+                                  if (product.image && typeof product.image === 'string' && product.image.trim()) {
+                                    return product.image.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/');
+                                  }
+                                  let extra = null;
+                                  if (Array.isArray(product.extraImages) && product.extraImages.length > 0) extra = product.extraImages[0];
+                                  else if (typeof product.extraImages === 'string' && product.extraImages.trim()) {
+                                    try {
+                                      const parsed = JSON.parse(product.extraImages);
+                                      if (Array.isArray(parsed) && parsed.length > 0) extra = parsed[0];
+                                    } catch {}
+                                  }
+                                  if (extra && typeof extra === 'string' && extra.trim()) {
+                                    return extra.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/');
+                                  }
+                                  return 'https://placehold.co/100';
+                                })()} 
+                                alt="" 
+                              />
                               <div className="info">
                                 <strong>{product.name}</strong>
                                 <span>{product.sku}</span>
@@ -646,7 +665,26 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                       )}
                     </div>
                     <div className="card-header">
-                      <img src={product.image ? product.image.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/') : (product.extraImages?.[0] ? product.extraImages[0].replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/') : 'https://placehold.co/100')} alt="" />
+                      <img 
+                        src={(() => {
+                          if (product.image && typeof product.image === 'string' && product.image.trim()) {
+                            return product.image.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/');
+                          }
+                          let extra = null;
+                          if (Array.isArray(product.extraImages) && product.extraImages.length > 0) extra = product.extraImages[0];
+                          else if (typeof product.extraImages === 'string' && product.extraImages.trim()) {
+                            try {
+                              const parsed = JSON.parse(product.extraImages);
+                              if (Array.isArray(parsed) && parsed.length > 0) extra = parsed[0];
+                            } catch {}
+                          }
+                          if (extra && typeof extra === 'string' && extra.trim()) {
+                            return extra.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/');
+                          }
+                          return 'https://placehold.co/100';
+                        })()} 
+                        alt="" 
+                      />
                       <div className="card-title-info" style={{ paddingRight: '36px' }}>
                         <strong>{product.name}</strong>
                         <span className="card-extra">{product.sku} • {product.category}</span>

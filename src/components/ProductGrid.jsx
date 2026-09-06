@@ -31,14 +31,33 @@ const ProductGrid = ({ onProductClick, onAddToCart: propOnAddToCart }) => {
       try {
         const rawProducts = await apiGetProducts();
         
-        const loadedProducts = rawProducts.map(p => ({
-          ...p,
-          tag: p.category || 'NỔI BẬT',
-          name: p.title,
-          price: p.discountPrice || p.basePrice || p.price,
-          oldPrice: p.basePrice || p.price,
-          img: p.image ? p.image.replace('/upload/', '/upload/f_auto,q_auto,w_500,c_fill/') : (p.extraImages?.[0] ? p.extraImages[0].replace('/upload/', '/upload/f_auto,q_auto,w_500,c_fill/') : 'https://placehold.co/400x400.png?text=ZBUILD')
-        })).filter(p => p.status === 'active' || (p.status !== 'Draft' && p.status !== 'Inactive'));
+        const loadedProducts = rawProducts.map(p => {
+          let imgUrl = 'https://placehold.co/400x400.png?text=ZBUILD';
+          if (p.image && typeof p.image === 'string' && p.image.trim()) {
+            imgUrl = p.image.replace('/upload/', '/upload/f_auto,q_auto,w_500,c_fill/');
+          } else {
+            let extra = null;
+            if (Array.isArray(p.extraImages) && p.extraImages.length > 0) extra = p.extraImages[0];
+            else if (typeof p.extraImages === 'string' && p.extraImages.trim()) {
+              try {
+                const parsed = JSON.parse(p.extraImages);
+                if (Array.isArray(parsed) && parsed.length > 0) extra = parsed[0];
+              } catch {}
+            }
+            if (extra && typeof extra === 'string' && extra.trim()) {
+              imgUrl = extra.replace('/upload/', '/upload/f_auto,q_auto,w_500,c_fill/');
+            }
+          }
+
+          return {
+            ...p,
+            tag: p.category || 'NỔI BẬT',
+            name: p.title,
+            price: p.discountPrice || p.basePrice || p.price,
+            oldPrice: p.basePrice || p.price,
+            img: imgUrl
+          };
+        }).filter(p => p.status === 'active' || (p.status !== 'Draft' && p.status !== 'Inactive'));
         
         setProducts(loadedProducts);
         

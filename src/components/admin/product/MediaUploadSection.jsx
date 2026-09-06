@@ -43,13 +43,13 @@ const MediaUploadSection = ({
       <div className="form-group" style={{ marginTop: '2rem' }}>
         <label>Hình ảnh bổ sung (Ảnh phụ)</label>
         <div className="extra-media-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '20px', marginTop: '10px' }}>
-          {extraImages.map((url, index) => (
+          {(Array.isArray(extraImages) ? extraImages : []).map((url, index) => (
             <div key={index} className="extra-image-container">
               <button type="button" className="remove-extra-btn" onClick={() => onRemoveExtra(index)} title="Xóa hình này">×</button>
               <div className="extra-image-upload" onClick={() => document.getElementById(`extraImage${index}`).click()}>
                 <input type="file" id={`extraImage${index}`} style={{ display: 'none' }} accept="image/*" onChange={(e) => onExtraImageChange(e, index)} />
-                {extraPreviews[index] ? (
-                  <img src={extraPreviews[index]} alt={`Sub ${index}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                {(extraPreviews && extraPreviews[index]) || url ? (
+                  <img src={(extraPreviews && extraPreviews[index]) || url} alt={`Sub ${index}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <div className="extra-image-placeholder">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -63,8 +63,9 @@ const MediaUploadSection = ({
                   placeholder="Hoặc dán URL hình..." 
                   value={url || ''} 
                   onChange={(e) => {
-                    const newUrls = [...extraImages];
-                    newUrls[index] = e.target.value;
+                    const val = e.target.value;
+                    const newUrls = [...(Array.isArray(extraImages) ? extraImages : [])];
+                    newUrls[index] = val;
                     setProduct(prev => ({ ...prev, extraImages: newUrls }));
                   }}
                   className="mini-input"
