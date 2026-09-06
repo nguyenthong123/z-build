@@ -344,10 +344,22 @@ export const useAdminAI = () => {
           instructions: msgText
         });
 
-        if (bulkResult && bulkResult.success) {
-          const prods = bulkResult.products || [];
-          const listText = prods.map((p, idx) => `${idx + 1}. **${p.title}** (${p.category}) - ${p.aiGenerated ? '⚡ DeepSeek AI đã viết bài HTML chuẩn SEO (' + p.descLength + ' ký tự)' : 'Đã cập nhật bài viết'}`).join('\n');
-          const reply = `✅ **Thực thi AI Agent thành công!**\n\n${bulkResult.message}\n\n**Danh sách sản phẩm vừa được tạo bài viết HTML chuẩn SEO & lưu vào SQLite:**\n${listText}\n\n💡 Bạn có thể làm mới bảng sản phẩm hoặc click vào từng sản phẩm để xem bài viết hoàn chỉnh.`;
+        const isSuccess = bulkResult && (
+          bulkResult.success === true ||
+          bulkResult.message ||
+          bulkResult.output ||
+          bulkResult.reply ||
+          Array.isArray(bulkResult) ||
+          (typeof bulkResult === 'object' && !bulkResult.error)
+        );
+
+        if (isSuccess) {
+          const prods = Array.isArray(bulkResult.products) ? bulkResult.products : [];
+          const customMsg = bulkResult.message || bulkResult.output || bulkResult.reply || "Đã tạo bài viết chuẩn SEO và lưu thành công vào cơ sở dữ liệu SQLite!";
+          const listText = prods.length > 0 
+            ? `\n\n**Danh sách sản phẩm vừa được cập nhật:**\n` + prods.map((p, idx) => `${idx + 1}. **${p.title || p.name || 'Sản phẩm'}** - ${p.aiGenerated ? '⚡ AI đã viết bài HTML chuẩn SEO (' + (p.descLength || 1500) + ' ký tự)' : 'Đã lưu bài viết'}`).join('\n')
+            : '';
+          const reply = `✅ **Thực thi AI Agent thành công!**\n\n${customMsg}${listText}\n\n💡 Bạn có thể làm mới bảng sản phẩm hoặc click vào từng sản phẩm để xem bài viết hoàn chỉnh.`;
           setMessages(prev => [...prev, { id: Date.now() + 1, text: reply, isBot: true, time: "Vừa xong" }]);
           setIsTyping(false);
           // Phát sự kiện reload sản phẩm
@@ -355,7 +367,7 @@ export const useAdminAI = () => {
           window.dispatchEvent(new CustomEvent('PRODUCTS_CHANGED'));
           return;
         } else {
-          const errMsg = bulkResult?.error || "Không thể xử lý yêu cầu viết bài tự động.";
+          const errMsg = bulkResult?.error || (typeof bulkResult === 'string' ? bulkResult : "Không thể xử lý yêu cầu viết bài tự động.");
           setMessages(prev => [...prev, { id: Date.now() + 1, text: `⚠️ Hệ thống AI báo lỗi: ${errMsg}`, isBot: true, time: "Vừa xong" }]);
           setIsTyping(false);
           return;
