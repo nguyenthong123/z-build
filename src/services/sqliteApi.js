@@ -7,6 +7,40 @@
 const API_BASE = import.meta.env.VITE_API_BASE || 'https://34-133-127-214.nip.io/api/zbuild';
 const N8N_WEBHOOK_BASE = import.meta.env.VITE_N8N_BASE || 'https://34-133-127-214.nip.io/webhook';
 
+// In-memory cache map & TTL (60s)
+const apiCache = new Map();
+const CACHE_TTL_MS = 60000;
+
+function getCached(key) {
+  const item = apiCache.get(key);
+  if (!item) return null;
+  if (Date.now() - item.time > CACHE_TTL_MS) {
+    apiCache.delete(key);
+    return null;
+  }
+  return item.data;
+}
+
+function setCached(key, data) {
+  apiCache.set(key, { data, time: Date.now() });
+}
+
+export function clearApiCache(prefix = '') {
+  if (!prefix) {
+    apiCache.clear();
+  } else {
+    for (const key of apiCache.keys()) {
+      if (key.startsWith(prefix)) apiCache.delete(key);
+    }
+  }
+}
+
+// Clear product cache on update events
+if (typeof window !== 'undefined') {
+  window.addEventListener('PRODUCTS_CHANGED', () => clearApiCache('product'));
+  window.addEventListener('AI_PRODUCTS_UPDATED', () => clearApiCache('product'));
+}
+
 // Helper for HTTP requests
 async function fetchJson(url, options = {}) {
   try {
@@ -40,17 +74,30 @@ export async function apiGetProducts(params = {}) {
   if (params.limit) qs.append('limit', params.limit);
 
   const queryStr = qs.toString() ? `?${qs.toString()}` : '';
+  const cacheKey = `products_${queryStr}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
   const data = await fetchJson(`${API_BASE}/products${queryStr}`);
-  return data.products || [];
+  const result = data.products || [];
+  setCached(cacheKey, result);
+  return result;
 }
 
 export async function apiGetProduct(idOrSlug) {
   if (!idOrSlug) return null;
+  const cacheKey = `product_${idOrSlug}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
   const data = await fetchJson(`${API_BASE}/products/${encodeURIComponent(idOrSlug)}`);
-  return data.product || null;
+  const result = data.product || null;
+  if (result) setCached(cacheKey, result);
+  return result;
 }
 
 export async function apiSaveProduct(product) {
+  clearApiCache('product');
   if (product.id) {
     return await fetchJson(`${API_BASE}/products/${encodeURIComponent(product.id)}`, {
       method: 'PUT',
@@ -65,12 +112,14 @@ export async function apiSaveProduct(product) {
 }
 
 export async function apiDeleteProduct(productId) {
+  clearApiCache('product');
   return await fetchJson(`${API_BASE}/products/${encodeURIComponent(productId)}`, {
     method: 'DELETE'
   });
 }
 
 export async function apiBatchDeleteProducts(productIds) {
+  clearApiCache('product');
   return await fetchJson(`${API_BASE}/products/batch-delete`, {
     method: 'POST',
     body: JSON.stringify({ ids: productIds })

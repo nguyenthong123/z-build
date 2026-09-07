@@ -83,79 +83,76 @@ export const useStorefrontAI = (productContext) => {
   const [dbCategories, setDbCategories] = useState([]);
 
   useEffect(() => {
-    const fetchCats = async () => {
-      try {
-        const querySnapshot = await getDocs(query(collection(db, "products"), limit(200)));
-        // Khởi tạo các danh mục mặc định cơ bản
-        const cats = new Set(["Giải pháp AI", "Vật liệu xây dựng", "Phần mềm & Dịch vụ", "Thiết bị vệ sinh", "Trang trí nội thất", "Công cụ & Dụng cụ", "Điện tử", "Laptop", "Âm thanh"]);
-        querySnapshot.forEach((doc) => {
-          if (doc.data().category) cats.add(doc.data().category);
-        });
-        setDbCategories(Array.from(cats).sort());
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-      }
-    };
-    fetchCats();
+    const timer = setTimeout(() => {
+      const fetchCats = async () => {
+        try {
+          const querySnapshot = await getDocs(query(collection(db, "products"), limit(100)));
+          const cats = new Set(["Giải pháp AI", "Vật liệu xây dựng", "Phần mềm & Dịch vụ", "Thiết bị vệ sinh", "Trang trí nội thất", "Công cụ & Dụng cụ", "Điện tử", "Laptop", "Âm thanh"]);
+          querySnapshot.forEach((doc) => {
+            if (doc.data().category) cats.add(doc.data().category);
+          });
+          setDbCategories(Array.from(cats).sort());
+        } catch (error) {
+          console.warn("Notice: fetchCats skipped:", error.message);
+        }
+      };
+      fetchCats();
+    }, 2500);
+    return () => clearTimeout(timer);
   }, []);
   const [productSuggestions, setProductSuggestions] = useState([]);
   const [knowledgeBase, setKnowledgeBase] = useState({ all_units: [], raw_docs: [], performance: [] });
   const [userName, setUserName] = useState("Thong Nguyen");
   const lastProcessedProductIdRef = useRef(null);
 
-  // Load Knowledge Base & Products
+  // Load Knowledge Base & Products asynchronously in idle time
   useEffect(() => {
-    const loadKB = async () => {
-      try {
-        const [unitsSnap, baseSnap, consultationsSnap, productsSnap] = await Promise.all([
-          getDocs(collection(db, "ai_knowledge_units")),
-          getDocs(collection(db, "ai_knowledge_base")),
-          getDocs(query(collection(db, "ai_consultations"), orderBy("createdAt", "desc"), limit(50))),
-          getDocs(query(collection(db, "products"), orderBy("title", "asc"), limit(200)))
-        ]);
+    const timer = setTimeout(() => {
+      const loadKB = async () => {
+        try {
+          const [unitsSnap, baseSnap, consultationsSnap] = await Promise.all([
+            getDocs(collection(db, "ai_knowledge_units")),
+            getDocs(collection(db, "ai_knowledge_base")),
+            getDocs(query(collection(db, "ai_consultations"), orderBy("createdAt", "desc"), limit(30)))
+          ]);
 
-        const knowledgeUnits = unitsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const knowledgeBaseRaw = baseSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const pastConsultations = consultationsSnap.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            category: "Lịch sử tư vấn thông minh (Nên tham khảo)",
-            content: `Khách hỏi: ${data.userQuery} \n=> Bot Đã Trả Lời: ${data.botResponse}`,
-            keywords: data.userQuery?.split(" ") || [],
-            summary: "Dữ liệu học từ các cuộc tư vấn thực tế trong quá khứ"
-          };
-        });
+          const knowledgeUnits = unitsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          const knowledgeBaseRaw = baseSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          const pastConsultations = consultationsSnap.docs.map(doc => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              category: "Lịch sử tư vấn thông minh (Nên tham khảo)",
+              content: `Khách hỏi: ${data.userQuery} \n=> Bot Đã Trả Lời: ${data.botResponse}`,
+              keywords: data.userQuery?.split(" ") || [],
+              summary: "Dữ liệu học từ các cuộc tư vấn thực tế trong quá khứ"
+            };
+          });
 
-        const products = productsSnap.docs.map(doc => {
-          const data = doc.data();
-          return { id: doc.id, title: data.title, category: data.category || 'Chung', image: data.image || null };
-        }).filter(p => p.title);
+          // Load performance data
+          const userEmail = auth.currentUser?.email || "";
+          let performanceData = null;
+          if (userEmail) {
+            const perfSnap = await getDocs(query(collection(db, "agency_performance"), where("email", "==", userEmail), limit(1)));
+            performanceData = perfSnap.docs.length > 0 ? perfSnap.docs[0].data() : null;
+          }
 
-        setProductSuggestions(products);
+          if (performanceData?.name || auth.currentUser?.displayName) {
+            setUserName(performanceData?.name || auth.currentUser?.displayName || "Thong Nguyen");
+          }
 
-        // Load performance data
-        const userEmail = auth.currentUser?.email || "";
-        let performanceData = null;
-        if (userEmail) {
-          const perfSnap = await getDocs(query(collection(db, "agency_performance"), where("email", "==", userEmail), limit(1)));
-          performanceData = perfSnap.docs.length > 0 ? perfSnap.docs[0].data() : null;
+          setKnowledgeBase({ 
+            all_units: [...knowledgeUnits, ...pastConsultations], 
+            raw_docs: knowledgeBaseRaw,
+            performance: performanceData ? [performanceData] : []
+          });
+        } catch {
+          // Silenced permission error
         }
-
-        if (performanceData?.name || auth.currentUser?.displayName) {
-          setUserName(performanceData?.name || auth.currentUser?.displayName || "Thong Nguyen");
-        }
-
-        setKnowledgeBase({ 
-          all_units: [...knowledgeUnits, ...pastConsultations], 
-          raw_docs: knowledgeBaseRaw,
-          performance: performanceData ? [performanceData] : []
-        });
-      } catch {
-        // Silenced permission error
-      }
-    };
-    loadKB();
+      };
+      loadKB();
+    }, 2000);
+    return () => clearTimeout(timer);
   }, []);
 
   const getKnowledgeContext = useCallback((msgText) => {

@@ -9,7 +9,6 @@ import App from './App.jsx'
 import { ToastProvider } from './context/ToastContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { WishlistProvider } from './context/WishlistContext'
-import { AdminAIProvider } from './context/AdminAIContext'
 import { AuthProvider } from './context/AuthContext'
 import { StoreProvider } from './context/StoreContext'
 
@@ -26,9 +25,7 @@ createRoot(document.getElementById('root')).render(
                 <WishlistProvider>
                   <ToastProvider>
                     <AppProvider>
-                      <AdminAIProvider>
-                        <App />
-                      </AdminAIProvider>
+                      <App />
                     </AppProvider>
                   </ToastProvider>
                 </WishlistProvider>

@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
@@ -205,18 +205,24 @@ export const AppProvider = ({ children }) => {
     navigate('/login');
   };
 
+  const contextValue = useMemo(() => ({
+    cartItems, setCartItems, updateQuantity, removeItem, clearCart, handleAddToCart,
+    compareCount, setCompareCount,
+    intendedDestination, setIntendedDestination, handleLoginRequired,
+    orderData, setOrderData, handleOrderComplete,
+    editingProduct, setEditingProduct,
+    selectedOrder, setSelectedOrder,
+    isChatBotOpen, setIsChatBotOpen,
+    detailProduct, setDetailProduct,
+    storefrontAdvisorState
+  }), [
+    cartItems, compareCount, intendedDestination, orderData,
+    editingProduct, selectedOrder, isChatBotOpen, detailProduct,
+    storefrontAdvisorState
+  ]);
+
   return (
-    <AppContext.Provider value={{
-      cartItems, setCartItems, updateQuantity, removeItem, clearCart, handleAddToCart,
-      compareCount, setCompareCount,
-      intendedDestination, setIntendedDestination, handleLoginRequired,
-      orderData, setOrderData, handleOrderComplete,
-      editingProduct, setEditingProduct,
-      selectedOrder, setSelectedOrder,
-      isChatBotOpen, setIsChatBotOpen,
-      detailProduct, setDetailProduct,
-      storefrontAdvisorState
-    }}>
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );
