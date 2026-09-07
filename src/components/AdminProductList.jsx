@@ -397,6 +397,17 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                 }
                 sessionStorage.setItem('ai-prompt', prompt);
                 sessionStorage.setItem('ai-product-ids', JSON.stringify(selectedProducts));
+                if (selectedProducts.length > 0) {
+                  const selectedProds = products.filter(p => selectedProducts.includes(p.id));
+                  sessionStorage.setItem('ai-selected-products', JSON.stringify(selectedProds.map(p => ({
+                    id: p.id,
+                    title: p.title || p.name || p.id,
+                    category: p.category || '',
+                    specs: p.specs || ''
+                  }))));
+                } else {
+                  sessionStorage.removeItem('ai-selected-products');
+                }
                 window.dispatchEvent(new Event('trigger-admin-ai-prompt'));
               }} style={{ padding: '0 12px', height: '32px', borderRadius: '8px', backgroundColor: '#fff', color: '#1a1a2e', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '12px', whiteSpace: 'nowrap' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#eab308" strokeWidth="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>

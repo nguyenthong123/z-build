@@ -3,7 +3,7 @@ import { db, auth } from '../firebase';
 import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, limit } from 'firebase/firestore';
 import Fuse from 'fuse.js';
 import { ADMIN_AI_FUNCTIONS, executeFunction } from '../services/aiFunctions';
-import { apiTriggerAiBulkEnrich, apiSendAdminAiMessage } from '../services/sqliteApi';
+import { apiTriggerAiBulkEnrich, apiSendAdminAiMessage, apiGetProduct } from '../services/sqliteApi';
 
 /**
  * Custom hook to manage AI Advisor state and logic (Admin).
@@ -314,11 +314,15 @@ export const useAdminAI = () => {
     
     // Lấy danh sách ID sản phẩm đã chọn từ sessionStorage (do AdminProductList lưu)
     let selectedIds = [];
+    let selectedProdsInfo = [];
     try {
       selectedIds = JSON.parse(sessionStorage.getItem('ai-product-ids') || '[]');
+      selectedProdsInfo = JSON.parse(sessionStorage.getItem('ai-selected-products') || '[]');
       sessionStorage.removeItem('ai-product-ids');
+      sessionStorage.removeItem('ai-selected-products');
     } catch {
       selectedIds = [];
+      selectedProdsInfo = [];
     }
 
     const isBulkDraftRequest = (lowerMsg.includes("quét") || lowerMsg.includes("quet") || lowerMsg.includes("n8n")) && 
@@ -353,13 +357,31 @@ export const useAdminAI = () => {
           let successCount = 0;
           for (let i = 0; i < total; i++) {
             const pid = selectedIds[i];
-            const pTitle = selectedTitles[i] || `Sản phẩm mã ${pid}`;
+            
+            // Tìm thông tin chi tiết sản phẩm chính xác
+            let prodInfo = selectedProdsInfo.find(p => p.id === pid) || productSuggestions.find(p => p.id === pid);
+            if (!prodInfo || !prodInfo.title) {
+              try {
+                const fetched = await apiGetProduct(pid);
+                if (fetched) prodInfo = fetched;
+              } catch (e) {
+                console.warn("Could not fetch product detail for AI prompt:", e);
+              }
+            }
+
+            const pTitle = prodInfo?.title || prodInfo?.name || selectedTitles[i] || `Sản phẩm ${pid}`;
+            const pCat = prodInfo?.category || 'Vật liệu xây dựng';
+            const pSpecs = prodInfo?.specs || '';
 
             try {
               const res = await apiTriggerAiBulkEnrich({
                 limit: 1,
                 productIds: [pid],
-                instructions: `Viết bài mô tả chi tiết chuẩn SEO bằng mã HTML cho sản phẩm: ${pTitle} (Mã SP: ${pid})`
+                productId: pid,
+                title: pTitle,
+                category: pCat,
+                specs: pSpecs,
+                instructions: `Viết bài mô tả chi tiết chuẩn SEO bằng mã HTML cho sản phẩm: ${pTitle} (Danh mục: ${pCat}${pSpecs ? ', Quy cách: ' + pSpecs : ''})`
               });
 
               const isItemSuccess = res && (res.success === true || res.message || res.output || !res.error);
@@ -400,9 +422,9 @@ export const useAdminAI = () => {
               ]);
             }
 
-            // Nghỉ 6 giây giữa các sản phẩm để Groq hồi token 100%
+            // Nghỉ 5 giây giữa các sản phẩm để Groq hồi token ổn định
             if (i < total - 1) {
-              await new Promise(r => setTimeout(r, 6000));
+              await new Promise(r => setTimeout(r, 5000));
             }
           }
 
