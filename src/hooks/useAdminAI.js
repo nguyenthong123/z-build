@@ -341,6 +341,18 @@ export const useAdminAI = () => {
           .filter(l => l.trim().startsWith("- ") || /^\d+[\.\)]\s*/.test(l.trim()))
           .map(l => l.replace(/^(-\s*|\d+[\.\)]\s*)/, "").trim());
 
+        // Trích xuất phần thông số kỹ thuật & yêu cầu bổ sung do Admin nhập vào prompt nếu có
+        let extraAdminNotes = '';
+        if (msgText.includes('[Thông số kỹ thuật & Ưu điểm bổ sung]:') || msgText.includes('[Thông tin & Yêu cầu bổ sung]:')) {
+          const parts = msgText.split(/\[(?:Thông số kỹ thuật & Ưu điểm bổ sung|Thông tin & Yêu cầu bổ sung)\]:/i);
+          if (parts.length > 1) {
+            extraAdminNotes = parts[1].replace(/\[Yêu cầu.*?\]:[\s\S]*/i, '').trim();
+            if (extraAdminNotes.startsWith('(Nhập thông số') || extraAdminNotes.startsWith('(Nhập thông tin')) {
+              extraAdminNotes = '';
+            }
+          }
+        }
+
         // Nếu có danh sách ID sản phẩm được chọn: Xử lý lần lượt từng SP và báo cáo realtime vào chat
         if (selectedIds.length > 0) {
           const total = selectedIds.length;
@@ -348,7 +360,7 @@ export const useAdminAI = () => {
             ...prev,
             {
               id: Date.now() + 1,
-              text: `🚀 **Bắt đầu quy trình AI viết bài cho ${total} sản phẩm...**\nTrợ lý sẽ cập nhật kết quả từng sản phẩm trực tiếp vào khung chat này!`,
+              text: `🚀 **Bắt đầu quy trình AI viết bài tuần tự cho ${total} sản phẩm...**\n• Hệ thống gửi từng sản phẩm kèm đầy đủ thông số gốc & yêu cầu của bạn.\n• Tự động giãn cách 5 giây giữa các lượt để đảm bảo AI hoạt động 100% ổn định không bị quá tải.`,
               isBot: true,
               time: "Vừa xong"
             }
@@ -372,6 +384,18 @@ export const useAdminAI = () => {
             const pTitle = prodInfo?.title || prodInfo?.name || selectedTitles[i] || `Sản phẩm ${pid}`;
             const pCat = prodInfo?.category || 'Vật liệu xây dựng';
             const pSpecs = prodInfo?.specs || '';
+            const pUnit = prodInfo?.unit || '';
+            const pWeight = prodInfo?.weight || '';
+
+            // Tạo prompt chuyên sâu bao gồm đầy đủ thông số kỹ thuật gốc và ghi chú của Admin
+            const combinedInstructions = [
+              `Viết bài mô tả chi tiết, chuyên sâu, chuẩn SEO bằng mã HTML cho sản phẩm: "${pTitle}".`,
+              `Phân loại danh mục: ${pCat}.`,
+              pSpecs ? `Quy cách kỹ thuật: ${pSpecs}.` : '',
+              pUnit ? `Đơn vị tính: ${pUnit}.` : '',
+              pWeight ? `Trọng lượng/Khối lượng: ${pWeight} kg.` : '',
+              extraAdminNotes ? `Yêu cầu & Thông số bổ sung từ Admin:\n${extraAdminNotes}` : ''
+            ].filter(Boolean).join('\n');
 
             try {
               const res = await apiTriggerAiBulkEnrich({
@@ -381,7 +405,10 @@ export const useAdminAI = () => {
                 title: pTitle,
                 category: pCat,
                 specs: pSpecs,
-                instructions: `Viết bài mô tả chi tiết chuẩn SEO bằng mã HTML cho sản phẩm: ${pTitle} (Danh mục: ${pCat}${pSpecs ? ', Quy cách: ' + pSpecs : ''})`
+                unit: pUnit,
+                weight: pWeight,
+                instructions: combinedInstructions,
+                productInfo: extraAdminNotes
               });
 
               const isItemSuccess = res && (res.success === true || res.message || res.output || !res.error);
