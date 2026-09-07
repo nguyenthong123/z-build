@@ -274,19 +274,29 @@ export async function apiTriggerAiBulkEnrich({ status = 'Draft', limit = 5, prod
     tavilyApiKey
   };
 
+  let vpsError = null;
+  // 1. Thử gọi VPS AI Endpoint trước
   try {
-    // 1. Ưu tiên gọi trực tiếp AI API trên VPS SQLite backend (rất nhanh, 15-20s)
-    return await fetchJson(`${API_BASE}/ai/bulk-enrich`, {
+    const res = await fetchJson(`${API_BASE}/ai/bulk-enrich`, {
       method: 'POST',
       body: JSON.stringify(payload)
-    }, 70000);
+    }, 55000);
+    return { ...res, engine: 'VPS AI Backend' };
   } catch (apiErr) {
-    console.warn('[AI Bulk Enrich] VPS API notice, fallback to n8n webhook:', apiErr.message);
-    // 2. Dự phòng n8n webhook nếu endpoint chính lỗi
-    return await fetchJson(`${N8N_WEBHOOK_BASE}/dong-bo-sp-ai`, {
+    vpsError = apiErr.message;
+    console.warn('[AI Bulk Enrich] VPS API error, trying n8n webhook fallback:', apiErr.message);
+  }
+
+  // 2. Dự phòng n8n Webhook nếu VPS API không phản hồi
+  try {
+    const res = await fetchJson(`${N8N_WEBHOOK_BASE}/dong-bo-sp-ai`, {
       method: 'POST',
       body: JSON.stringify(payload)
-    }, 90000);
+    }, 60000);
+    return { ...res, engine: 'n8n Webhook' };
+  } catch (n8nErr) {
+    console.error('[AI Bulk Enrich] Both VPS API and n8n Webhook failed:', n8nErr.message);
+    throw new Error(`Không thể kết nối (VPS: ${vpsError} | n8n: ${n8nErr.message})`);
   }
 }
 

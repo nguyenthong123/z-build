@@ -411,11 +411,12 @@ export const useAdminAI = () => {
 
               if (isItemSuccess) {
                 successCount++;
+                const engineTag = res.engine ? `[${res.engine}]` : `[AI Engine]`;
                 setMessages(prev => [
                   ...prev,
                   {
                     id: Date.now() + i + 100,
-                    text: `✅ **[${i + 1}/${total}] Đã viết xong & lưu vào SQLite:**\n• Sản phẩm: **${pTitle}**\n• Mã SP: \`${pid}\``,
+                    text: `✅ **[${i + 1}/${total}] ${engineTag} Đã viết xong & lưu vào SQLite:**\n• Sản phẩm: **${pTitle}**\n• Mã SP: \`${pid}\``,
                     isBot: true,
                     time: "Vừa xong"
                   }
@@ -427,7 +428,7 @@ export const useAdminAI = () => {
                   ...prev,
                   {
                     id: Date.now() + i + 100,
-                    text: `⚠️ **[${i + 1}/${total}] Chưa cập nhật được:** ${pTitle} (${res?.error || 'Lỗi phản hồi'})`,
+                    text: `⚠️ **[${i + 1}/${total}] Server phản hồi lỗi:** ${pTitle}\n• Chi tiết: \`${res?.error || 'Lỗi không xác định'}\``,
                     isBot: true,
                     time: "Vừa xong"
                   }
@@ -438,16 +439,18 @@ export const useAdminAI = () => {
                 ...prev,
                 {
                   id: Date.now() + i + 100,
-                  text: `⚠️ **[${i + 1}/${total}] Lỗi kết nối:** ${pTitle} (${pErr.message})`,
+                  text: `❌ **[${i + 1}/${total}] Lỗi kết nối hệ thống:** ${pTitle}\n• Chi tiết lỗi: \`${pErr.message}\`\n• Trạng thái: Tiến trình đã tạm dừng. Vui lòng kiểm tra lại trạng thái n8n hoặc backend trước khi gửi lại.`,
                   isBot: true,
                   time: "Vừa xong"
                 }
               ]);
+              setIsTyping(false);
+              return;
             }
 
-            // Nghỉ 5 giây giữa các sản phẩm để Groq hồi token ổn định
+            // Nghỉ 4 giây giữa các sản phẩm để hồi phục token
             if (i < total - 1) {
-              await new Promise(r => setTimeout(r, 5000));
+              await new Promise(r => setTimeout(r, 4000));
             }
           }
 
@@ -455,7 +458,7 @@ export const useAdminAI = () => {
             ...prev,
             {
               id: Date.now() + total + 500,
-              text: `🎉 **HOÀN TẤT TOÀN BỘ!** Đã hoàn thành viết bài chuẩn SEO cho **${successCount}/${total}** sản phẩm. Bạn có thể mở chi tiết sản phẩm để xem ngay.`,
+              text: `🎉 **HOÀN TẤT TOÀN BỘ!** Đã hoàn thành viết bài chuẩn SEO cho **${successCount}/${total}** sản phẩm. Bạn có thể mở chi tiết sản phẩm để kiểm tra ngay.`,
               isBot: true,
               time: "Vừa xong"
             }
