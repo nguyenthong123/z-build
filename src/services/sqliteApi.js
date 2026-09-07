@@ -3,9 +3,9 @@
  * Connects directly to SQLite backend on VPS / Local, completely replacing Firestore
  */
 
-// API Base URL (VPS n8n / SQLite backend with full CORS & SSL)
-const API_BASE = import.meta.env.VITE_API_BASE || 'https://34-133-127-214.nip.io/api/zbuild';
-const N8N_WEBHOOK_BASE = import.meta.env.VITE_N8N_BASE || 'https://34-133-127-214.nip.io/webhook';
+// API Base URL (VPS n8n / SQLite backend on new VPS 34.169.201.51 with full CORS & SSL)
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://hon-entertaining-meeting-peter.trycloudflare.com/api/zbuild';
+const N8N_WEBHOOK_BASE = import.meta.env.VITE_N8N_BASE || 'https://rob-gerald-decorating-javascript.trycloudflare.com/webhook';
 
 // In-memory + localStorage persistent cache (5 minutes TTL)
 const apiCache = new Map();
