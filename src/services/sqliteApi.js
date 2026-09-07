@@ -115,9 +115,8 @@ export async function apiGetProducts(params = {}) {
   const cacheKey = `products_${queryStr}`;
   const cached = getCached(cacheKey);
 
-  // If cached data exists, return immediately for instant 0ms render
-  if (cached && Array.isArray(cached) && cached.length > 0) {
-    // Background refresh
+  // Background refresh helper to keep SQLite fresh
+  const triggerBackgroundSync = () => {
     setTimeout(async () => {
       try {
         const data = await fetchJson(`${API_BASE}/products${queryStr}`, {}, 8000);
@@ -126,11 +125,30 @@ export async function apiGetProducts(params = {}) {
           setCached(cacheKey, fresh);
         }
       } catch {}
-    }, 200);
+    }, 150);
+  };
+
+  // 1. If cached data exists in memory or localStorage, return immediately (0ms)
+  if (cached && Array.isArray(cached) && cached.length > 0) {
+    triggerBackgroundSync();
     return cached;
   }
 
-  // Fast live fetch with 5s timeout
+  // 2. Try fast static JSON (< 30ms CDN) for instant initial paint
+  try {
+    const fallbackRes = await fetch('/products.json');
+    if (fallbackRes.ok) {
+      const fallbackData = await fallbackRes.json();
+      const list = Array.isArray(fallbackData) ? fallbackData : (fallbackData?.products || []);
+      if (Array.isArray(list) && list.length > 0) {
+        setCached(cacheKey, list);
+        triggerBackgroundSync();
+        return list;
+      }
+    }
+  } catch {}
+
+  // 3. Direct live VPS fetch as fallback
   try {
     const data = await fetchJson(`${API_BASE}/products${queryStr}`, {}, 5000);
     const result = Array.isArray(data) ? data : (data?.products || []);
@@ -139,22 +157,7 @@ export async function apiGetProducts(params = {}) {
       return result;
     }
   } catch (err) {
-    console.warn('Live API products slow/offline, using fast static fallback:', err.message);
-  }
-
-  // Fast static fallback (< 50ms)
-  try {
-    const fallbackRes = await fetch('/products.json');
-    if (fallbackRes.ok) {
-      const fallbackData = await fallbackRes.json();
-      const list = Array.isArray(fallbackData) ? fallbackData : (fallbackData?.products || []);
-      if (list && list.length > 0) {
-        setCached(cacheKey, list);
-        return list;
-      }
-    }
-  } catch (e) {
-    console.warn('Static products fallback error:', e);
+    console.warn('Live API products notice:', err.message);
   }
 
   return [];
