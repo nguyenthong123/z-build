@@ -42,7 +42,7 @@ if (typeof window !== 'undefined') {
 }
 
 // Helper for HTTP requests with timeout
-async function fetchJson(url, options = {}, timeoutMs = 60000) {
+async function fetchJson(url, options = {}, timeoutMs = 25000) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -84,12 +84,35 @@ export async function apiGetProducts(params = {}) {
   const queryStr = qs.toString() ? `?${qs.toString()}` : '';
   const cacheKey = `products_${queryStr}`;
   const cached = getCached(cacheKey);
-  if (cached) return cached;
+  if (cached && Array.isArray(cached) && cached.length > 0) return cached;
 
-  const data = await fetchJson(`${API_BASE}/products${queryStr}`);
-  const result = data.products || [];
-  setCached(cacheKey, result);
-  return result;
+  try {
+    const data = await fetchJson(`${API_BASE}/products${queryStr}`);
+    const result = Array.isArray(data) ? data : (data?.products || []);
+    if (Array.isArray(result) && result.length > 0) {
+      setCached(cacheKey, result);
+      return result;
+    }
+  } catch (err) {
+    console.warn('API get products notice, checking fallback:', err.message);
+  }
+
+  // Static fallback if API is unreachable / cold start
+  try {
+    const fallbackRes = await fetch('/products.json');
+    if (fallbackRes.ok) {
+      const fallbackData = await fallbackRes.json();
+      const list = Array.isArray(fallbackData) ? fallbackData : (fallbackData?.products || []);
+      if (list && list.length > 0) {
+        setCached(cacheKey, list);
+        return list;
+      }
+    }
+  } catch (e) {
+    console.warn('Static products fallback error:', e);
+  }
+
+  return [];
 }
 
 export async function apiGetProduct(idOrSlug) {
@@ -98,10 +121,17 @@ export async function apiGetProduct(idOrSlug) {
   const cached = getCached(cacheKey);
   if (cached) return cached;
 
-  const data = await fetchJson(`${API_BASE}/products/${encodeURIComponent(idOrSlug)}`);
-  const result = data.product || null;
-  if (result) setCached(cacheKey, result);
-  return result;
+  try {
+    const data = await fetchJson(`${API_BASE}/products/${encodeURIComponent(idOrSlug)}`);
+    const result = data?.product || data || null;
+    if (result && typeof result === 'object' && result.id) {
+      setCached(cacheKey, result);
+      return result;
+    }
+  } catch (err) {
+    console.warn('Get single product error:', err.message);
+  }
+  return null;
 }
 
 export async function apiSaveProduct(product) {
@@ -139,8 +169,13 @@ export async function apiBatchDeleteProducts(productIds) {
 // ==========================================
 
 export async function apiGetCustomers() {
-  const data = await fetchJson(`${API_BASE}/customers`);
-  return data.customers || [];
+  try {
+    const data = await fetchJson(`${API_BASE}/customers`);
+    return Array.isArray(data) ? data : (data?.customers || []);
+  } catch (err) {
+    console.warn('apiGetCustomers error:', err.message);
+    return [];
+  }
 }
 
 export async function apiSaveCustomer(customer) {
@@ -162,8 +197,13 @@ export async function apiDeleteCustomer(customerId) {
 
 export async function apiGetOrders(userId = null) {
   const queryStr = userId ? `?userId=${encodeURIComponent(userId)}` : '';
-  const data = await fetchJson(`${API_BASE}/orders${queryStr}`);
-  return data.orders || [];
+  try {
+    const data = await fetchJson(`${API_BASE}/orders${queryStr}`);
+    return Array.isArray(data) ? data : (data?.orders || []);
+  } catch (err) {
+    console.warn('apiGetOrders error:', err.message);
+    return [];
+  }
 }
 
 export async function apiCreateOrder(orderData) {

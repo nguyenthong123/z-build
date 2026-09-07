@@ -41,22 +41,6 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
     sessionStorage.setItem('admin_product_category', selectedCategory);
   }, [selectedCategory]);
 
-  // Tự động đồng bộ ngầm khi admin mở trang
-  useEffect(() => {
-    const checkAutoSync = async () => {
-      if (autoSyncTriggered) return;
-      setAutoSyncTriggered(true);
-      try {
-        await apiDunvexSyncProducts();
-        fetchProducts();
-      } catch (e) {
-        console.warn('Auto-sync notice:', e.message);
-      }
-    };
-    checkAutoSync();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoSyncTriggered]);
-
 
 
 
@@ -136,26 +120,33 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
   
   const ITEMS_PER_PAGE = 1000;
 
-  // Load cache toàn bộ SP khi mount
-  useEffect(() => { loadAllProductsCache(); }, []);
+  // Load toàn bộ SP khi mount
+  useEffect(() => { 
+    fetchProducts(); 
+  }, []);
 
-  // Debounce search: đợi 300ms sau khi gõ xong mới filter
+  // Debounce search: đợi 250ms sau khi gõ xong mới filter
   useEffect(() => {
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     searchTimerRef.current = setTimeout(() => {
       if (searchQuery) {
         searchFromCache(searchQuery);
       } else {
-        fetchProducts(); // Quay về pagination
-        setHasMore(true);
+        if (allProductsCache.current.length > 0) {
+          setProducts(allProductsCache.current);
+          setLoading(false);
+        } else {
+          fetchProducts();
+        }
+        setHasMore(false);
       }
-    }, 300);
+    }, 250);
     return () => clearTimeout(searchTimerRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
   useEffect(() => {
-    if (!searchQuery) fetchProducts();
+    if (!searchQuery && allProductsCache.current.length === 0) fetchProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory]);
 
