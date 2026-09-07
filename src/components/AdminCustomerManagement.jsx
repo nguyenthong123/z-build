@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { 
   apiGetCustomers, 
   apiGetOrders, 
@@ -22,19 +23,19 @@ const TYPE_COLORS = {
 const getTypeStyle = (type) => TYPE_COLORS[type] || TYPE_COLORS['default'];
 
 const AdminCustomerManagement = ({ onBack }) => {
+  const { adminEmails = [] } = useAuth() || {};
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [adminEmails] = useState(['nbt1024@gmail.com']);
   const [stats, setStats] = useState({ total: 0 });
 
   useEffect(() => {
-    fetchCustomers();
+    fetchCustomers(adminEmails);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [adminEmails]);
 
   const fetchCustomers = async (admins = adminEmails) => {
     setLoading(true);

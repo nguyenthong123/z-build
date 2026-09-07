@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { apiGetSettings, apiSaveSettings } from '../services/sqliteApi';
 import './AdminSettings.css';
 
 const getRootAdmins = () => {
   const envEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS || '';
   const list = envEmails.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-  if (!list.includes('nbt1024@gmail.com')) {
-    list.push('nbt1024@gmail.com');
-  }
+  const defaults = ['nbt1024@gmail.com', 'tranthanh.datnguon@gmail.com', 'thachcao.taman@gmail.com'];
+  defaults.forEach(d => {
+    if (!list.includes(d)) list.push(d);
+  });
   return list;
 };
 
@@ -44,17 +46,17 @@ const formatCurrencyToWords = (num) => {
 
 const AdminSettings = () => {
   const [bankInfo, setBankInfo] = useState({
-    bankCode: '',
-    bankName: '',
-    accountNumber: '',
-    accountName: ''
+    bankCode: 'vcb',
+    bankName: 'Vietcombank',
+    accountNumber: '1014845876',
+    accountName: 'NGUYEN BA TRUNG'
   });
   const [footerInfo, setFooterInfo] = useState({
-    tagline: '',
-    phone: '',
-    email: '',
-    address: '',
-    copyright: ''
+    tagline: 'Giải pháp vật liệu xây dựng & công nghệ quản lý bán hàng dành cho nhà thầu, đại lý chuyên nghiệp.',
+    phone: '0905 123 456',
+    email: 'contact@zbuild.click',
+    address: '123 Đường ABC, Quận XYZ, TP. HCM',
+    copyright: '2026 ZBUILD Store. Bảo lưu mọi quyền.'
   });
   const [openClawConfig, setOpenClawConfig] = useState({
     dunvexApiKey: '',
@@ -69,46 +71,48 @@ const AdminSettings = () => {
     groupForwardEnabled: false,
     enabled: false
   });
-  const [adminEmails, setAdminEmails] = useState([]);
+  const [adminEmails, setAdminEmails] = useState(getRootAdmins());
   const [newAdminEmail, setNewAdminEmail] = useState('');
 
-  // Dùng arrayUnion/arrayRemove để tránh race condition khi nhiều admin cùng sửa
-  const addAdminEmail = async (email) => {
+  const syncAdminEmails = async (updatedList) => {
     try {
-      const adminDocRef = doc(db, 'settings', 'admins');
-      await updateDoc(adminDocRef, { emails: arrayUnion(email) });
+      // 1. Save to SQLite Primary Backend
+      await apiSaveSettings('admins', { emails: updatedList });
+      
+      // 2. Backup to Firestore
+      try {
+        const adminDocRef = doc(db, 'settings', 'admins');
+        await setDoc(adminDocRef, { emails: updatedList }, { merge: true });
+      } catch (fbErr) {
+        console.warn('Firestore backup sync skipped:', fbErr.message);
+      }
+
+      setToast({ message: 'Cập nhật phân quyền thành công!', type: 'success' });
     } catch (err) {
-      console.error('Lỗi thêm admin email:', err);
-      setToast({ message: 'Lỗi thêm phân quyền!', type: 'error' });
+      console.error('Lỗi lưu phân quyền:', err);
+      setToast({ message: 'Lỗi lưu phân quyền: ' + err.message, type: 'error' });
+    } finally {
       setTimeout(() => setToast(null), 3000);
     }
   };
 
-  const removeAdminEmail = async (email) => {
-    try {
-      const adminDocRef = doc(db, 'settings', 'admins');
-      await updateDoc(adminDocRef, { emails: arrayRemove(email) });
-    } catch (err) {
-      console.error('Lỗi xoá admin email:', err);
-      setToast({ message: 'Lỗi xoá phân quyền!', type: 'error' });
-      setTimeout(() => setToast(null), 3000);
-    }
-  };
-
-  const handleAddAdmin = () => {
+  const handleAddAdmin = async () => {
     const email = newAdminEmail.trim().toLowerCase();
     if (email && !adminEmails.includes(email)) {
-      setAdminEmails(prev => [...prev, email]);
+      const updated = [...adminEmails, email];
+      setAdminEmails(updated);
       setNewAdminEmail('');
-      addAdminEmail(email);
+      await syncAdminEmails(updated);
     }
   };
 
-  const handleRemoveAdmin = (email) => {
-    setAdminEmails(prev => prev.filter(e => e !== email));
-    removeAdminEmail(email);
+  const handleRemoveAdmin = async (email) => {
+    const updated = adminEmails.filter(e => e.toLowerCase().trim() !== email.toLowerCase().trim());
+    setAdminEmails(updated);
+    await syncAdminEmails(updated);
   };
-  const [googleSheetUrl, setGoogleSheetUrl] = useState('');
+
+  const [googleSheetUrl, setGoogleSheetUrl] = useState("https://script.google.com/macros/s/AKfycbyjxwNzi7j1KMpLdrYFfPzYFYhEmFhb9ercrPho5CMXCTRKE_dx0iaoYOFwP8t20gZG/exec");
   const [shippingSettings, setShippingSettings] = useState({
     storeLat: '',
     storeLng: '',
@@ -123,71 +127,55 @@ const AdminSettings = () => {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const docRef = doc(db, 'storeSettings', 'main');
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().bankInfo) {
-          setBankInfo(docSnap.data().bankInfo);
-        } else {
-          setBankInfo({ bankCode: 'vcb', bankName: 'Vietcombank', accountNumber: '1014845876', accountName: 'NGUYEN BA TRUNG' });
+        // 1. Fetch from SQLite Backend first
+        let mainData = null;
+        let adminsData = null;
+        try {
+          mainData = await apiGetSettings('main');
+          adminsData = await apiGetSettings('admins');
+        } catch (e) {
+          console.warn("SQLite settings fetch notice:", e.message);
         }
 
-        if (docSnap.exists() && docSnap.data().openClawConfig) {
-          const raw = docSnap.data().openClawConfig;
-          setOpenClawConfig({
-            dunvexApiKey: raw.dunvexApiKey || raw.apiKey || raw.botApiKey || '',
-            dunvexWebhookUrl: raw.dunvexWebhookUrl || raw.webhookUrl || '',
-            apiUrl: raw.apiUrl || '',
-            ownerId: raw.ownerId || ''
-          });
-        } else {
-          setOpenClawConfig({ 
-            dunvexApiKey: '',
-            dunvexWebhookUrl: '',
-            apiUrl: process.env.NEXT_PUBLIC_OPENCLAW_API_URL || 'http://localhost:8000/chat',
-            ownerId: ''
-          });
+        // 2. Fetch from Firestore if SQLite has missing data
+        let fbData = null;
+        let fbAdmins = null;
+        if (!mainData || Object.keys(mainData).length === 0) {
+          try {
+            const docSnap = await getDoc(doc(db, 'storeSettings', 'main'));
+            if (docSnap.exists()) fbData = docSnap.data();
+          } catch {}
+        }
+        if (!adminsData || !adminsData.emails) {
+          try {
+            const adminSnap = await getDoc(doc(db, 'settings', 'admins'));
+            if (adminSnap.exists()) fbAdmins = adminSnap.data();
+          } catch {}
         }
 
-        if (docSnap.exists() && docSnap.data().googleSheetUrl) {
-          setGoogleSheetUrl(docSnap.data().googleSheetUrl);
-        } else {
-          setGoogleSheetUrl("https://script.google.com/macros/s/AKfycbyjxwNzi7j1KMpLdrYFfPzYFYhEmFhb9ercrPho5CMXCTRKE_dx0iaoYOFwP8t20gZG/exec");
-        }
+        const data = mainData && Object.keys(mainData).length > 0 ? mainData : (fbData || {});
 
-        if (docSnap.exists() && docSnap.data().shippingSettings) {
-          setShippingSettings(docSnap.data().shippingSettings);
-        }
+        if (data.bankInfo) setBankInfo(data.bankInfo);
+        if (data.footerInfo) setFooterInfo(data.footerInfo);
+        if (data.openClawConfig) setOpenClawConfig(data.openClawConfig);
+        if (data.googleSheetUrl) setGoogleSheetUrl(data.googleSheetUrl);
+        if (data.shippingSettings) setShippingSettings(data.shippingSettings);
+        if (data.telegramChatConfig) setTelegramChatConfig(data.telegramChatConfig);
 
-        if (docSnap.exists() && docSnap.data().footerInfo) {
-          setFooterInfo(docSnap.data().footerInfo);
-        } else {
-          setFooterInfo({
-            tagline: 'Giải pháp vật liệu xây dựng & công nghệ quản lý bán hàng dành cho nhà thầu, đại lý chuyên nghiệp.',
-            phone: '0905 123 456',
-            email: 'contact@zbuild.click',
-            address: '123 Đường ABC, Quận XYZ, TP. HCM',
-            copyright: '2026 ZBUILD Store. Bảo lưu mọi quyền.'
-          });
+        let finalEmails = getRootAdmins();
+        if (adminsData && Array.isArray(adminsData.emails)) {
+          finalEmails = Array.from(new Set([...finalEmails, ...adminsData.emails.map(e => e.toLowerCase().trim())]));
+        } else if (fbAdmins && Array.isArray(fbAdmins.emails)) {
+          finalEmails = Array.from(new Set([...finalEmails, ...fbAdmins.emails.map(e => e.toLowerCase().trim())]));
         }
+        setAdminEmails(finalEmails);
 
-        if (docSnap.exists() && docSnap.data().telegramChatConfig) {
-          setTelegramChatConfig(docSnap.data().telegramChatConfig);
-        } else {
-          setTelegramChatConfig({
-            botToken: '',
-            botConnected: false,
-            chatId: '',
-            groupForwardEnabled: false,
-            enabled: false
-          });
+        // Ensure SQLite has both keys stored
+        if (!mainData || Object.keys(mainData).length === 0) {
+          apiSaveSettings('main', data).catch(() => {});
         }
-
-        const adminDocRef = doc(db, 'settings', 'admins');
-        const adminSnap = await getDoc(adminDocRef);
-        if (adminSnap.exists() && adminSnap.data().emails) {
-          setAdminEmails(adminSnap.data().emails);
-        } else {
-          setAdminEmails(getRootAdmins());
+        if (!adminsData || !adminsData.emails) {
+          apiSaveSettings('admins', { emails: finalEmails }).catch(() => {});
         }
       } catch (err) {
         console.error('Lỗi khi tải cài đặt:', err);
@@ -206,13 +194,33 @@ const AdminSettings = () => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const docRef = doc(db, 'storeSettings', 'main');
-      await setDoc(docRef, { bankInfo, openClawConfig, googleSheetUrl, shippingSettings, footerInfo, telegramChatConfig }, { merge: true });
+      const payload = { 
+        bankInfo, 
+        openClawConfig, 
+        googleSheetUrl, 
+        shippingSettings, 
+        footerInfo, 
+        telegramChatConfig 
+      };
 
-      setToast({ message: 'Lưu cấu hình thành công!', type: 'success' });
+      // 1. Save to SQLite Primary Backend
+      await apiSaveSettings('main', payload);
+      await apiSaveSettings('admins', { emails: adminEmails });
+
+      // 2. Backup to Firestore
+      try {
+        const docRef = doc(db, 'storeSettings', 'main');
+        await setDoc(docRef, payload, { merge: true });
+        const adminDocRef = doc(db, 'settings', 'admins');
+        await setDoc(adminDocRef, { emails: adminEmails }, { merge: true });
+      } catch (fbErr) {
+        console.warn("Firestore backup save skipped:", fbErr.message);
+      }
+
+      setToast({ message: 'Lưu cấu hình vào SQLite thành công!', type: 'success' });
     } catch (err) {
       console.error('Lỗi khi lưu cài đặt:', err);
-      setToast({ message: 'Có lỗi xảy ra khi lưu!', type: 'error' });
+      setToast({ message: 'Có lỗi xảy ra khi lưu: ' + err.message, type: 'error' });
     } finally {
       setIsSaving(false);
       setTimeout(() => setToast(null), 3000);
