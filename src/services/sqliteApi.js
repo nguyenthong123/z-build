@@ -113,28 +113,39 @@ export async function apiGetProducts(params = {}) {
 
   const queryStr = qs.toString() ? `?${qs.toString()}` : '';
   const cacheKey = `products_${queryStr}`;
-  const cached = getCached(cacheKey);
 
-  // Background refresh helper to keep SQLite fresh
-  const triggerBackgroundSync = () => {
-    setTimeout(async () => {
-      try {
-        const data = await fetchJson(`${API_BASE}/products${queryStr}`, {}, 8000);
-        const fresh = Array.isArray(data) ? data : (data?.products || []);
-        if (Array.isArray(fresh) && fresh.length > 0) {
-          setCached(cacheKey, fresh);
-        }
-      } catch {}
-    }, 150);
-  };
-
-  // 1. If cached data exists in memory or localStorage, return immediately (0ms)
-  if (cached && Array.isArray(cached) && cached.length > 0) {
-    triggerBackgroundSync();
-    return cached;
+  if (params.skipCache) {
+    clearApiCache('product');
+  } else {
+    const cached = getCached(cacheKey);
+    // 1. Nếu có dữ liệu trong cache và không yêu cầu skipCache, trả về ngay (0ms) và đồng bộ ngầm
+    if (cached && Array.isArray(cached) && cached.length > 0) {
+      setTimeout(async () => {
+        try {
+          const data = await fetchJson(`${API_BASE}/products${queryStr}`, {}, 8000);
+          const fresh = Array.isArray(data) ? data : (data?.products || []);
+          if (Array.isArray(fresh)) {
+            setCached(cacheKey, fresh);
+          }
+        } catch {}
+      }, 150);
+      return cached;
+    }
   }
 
-  // 2. Try fast static JSON (< 30ms CDN) for instant initial paint
+  // 2. Gọi trực tiếp API VPS SQLite để lấy dữ liệu sống mới nhất (Là nguồn sự thật chuẩn xác)
+  try {
+    const data = await fetchJson(`${API_BASE}/products${queryStr}`, {}, 8000);
+    const result = Array.isArray(data) ? data : (data?.products || []);
+    if (Array.isArray(result)) {
+      setCached(cacheKey, result);
+      return result;
+    }
+  } catch (err) {
+    console.warn('Live API products notice:', err.message);
+  }
+
+  // 3. Dự phòng static JSON duy nhất khi máy chủ VPS hoàn toàn không phản hồi (offline)
   try {
     const fallbackRes = await fetch('/products.json');
     if (fallbackRes.ok) {
@@ -142,23 +153,10 @@ export async function apiGetProducts(params = {}) {
       const list = Array.isArray(fallbackData) ? fallbackData : (fallbackData?.products || []);
       if (Array.isArray(list) && list.length > 0) {
         setCached(cacheKey, list);
-        triggerBackgroundSync();
         return list;
       }
     }
   } catch {}
-
-  // 3. Direct live VPS fetch as fallback
-  try {
-    const data = await fetchJson(`${API_BASE}/products${queryStr}`, {}, 5000);
-    const result = Array.isArray(data) ? data : (data?.products || []);
-    if (Array.isArray(result) && result.length > 0) {
-      setCached(cacheKey, result);
-      return result;
-    }
-  } catch (err) {
-    console.warn('Live API products notice:', err.message);
-  }
 
   return [];
 }
@@ -306,16 +304,40 @@ export async function apiSaveSettings(key, value) {
 // ==========================================
 
 export async function apiDunvexSyncProducts(mode = 'sync_existing') {
+  clearApiCache('product');
+  // Đối với clean_deleted: ưu tiên gọi thẳng VPS API để thực hiện câu lệnh xóa SQLite chính xác
+  if (mode === 'clean_deleted') {
+    try {
+      const res = await fetchJson(`${API_BASE}/sync/dunvex-products`, {
+        method: 'POST',
+        body: JSON.stringify({ mode })
+      }, 35000);
+      clearApiCache('product');
+      return res;
+    } catch {
+      const res = await fetchJson(`${N8N_WEBHOOK_BASE}/zbuild-sync-products`, {
+        method: 'POST',
+        body: JSON.stringify({ mode })
+      }, 35000);
+      clearApiCache('product');
+      return res;
+    }
+  }
+
   try {
-    return await fetchJson(`${N8N_WEBHOOK_BASE}/zbuild-sync-products`, {
+    const res = await fetchJson(`${N8N_WEBHOOK_BASE}/zbuild-sync-products`, {
       method: 'POST',
       body: JSON.stringify({ mode })
     });
+    clearApiCache('product');
+    return res;
   } catch {
-    return await fetchJson(`${API_BASE}/sync/dunvex-products`, {
+    const res = await fetchJson(`${API_BASE}/sync/dunvex-products`, {
       method: 'POST',
       body: JSON.stringify({ mode })
     });
+    clearApiCache('product');
+    return res;
   }
 }
 
@@ -333,16 +355,20 @@ export async function apiDunvexSyncCustomers() {
 
 export async function apiTriggerAiEnrich({ productId, title, specs = '', category = '', instructions = '', productInfo = '', tavilyApiKey = '' } = {}) {
   const payload = { productId, title, specs, category, instructions, productInfo, tavilyApiKey };
+  // 1. Thử gọi n8n Webhook trước (Tối ưu token & kiểm soát prompt trên n8n)
   try {
-    return await fetchJson(`${API_BASE}/ai/enrich`, {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    }, 70000);
-  } catch {
-    return await fetchJson(`${N8N_WEBHOOK_BASE}/zbuild-ai-enrich`, {
+    const res = await fetchJson(`${N8N_WEBHOOK_BASE}/zbuild-ai-enrich`, {
       method: 'POST',
       body: JSON.stringify(payload)
     }, 90000);
+    return { ...res, engine: 'n8n Webhook' };
+  } catch (n8nErr) {
+    console.warn('[AI Enrich] n8n error, fallback to VPS AI Backend:', n8nErr.message);
+    const res = await fetchJson(`${API_BASE}/ai/enrich`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }, 70000);
+    return { ...res, engine: 'VPS AI Backend' };
   }
 }
 
@@ -362,29 +388,29 @@ export async function apiTriggerAiBulkEnrich({ status = 'Draft', limit = 5, prod
     tavilyApiKey
   };
 
-  let vpsError = null;
-  // 1. Thử gọi VPS AI Endpoint trước
-  try {
-    const res = await fetchJson(`${API_BASE}/ai/bulk-enrich`, {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    }, 55000);
-    return { ...res, engine: 'VPS AI Backend' };
-  } catch (apiErr) {
-    vpsError = apiErr.message;
-    console.warn('[AI Bulk Enrich] VPS API error, trying n8n webhook fallback:', apiErr.message);
-  }
-
-  // 2. Dự phòng n8n Webhook nếu VPS API không phản hồi
+  let n8nError = null;
+  // 1. Thử gọi n8n Webhook trước (Ưu tiên n8n để tối ưu hóa prompt & token)
   try {
     const res = await fetchJson(`${N8N_WEBHOOK_BASE}/dong-bo-sp-ai`, {
       method: 'POST',
       body: JSON.stringify(payload)
-    }, 60000);
+    }, 90000);
     return { ...res, engine: 'n8n Webhook' };
   } catch (n8nErr) {
-    console.error('[AI Bulk Enrich] Both VPS API and n8n Webhook failed:', n8nErr.message);
-    throw new Error(`Không thể kết nối (VPS: ${vpsError} | n8n: ${n8nErr.message})`);
+    n8nError = n8nErr.message;
+    console.warn('[AI Bulk Enrich] n8n Webhook error, fallback to VPS API:', n8nErr.message);
+  }
+
+  // 2. Dự phòng VPS AI API nếu n8n Webhook không phản hồi
+  try {
+    const res = await fetchJson(`${API_BASE}/ai/bulk-enrich`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }, 60000);
+    return { ...res, engine: 'VPS AI Backend' };
+  } catch (apiErr) {
+    console.error('[AI Bulk Enrich] Both n8n Webhook and VPS API failed:', apiErr.message);
+    throw new Error(`Không thể kết nối (n8n: ${n8nError} | VPS: ${apiErr.message})`);
   }
 }
 

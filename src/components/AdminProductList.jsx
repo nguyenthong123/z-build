@@ -160,9 +160,9 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
   }, [searchQuery, selectedCategory]);
 
   // Load tất cả SP vào cache (dùng cho search local)
-  const loadAllProductsCache = async () => {
+  const loadAllProductsCache = async (skipCache = false) => {
     try {
-      const rawProducts = await apiGetProducts();
+      const rawProducts = await apiGetProducts({ skipCache });
       const mapped = rawProducts.map(p => ({
         ...p,
         price: (p.discountPrice || p.basePrice || p.price) 
@@ -184,7 +184,7 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
       });
       setAllCategories(catSet);
     } catch (error) {
-      console.error("Error loading product cache:", error);
+      console.error("Error loading products cache:", error);
     }
   };
 
@@ -212,14 +212,14 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
 
   // Refresh cache + reload list
   const refreshProducts = async () => {
-    await loadAllProductsCache();
-    fetchProducts();
+    await loadAllProductsCache(true);
+    await fetchProducts(true);
   };
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (skipCache = false) => {
     setLoading(true);
     try {
-      const rawProducts = await apiGetProducts();
+      const rawProducts = await apiGetProducts({ skipCache });
       setHasMore(false);
 
       const productData = rawProducts.map(p => ({
