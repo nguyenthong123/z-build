@@ -53,7 +53,27 @@ function genSitemap(prods) {
 }
 
 function genProductsJSON(prods) {
-  const feed = prods.map(p => ({ title: p.title, slug: p.slug, category: p.category, description: (p.description || p.shortDescription || '').replace(/<[^>]+>/g, '').substring(0, 300), price: Number(p.discountPrice || p.price || 0), price_formatted: new Intl.NumberFormat('vi-VN').format(Number(p.discountPrice || p.price || 0)) + ' VND', image_url: p.image || null, url: p.slug ? SITE_URL + '/product/' + p.slug : SITE_URL, specs: p.specs || '', packaging: p.packaging || '', weight: p.weight || '', in_stock: true, last_updated: p.updatedAt || '' }));
+  const feed = prods.map(p => ({
+    id: p.id,
+    title: p.title,
+    slug: p.slug,
+    category: p.category,
+    description: (p.description || p.shortDescription || '').replace(/<[^>]+>/g, '').substring(0, 300),
+    price: Number(p.discountPrice || p.basePrice || p.price || 0),
+    basePrice: Number(p.basePrice || p.price || 0),
+    discountPrice: Number(p.discountPrice || p.price || 0),
+    price_formatted: new Intl.NumberFormat('vi-VN').format(Number(p.discountPrice || p.price || 0)) + ' VND',
+    image: p.image || null,
+    image_url: p.image || null,
+    extraImages: p.extraImages || null,
+    url: p.slug ? SITE_URL + '/product/' + p.slug : SITE_URL,
+    specs: p.specs || '',
+    packaging: p.packaging || '',
+    weight: p.weight || '',
+    in_stock: true,
+    status: p.status || 'active',
+    last_updated: p.updatedAt || ''
+  }));
   fs.writeFileSync(path.join(OUT, 'products.json'), JSON.stringify(feed, null, 2));
   console.log('Generated products.json with ' + feed.length + ' products');
 }

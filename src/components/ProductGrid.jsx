@@ -16,6 +16,8 @@ const normalizeVN = (str) => {
     .toLowerCase();
 };
 
+const DEFAULT_PRODUCT_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23f1f5f9'/%3E%3Cg fill='%2394a3b8' font-family='sans-serif' text-anchor='middle'%3E%3Cpath d='M160 150h80v100h-80z' fill='%23cbd5e1'/%3E%3Ctext x='200' y='210' font-size='22' font-weight='bold' fill='%2364748b'%3EZBUILD%3C/text%3E%3C/g%3E%3C/svg%3E";
+
 const ProductGrid = ({ onProductClick, onAddToCart: propOnAddToCart }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,10 +34,8 @@ const ProductGrid = ({ onProductClick, onAddToCart: propOnAddToCart }) => {
         const rawProducts = await apiGetProducts();
         
         const loadedProducts = rawProducts.map(p => {
-          let imgUrl = 'https://placehold.co/400x400.png?text=ZBUILD';
-          if (p.image && typeof p.image === 'string' && p.image.trim()) {
-            imgUrl = p.image.replace('/upload/', '/upload/f_auto,q_auto,w_500,c_fill/');
-          } else {
+          let rawImg = p.image || p.image_url || p.imageUrl;
+          if (!rawImg || typeof rawImg !== 'string' || !rawImg.trim() || rawImg.includes('placehold.co')) {
             let extra = null;
             if (Array.isArray(p.extraImages) && p.extraImages.length > 0) extra = p.extraImages[0];
             else if (typeof p.extraImages === 'string' && p.extraImages.trim()) {
@@ -44,15 +44,22 @@ const ProductGrid = ({ onProductClick, onAddToCart: propOnAddToCart }) => {
                 if (Array.isArray(parsed) && parsed.length > 0) extra = parsed[0];
               } catch {}
             }
-            if (extra && typeof extra === 'string' && extra.trim()) {
-              imgUrl = extra.replace('/upload/', '/upload/f_auto,q_auto,w_500,c_fill/');
+            if (extra && typeof extra === 'string' && extra.trim() && !extra.includes('placehold.co')) {
+              rawImg = extra;
             }
+          }
+
+          let imgUrl = DEFAULT_PRODUCT_IMAGE;
+          if (rawImg && typeof rawImg === 'string' && rawImg.trim() && !rawImg.includes('placehold.co')) {
+            imgUrl = rawImg.includes('/upload/')
+              ? rawImg.replace('/upload/', '/upload/f_auto,q_auto,w_500,c_fill/')
+              : rawImg;
           }
 
           return {
             ...p,
             tag: p.category || 'NỔI BẬT',
-            name: p.title,
+            name: p.title || p.name || '',
             price: p.discountPrice || p.basePrice || p.price,
             oldPrice: p.basePrice || p.price,
             img: imgUrl
@@ -204,7 +211,15 @@ const ProductGrid = ({ onProductClick, onAddToCart: propOnAddToCart }) => {
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
           </svg>
         </button>
-        <img src={product.img} alt={product.name} loading="lazy" />
+        <img 
+          src={product.img || DEFAULT_PRODUCT_IMAGE} 
+          alt={product.name} 
+          loading="lazy" 
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = DEFAULT_PRODUCT_IMAGE;
+          }}
+        />
       </div>
       <div className="product-info">
         <h3>{product.name}</h3>

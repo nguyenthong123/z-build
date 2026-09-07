@@ -348,8 +348,9 @@ const ProductCompare = () => {
                       <div key={p.id} className="compare-suggestion-item" onClick={() => addProduct(p)}>
                         <img
                           className="compare-suggestion-img"
-                          src={p.image || 'https://placehold.co/100'}
+                          src={p.image || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f1f5f9'/%3E%3Ctext x='50' y='55' font-size='11' font-family='sans-serif' text-anchor='middle' fill='%2394a3b8'%3EZBUILD%3C/text%3E%3C/svg%3E"}
                           alt={p.title}
+                          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f1f5f9'/%3E%3Ctext x='50' y='55' font-size='11' font-family='sans-serif' text-anchor='middle' fill='%2394a3b8'%3EZBUILD%3C/text%3E%3C/svg%3E"; }}
                         />
                         <div className="compare-suggestion-info">
                           <div className="compare-suggestion-name">{p.title}</div>
@@ -449,8 +450,9 @@ const ProductCompare = () => {
                     <div key={p.id} className="compare-suggestion-item" onClick={() => addProduct(p)}>
                       <img
                         className="compare-suggestion-img"
-                        src={p.image || 'https://placehold.co/100'}
+                        src={p.image || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f1f5f9'/%3E%3Ctext x='50' y='55' font-size='11' font-family='sans-serif' text-anchor='middle' fill='%2394a3b8'%3EZBUILD%3C/text%3E%3C/svg%3E"}
                         alt={p.title}
+                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f1f5f9'/%3E%3Ctext x='50' y='55' font-size='11' font-family='sans-serif' text-anchor='middle' fill='%2394a3b8'%3EZBUILD%3C/text%3E%3C/svg%3E"; }}
                       />
                       <div className="compare-suggestion-info">
                         <div className="compare-suggestion-name">{p.title}</div>
@@ -485,9 +487,9 @@ const ProductCompare = () => {
                     <div className="compare-column-header">
                       <div className="compare-product-img-wrapper">
                         <img
-                          src={p.image || 'https://placehold.co/400'}
+                          src={p.image || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23f1f5f9'/%3E%3Ctext x='200' y='210' font-size='22' font-family='sans-serif' text-anchor='middle' fill='%2394a3b8'%3EZBUILD%3C/text%3E%3C/svg%3E"}
                           alt={p.title}
-                          onError={(e) => { e.target.src = 'https://placehold.co/400'; }}
+                          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23f1f5f9'/%3E%3Ctext x='200' y='210' font-size='22' font-family='sans-serif' text-anchor='middle' fill='%2394a3b8'%3EZBUILD%3C/text%3E%3C/svg%3E"; }}
                         />
                         <button
                           className="compare-remove-btn"

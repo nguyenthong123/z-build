@@ -552,8 +552,9 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                             <div className="product-cell">
                               <img 
                                 src={(() => {
-                                  if (product.image && typeof product.image === 'string' && product.image.trim()) {
-                                    return product.image.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/');
+                                  const raw = product.image || product.image_url;
+                                  if (raw && typeof raw === 'string' && raw.trim() && !raw.includes('placehold.co')) {
+                                    return raw.includes('/upload/') ? raw.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/') : raw;
                                   }
                                   let extra = null;
                                   if (Array.isArray(product.extraImages) && product.extraImages.length > 0) extra = product.extraImages[0];
@@ -563,12 +564,16 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                                       if (Array.isArray(parsed) && parsed.length > 0) extra = parsed[0];
                                     } catch {}
                                   }
-                                  if (extra && typeof extra === 'string' && extra.trim()) {
-                                    return extra.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/');
+                                  if (extra && typeof extra === 'string' && extra.trim() && !extra.includes('placehold.co')) {
+                                    return extra.includes('/upload/') ? extra.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/') : extra;
                                   }
-                                  return 'https://placehold.co/100';
+                                  return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f1f5f9'/%3E%3Ctext x='50' y='55' font-size='11' font-family='sans-serif' text-anchor='middle' fill='%2394a3b8'%3EZBUILD%3C/text%3E%3C/svg%3E";
                                 })()} 
                                 alt="" 
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f1f5f9'/%3E%3Ctext x='50' y='55' font-size='11' font-family='sans-serif' text-anchor='middle' fill='%2394a3b8'%3EZBUILD%3C/text%3E%3C/svg%3E";
+                                }}
                               />
                               <div className="info">
                                 <strong>{product.name}</strong>
@@ -669,8 +674,9 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                     <div className="card-header">
                       <img 
                         src={(() => {
-                          if (product.image && typeof product.image === 'string' && product.image.trim()) {
-                            return product.image.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/');
+                          const raw = product.image || product.image_url;
+                          if (raw && typeof raw === 'string' && raw.trim() && !raw.includes('placehold.co')) {
+                            return raw.includes('/upload/') ? raw.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/') : raw;
                           }
                           let extra = null;
                           if (Array.isArray(product.extraImages) && product.extraImages.length > 0) extra = product.extraImages[0];
@@ -680,12 +686,16 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
                               if (Array.isArray(parsed) && parsed.length > 0) extra = parsed[0];
                             } catch {}
                           }
-                          if (extra && typeof extra === 'string' && extra.trim()) {
-                            return extra.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/');
+                          if (extra && typeof extra === 'string' && extra.trim() && !extra.includes('placehold.co')) {
+                            return extra.includes('/upload/') ? extra.replace('/upload/', '/upload/f_auto,q_auto,w_200,c_fill/') : extra;
                           }
-                          return 'https://placehold.co/100';
+                          return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f1f5f9'/%3E%3Ctext x='50' y='55' font-size='11' font-family='sans-serif' text-anchor='middle' fill='%2394a3b8'%3EZBUILD%3C/text%3E%3C/svg%3E";
                         })()} 
                         alt="" 
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f1f5f9'/%3E%3Ctext x='50' y='55' font-size='11' font-family='sans-serif' text-anchor='middle' fill='%2394a3b8'%3EZBUILD%3C/text%3E%3C/svg%3E";
+                        }}
                       />
                       <div className="card-title-info" style={{ paddingRight: '36px' }}>
                         <strong>{product.name}</strong>

@@ -128,9 +128,11 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
     fetchRelated();
   }, [product]);
 
+  const DEFAULT_PRODUCT_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='800' viewBox='0 0 800 800'%3E%3Crect width='800' height='800' fill='%23f1f5f9'/%3E%3Cg fill='%2394a3b8' font-family='sans-serif' text-anchor='middle'%3E%3Cpath d='M320 300h160v200h-160z' fill='%23cbd5e1'/%3E%3Ctext x='400' y='420' font-size='36' font-weight='bold' fill='%2364748b'%3EZBUILD%3C/text%3E%3C/g%3E%3C/svg%3E";
+
   const getOptimizedUrl = (url, width = 800) => {
-    if (!url) return '';
-    if (typeof url === 'string' && url.includes('/upload/')) {
+    if (!url || typeof url !== 'string' || !url.trim() || url.includes('placehold.co')) return '';
+    if (url.includes('/upload/')) {
       // Tối ưu ảnh qua Cloudinary: tự động định dạng (WebP), nén chất lượng, giới hạn chiều rộng
       return url.replace('/upload/', `/upload/f_auto,q_auto,w_${width},c_limit/`);
     }
@@ -149,12 +151,13 @@ const ProductDetail = ({ product: propProduct, onBack, onAddToCart, isLoggedIn, 
         extraList = [product.extraImages.trim()];
       }
     }
-    const optimizedMain = getOptimizedUrl(product?.image, 1000);
-    const optimizedExtras = extraList.filter(img => img && typeof img === 'string').map(img => getOptimizedUrl(img, 1000));
+    const rawMain = product?.image || product?.image_url || product?.imageUrl;
+    const optimizedMain = getOptimizedUrl(rawMain, 1000);
+    const optimizedExtras = extraList.filter(img => img && typeof img === 'string' && !img.includes('placehold.co')).map(img => getOptimizedUrl(img, 1000));
     if (!optimizedMain && optimizedExtras.length > 0) {
       return optimizedExtras;
     }
-    return [ optimizedMain || 'https://placehold.co/800', ...optimizedExtras ];
+    return [ optimizedMain || DEFAULT_PRODUCT_IMAGE, ...optimizedExtras ];
   }, [product]);
 
   const videos = React.useMemo(() => [
