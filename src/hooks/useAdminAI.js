@@ -568,8 +568,15 @@ Phản hồi bằng tiếng Việt. TÓM TẮT kết quả function đã gọi (
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userName, getKnowledgeContext, callAI, dbCategories]);
 
+  const clearMessages = useCallback(() => {
+    setMessages([]);
+    try {
+      localStorage.removeItem(storageKey);
+    } catch {}
+  }, [storageKey]);
+
   return {
     messages, input, setInput, isTyping, activeModel, productSuggestions, userName,
-    handleSend
+    handleSend, clearMessages
   };
 };

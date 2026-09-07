@@ -6,12 +6,13 @@ import { useAdminAI } from '../context/AdminAIContext';
 import './AdminAIAssistant.css';
 
 const AdminAIAssistant = () => {
-  const { messages, input, setInput, isTyping, handleSend } = useAdminAI();
+  const { messages, input, setInput, isTyping, handleSend, clearMessages } = useAdminAI();
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
   const [selectedImages, setSelectedImages] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
 
   const displayMessages = React.useMemo(() => messages.length === 0 ? [
     { 
@@ -29,6 +30,21 @@ const AdminAIAssistant = () => {
   useEffect(() => {
     scrollToBottom();
   }, [displayMessages, isTyping]);
+
+  // Handle ESC key to exit maximized mode or close chat
+  useEffect(() => {
+    const handleKeyDownGlobal = (e) => {
+      if (e.key === 'Escape') {
+        if (isMaximized) {
+          setIsMaximized(false);
+        } else if (isOpen) {
+          setIsOpen(false);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDownGlobal);
+    return () => window.removeEventListener('keydown', handleKeyDownGlobal);
+  }, [isMaximized, isOpen]);
 
   useEffect(() => {
     const handleCheckPrompt = () => {
@@ -106,6 +122,15 @@ const AdminAIAssistant = () => {
 
   return (
     <>
+      {/* Backdrop overlay when maximized */}
+      {isOpen && isMaximized && (
+        <div 
+          className="admin-ai-backdrop" 
+          onClick={() => setIsMaximized(false)}
+          title="Nhấn để thu nhỏ khung chat"
+        />
+      )}
+
       {/* Floating Toggle Button */}
       <button 
         className={`admin-ai-toggle-btn ${isOpen ? 'open' : ''}`} 
@@ -121,19 +146,50 @@ const AdminAIAssistant = () => {
 
       {/* Floating Chat Panel */}
       <div 
-        className="admin-ai-floating-panel"
+        className={`admin-ai-floating-panel ${isMaximized ? 'maximized' : ''}`}
         style={{
           display: isOpen ? 'flex' : 'none'
         }}
       >
         <header className="admin-ai-header">
-          <h3>
-            <span style={{ color: '#eab308', display: 'flex', alignItems: 'center' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-            </span>
-            Trợ lý AI Quản Trị
-          </h3>
-          <p>Hỗ trợ tạo sản phẩm, viết bài mô tả SEO nhanh.</p>
+          <div className="admin-ai-header-left">
+            <h3>
+              <span className="admin-ai-sparkle-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+              </span>
+              Trợ lý AI Quản Trị
+              {isMaximized && <span className="admin-ai-badge-max">Toàn màn hình</span>}
+            </h3>
+            <p>Hỗ trợ tạo sản phẩm, viết bài mô tả SEO nhanh.</p>
+          </div>
+
+          <div className="admin-ai-header-actions">
+            <button 
+              className="admin-ai-btn-action" 
+              onClick={clearMessages} 
+              title="Xoá lịch sử chat"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+            <button 
+              className="admin-ai-btn-action" 
+              onClick={() => setIsMaximized(!isMaximized)} 
+              title={isMaximized ? "Thu nhỏ về góc" : "Phóng to ra giữa màn hình"}
+            >
+              {isMaximized ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+              )}
+            </button>
+            <button 
+              className="admin-ai-btn-action close" 
+              onClick={() => { setIsOpen(false); setIsMaximized(false); }} 
+              title="Đóng khung chat"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
         </header>
 
         <div className="admin-ai-chat-container">

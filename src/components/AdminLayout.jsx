@@ -38,17 +38,15 @@ export default function AdminLayout() {
   );
 
   return (
-    <AdminAIProvider>
-      <div className="admin-container">
-        <AdminSidebar />
-        <main className="admin-main">
-          <div className="admin-page-card">
-            <Outlet />
-          </div>
-        </main>
-        <AdminAIAssistant />
-      </div>
-    </AdminAIProvider>
+    <div className="admin-container">
+      <AdminSidebar />
+      <main className="admin-main">
+        <div className="admin-page-card">
+          <Outlet />
+        </div>
+      </main>
+      <AdminAIAssistant />
+    </div>
   );
 };
 
