@@ -7,30 +7,60 @@
 const API_BASE = import.meta.env.VITE_API_BASE || 'https://34-133-127-214.nip.io/api/zbuild';
 const N8N_WEBHOOK_BASE = import.meta.env.VITE_N8N_BASE || 'https://34-133-127-214.nip.io/webhook';
 
-// In-memory cache map & TTL (60s)
+// In-memory + localStorage persistent cache (5 minutes TTL)
 const apiCache = new Map();
-const CACHE_TTL_MS = 60000;
+const CACHE_TTL_MS = 300000;
 
 function getCached(key) {
   const item = apiCache.get(key);
-  if (!item) return null;
-  if (Date.now() - item.time > CACHE_TTL_MS) {
-    apiCache.delete(key);
-    return null;
+  if (item && (Date.now() - item.time < CACHE_TTL_MS)) {
+    return item.data;
   }
-  return item.data;
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem(`zbuild_cache_${key}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && (Date.now() - parsed.time < CACHE_TTL_MS) && parsed.data) {
+          apiCache.set(key, parsed);
+          return parsed.data;
+        }
+      }
+    } catch {}
+  }
+  return null;
 }
 
 function setCached(key, data) {
-  apiCache.set(key, { data, time: Date.now() });
+  const item = { data, time: Date.now() };
+  apiCache.set(key, item);
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(`zbuild_cache_${key}`, JSON.stringify(item));
+    } catch {}
+  }
 }
 
 export function clearApiCache(prefix = '') {
   if (!prefix) {
     apiCache.clear();
+    if (typeof window !== 'undefined') {
+      try {
+        Object.keys(localStorage).forEach(k => {
+          if (k.startsWith('zbuild_cache_')) localStorage.removeItem(k);
+        });
+      } catch {}
+    }
   } else {
     for (const key of apiCache.keys()) {
       if (key.startsWith(prefix)) apiCache.delete(key);
+    }
+    if (typeof window !== 'undefined') {
+      try {
+        Object.keys(localStorage).forEach(k => {
+          if (k.startsWith(`zbuild_cache_${prefix}`)) localStorage.removeItem(k);
+        });
+      } catch {}
     }
   }
 }
@@ -42,7 +72,7 @@ if (typeof window !== 'undefined') {
 }
 
 // Helper for HTTP requests with timeout
-async function fetchJson(url, options = {}, timeoutMs = 25000) {
+async function fetchJson(url, options = {}, timeoutMs = 15000) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -84,20 +114,35 @@ export async function apiGetProducts(params = {}) {
   const queryStr = qs.toString() ? `?${qs.toString()}` : '';
   const cacheKey = `products_${queryStr}`;
   const cached = getCached(cacheKey);
-  if (cached && Array.isArray(cached) && cached.length > 0) return cached;
 
+  // If cached data exists, return immediately for instant 0ms render
+  if (cached && Array.isArray(cached) && cached.length > 0) {
+    // Background refresh
+    setTimeout(async () => {
+      try {
+        const data = await fetchJson(`${API_BASE}/products${queryStr}`, {}, 8000);
+        const fresh = Array.isArray(data) ? data : (data?.products || []);
+        if (Array.isArray(fresh) && fresh.length > 0) {
+          setCached(cacheKey, fresh);
+        }
+      } catch {}
+    }, 200);
+    return cached;
+  }
+
+  // Fast live fetch with 5s timeout
   try {
-    const data = await fetchJson(`${API_BASE}/products${queryStr}`);
+    const data = await fetchJson(`${API_BASE}/products${queryStr}`, {}, 5000);
     const result = Array.isArray(data) ? data : (data?.products || []);
     if (Array.isArray(result) && result.length > 0) {
       setCached(cacheKey, result);
       return result;
     }
   } catch (err) {
-    console.warn('API get products notice, checking fallback:', err.message);
+    console.warn('Live API products slow/offline, using fast static fallback:', err.message);
   }
 
-  // Static fallback if API is unreachable / cold start
+  // Fast static fallback (< 50ms)
   try {
     const fallbackRes = await fetch('/products.json');
     if (fallbackRes.ok) {
