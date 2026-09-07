@@ -41,23 +41,31 @@ if (typeof window !== 'undefined') {
   window.addEventListener('AI_PRODUCTS_UPDATED', () => clearApiCache('product'));
 }
 
-// Helper for HTTP requests
-async function fetchJson(url, options = {}) {
+// Helper for HTTP requests with timeout
+async function fetchJson(url, options = {}, timeoutMs = 60000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(url, {
       ...options,
+      signal: options.signal || controller.signal,
       headers: {
         'Content-Type': 'application/json',
         ...(options.headers || {})
       }
     });
+    clearTimeout(timeoutId);
     if (!res.ok) {
       const errText = await res.text();
-      throw new Error(`API Error ${res.status}: ${errText}`);
+      throw new Error(`API Error ${res.status}: ${errText.slice(0, 200)}`);
     }
     return await res.json();
   } catch (err) {
-    console.error(`Fetch error at ${url}:`, err);
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error(`Quá thời gian phản hồi (Timeout ${timeoutMs/1000}s)`);
+    }
+    console.error(`Fetch error at ${url}:`, err.message);
     throw err;
   }
 }
@@ -236,44 +244,63 @@ export async function apiDunvexSyncCustomers() {
 }
 
 export async function apiTriggerAiEnrich({ productId, title, specs = '', category = '', instructions = '', productInfo = '', tavilyApiKey = '' } = {}) {
+  const payload = { productId, title, specs, category, instructions, productInfo, tavilyApiKey };
   try {
-    return await fetchJson(`${N8N_WEBHOOK_BASE}/zbuild-ai-enrich`, {
-      method: 'POST',
-      body: JSON.stringify({ productId, title, specs, category, instructions, productInfo, tavilyApiKey })
-    });
-  } catch {
     return await fetchJson(`${API_BASE}/ai/enrich`, {
       method: 'POST',
-      body: JSON.stringify({ productId, title, specs, category, instructions, productInfo, tavilyApiKey })
-    });
+      body: JSON.stringify(payload)
+    }, 70000);
+  } catch {
+    return await fetchJson(`${N8N_WEBHOOK_BASE}/zbuild-ai-enrich`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }, 90000);
   }
 }
 
-export async function apiTriggerAiBulkEnrich({ status = 'Draft', limit = 5, productIds = [], instructions = '', tavilyApiKey = '' } = {}) {
+export async function apiTriggerAiBulkEnrich({ status = 'Draft', limit = 5, productIds = [], productId = null, title = '', category = '', specs = '', unit = '', weight = '', instructions = '', productInfo = '', tavilyApiKey = '' } = {}) {
+  const payload = {
+    status,
+    limit,
+    productIds: productIds && productIds.length > 0 ? productIds : (productId ? [productId] : []),
+    productId: productId || (productIds && productIds.length > 0 ? productIds[0] : null),
+    title,
+    category,
+    specs,
+    unit,
+    weight,
+    instructions,
+    productInfo,
+    tavilyApiKey
+  };
+
   try {
-    return await fetchJson(`${N8N_WEBHOOK_BASE}/dong-bo-sp-ai`, {
-      method: 'POST',
-      body: JSON.stringify({ status, limit, productIds, instructions, tavilyApiKey })
-    });
-  } catch {
+    // 1. Ưu tiên gọi trực tiếp AI API trên VPS SQLite backend (rất nhanh, 15-20s)
     return await fetchJson(`${API_BASE}/ai/bulk-enrich`, {
       method: 'POST',
-      body: JSON.stringify({ status, limit, productIds, instructions, tavilyApiKey })
-    });
+      body: JSON.stringify(payload)
+    }, 70000);
+  } catch (apiErr) {
+    console.warn('[AI Bulk Enrich] VPS API notice, fallback to n8n webhook:', apiErr.message);
+    // 2. Dự phòng n8n webhook nếu endpoint chính lỗi
+    return await fetchJson(`${N8N_WEBHOOK_BASE}/dong-bo-sp-ai`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }, 90000);
   }
 }
 
 export async function apiSendAdminAiMessage({ message, history = [], productIds = [], instructions = '' } = {}) {
   try {
-    return await fetchJson(`${N8N_WEBHOOK_BASE}/zbuild-admin-chat`, {
-      method: 'POST',
-      body: JSON.stringify({ message, history, productIds, instructions })
-    });
-  } catch {
     return await fetchJson(`${API_BASE}/ai/chat`, {
       method: 'POST',
       body: JSON.stringify({ message, history, productIds, instructions })
-    });
+    }, 60000);
+  } catch {
+    return await fetchJson(`${N8N_WEBHOOK_BASE}/zbuild-admin-chat`, {
+      method: 'POST',
+      body: JSON.stringify({ message, history, productIds, instructions })
+    }, 80000);
   }
 }
 
