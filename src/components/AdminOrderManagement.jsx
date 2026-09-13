@@ -103,9 +103,23 @@ const AdminOrderManagement = ({ onViewOrderDetail }) => {
     return map[s] || null;
   };
 
-  const formatDate = (date) => {
-    if (!date) return '—';
-    return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
+  const formatDate = (dateVal) => {
+    if (!dateVal) return '—';
+    try {
+      let d;
+      if (dateVal instanceof Date) {
+        d = dateVal;
+      } else if (typeof dateVal === 'string') {
+        const isoStr = dateVal.includes(' ') ? dateVal.replace(' ', 'T') : dateVal;
+        d = new Date(isoStr);
+      } else {
+        d = new Date(dateVal);
+      }
+      if (isNaN(d.getTime())) return typeof dateVal === 'string' ? dateVal.split(' ')[0] : '—';
+      return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(d);
+    } catch {
+      return '—';
+    }
   };
 
   const formatCurrency = (n) => new Intl.NumberFormat('vi-VN').format(n || 0) + '₫';

@@ -356,17 +356,16 @@ export const useAdminAI = () => {
             ...prev,
             {
               id: Date.now() + 1,
-              text: `🚀 **Bắt đầu quy trình AI viết bài tuần tự cho ${total} sản phẩm...**\n• Hệ thống gửi từng sản phẩm kèm đầy đủ thông số gốc & yêu cầu của bạn.\n• Tự động giãn cách 5 giây giữa các lượt để đảm bảo AI hoạt động 100% ổn định không bị quá tải.`,
+              text: `🚀 **Bắt đầu quy trình AI viết bài cho ${total} sản phẩm...**\n• Hệ thống gửi toàn bộ danh sách sang n8n xử lý ngầm trên máy chủ VPS.\n• Bạn có thể thoải mái đóng chat, chuyển trang hoặc làm việc khác mà không lo ngắt kết nối!`,
               isBot: true,
               time: "Vừa xong"
             }
           ]);
 
-          let successCount = 0;
+          // 1. Chuẩn bị danh sách sản phẩm đầy đủ để gửi trọn gói sang n8n
+          const bulkItems = [];
           for (let i = 0; i < total; i++) {
             const pid = selectedIds[i];
-            
-            // Tìm thông tin chi tiết sản phẩm chính xác
             let prodInfo = selectedProdsInfo.find(p => p.id === pid) || productSuggestions.find(p => p.id === pid);
             if (!prodInfo || !prodInfo.title) {
               try {
@@ -383,7 +382,6 @@ export const useAdminAI = () => {
             const pUnit = prodInfo?.unit || '';
             const pWeight = prodInfo?.weight || '';
 
-            // Tạo prompt chuyên sâu bao gồm đầy đủ thông số kỹ thuật gốc và ghi chú của Admin
             const combinedInstructions = [
               `Viết bài mô tả chi tiết, chuyên sâu, chuẩn SEO bằng mã HTML cho sản phẩm: "${pTitle}".`,
               `Phân loại danh mục: ${pCat}.`,
@@ -393,17 +391,35 @@ export const useAdminAI = () => {
               extraAdminNotes ? `Yêu cầu & Thông số bổ sung từ Admin:\n${extraAdminNotes}` : ''
             ].filter(Boolean).join('\n');
 
+            bulkItems.push({
+              productId: pid,
+              title: pTitle,
+              category: pCat,
+              specs: pSpecs,
+              unit: pUnit,
+              weight: pWeight,
+              instructions: combinedInstructions
+            });
+          }
+
+          let successCount = 0;
+          for (let i = 0; i < total; i++) {
+            const itemPayload = bulkItems[i];
+            const pTitle = itemPayload.title;
+            const pid = itemPayload.productId;
+
             try {
               const res = await apiTriggerAiBulkEnrich({
                 limit: 1,
                 productIds: [pid],
                 productId: pid,
+                items: [itemPayload],
                 title: pTitle,
-                category: pCat,
-                specs: pSpecs,
-                unit: pUnit,
-                weight: pWeight,
-                instructions: combinedInstructions,
+                category: itemPayload.category,
+                specs: itemPayload.specs,
+                unit: itemPayload.unit,
+                weight: itemPayload.weight,
+                instructions: itemPayload.instructions,
                 productInfo: extraAdminNotes
               });
 
@@ -439,18 +455,11 @@ export const useAdminAI = () => {
                 ...prev,
                 {
                   id: Date.now() + i + 100,
-                  text: `❌ **[${i + 1}/${total}] Lỗi kết nối hệ thống:** ${pTitle}\n• Chi tiết lỗi: \`${pErr.message}\`\n• Trạng thái: Tiến trình đã tạm dừng. Vui lòng kiểm tra lại trạng thái n8n hoặc backend trước khi gửi lại.`,
+                  text: `❌ **[${i + 1}/${total}] Lỗi kết nối hệ thống:** ${pTitle}\n• Chi tiết lỗi: \`${pErr.message}\``,
                   isBot: true,
                   time: "Vừa xong"
                 }
               ]);
-              setIsTyping(false);
-              return;
-            }
-
-            // Nghỉ 4 giây giữa các sản phẩm để hồi phục token
-            if (i < total - 1) {
-              await new Promise(r => setTimeout(r, 4000));
             }
           }
 

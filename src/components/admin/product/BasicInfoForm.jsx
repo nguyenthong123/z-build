@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
+import { apiGenerateProductDescription } from '../../../services/sqliteApi';
 
 const BasicInfoForm = ({ title, slug, shortDescription, description, onChange, onDescriptionChange }) => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -15,49 +16,60 @@ const BasicInfoForm = ({ title, slug, shortDescription, description, onChange, o
     
     setIsGenerating(true);
     try {
-      const aiApiKey = process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY;
-      if (!aiApiKey) {
-        alert("Vui lòng cấu hình NEXT_PUBLIC_DEEPSEEK_API_KEY trong Vercel Environment Variables!");
+      // 1. Thử gọi n8n AI Agent & Tavily (hoặc VPS Backend)
+      const res = await apiGenerateProductDescription({
+        productId: slug || title,
+        title,
+        instructions: aiContext.trim()
+      });
+
+      if (res && res.description) {
+        let content = res.description;
+        content = content.replace(/```html/gi, '').replace(/```/g, '').trim();
+        onDescriptionChange(content);
+        setShowAiInput(false);
         setIsGenerating(false);
         return;
       }
 
-      const contextPrompt = aiContext.trim() ? `\n\nThông tin chi tiết về sản phẩm:\n"${aiContext.trim()}"\n\nHãy dựa vào các thông tin chi tiết trên để phân tích sâu, viết thật hay và đúng thực tế.` : '';
-
-      const prompt = `Viết một bài mô tả sản phẩm chuyên nghiệp, hấp dẫn, chuẩn SEO cho sản phẩm vật liệu xây dựng/nội thất có tên là "${title}".${contextPrompt}
+      // 2. Dự phòng gọi trực tiếp DeepSeek nếu cả n8n và VPS chưa online
+      const aiApiKey = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_DEEPSEEK_API_KEY) || import.meta.env.VITE_DEEPSEEK_API_KEY;
+      if (aiApiKey) {
+        const contextPrompt = aiContext.trim() ? `\n\nThông tin chi tiết về sản phẩm:\n"${aiContext.trim()}"\n\nHãy dựa vào các thông tin chi tiết trên để phân tích sâu, viết thật hay và đúng thực tế.` : '';
+        const prompt = `Viết một bài mô tả sản phẩm chuyên nghiệp, hấp dẫn, chuẩn SEO cho sản phẩm vật liệu xây dựng/nội thất có tên là "${title}".${contextPrompt}
 Yêu cầu:
 - Trình bày bố cục rõ ràng, chia thành các phần: Giới thiệu chung, Ưu điểm nổi bật, Ứng dụng.
 - Dùng định dạng HTML cơ bản (các thẻ h3, p, ul, li, strong).
 - Chỉ trả về đoạn mã HTML thuần, KHÔNG BỌC TRONG markdown block \`\`\`html.`;
 
-      const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${aiApiKey}`
-        },
-        body: JSON.stringify({
-          model: "deepseek-chat",
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.7
-        })
-      });
+        const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${aiApiKey}`
+          },
+          body: JSON.stringify({
+            model: "deepseek-chat",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.7
+          })
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        let content = data.choices[0]?.message?.content || "";
-        // Clean up any remaining markdown backticks just in case
-        content = content.replace(/```html/g, '').replace(/```/g, '').trim();
-        onDescriptionChange(content);
-        setShowAiInput(false);
-      } else {
-        const err = await response.json();
-        console.error("AI Error:", err);
-        alert("Có lỗi xảy ra khi kết nối tới AI API.");
+        if (response.ok) {
+          const data = await response.json();
+          let content = data.choices[0]?.message?.content || "";
+          content = content.replace(/```html/gi, '').replace(/```/g, '').trim();
+          onDescriptionChange(content);
+          setShowAiInput(false);
+          setIsGenerating(false);
+          return;
+        }
       }
+
+      alert("Không thể sinh nội dung AI. Vui lòng kiểm tra n8n Webhook hoặc VPS API.");
     } catch (err) {
-      console.error(err);
-      alert("Lỗi mạng khi gọi AI.");
+      console.error("AI Generation error:", err);
+      alert("Lỗi khi gọi AI tạo mô tả: " + err.message);
     } finally {
       setIsGenerating(false);
     }

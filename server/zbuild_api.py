@@ -10,10 +10,19 @@ from datetime import datetime
 
 PORT = int(os.environ.get('PORT', 8001))
 DB_PATH = os.environ.get('ZBUILD_DB_PATH', '/opt/zbuild/zbuild.db')
+if not os.path.exists(os.path.dirname(DB_PATH)) and not os.environ.get('ZBUILD_DB_PATH'):
+    local_db = os.path.join(os.path.dirname(__file__), '..', 'zbuild.db')
+    if os.path.exists(local_db):
+        DB_PATH = local_db
+    else:
+        DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'zbuild.sqlite')
+
 DUNVEX_API_URL = 'https://dunvex.com/api'
 DUNVEX_API_KEY = 'dvx_f1dbc799aaf2ca9039db8ee941f95ea41d0c8952c51a4b8f'
 DUNVEX_OWNER_ID = 'ng6vUtYb4ndgxXsfEwqdnMPbmrF2'
 ORDER_WEBHOOK_URL = os.environ.get('ORDER_WEBHOOK_URL', 'https://34.169.201.51/webhook/dunvex-order')
+AI_ENRICH_WEBHOOK_URL = os.environ.get('AI_ENRICH_WEBHOOK_URL', 'https://34-133-127-214.nip.io/webhook/zbuild-ai-enrich')
+
 
 # DeepSeek AI Engine (Tiết kiệm nhất: deepseek-chat / V3)
 DEEPSEEK_API_KEY = os.environ.get('DEEPSEEK_API_KEY', '')
@@ -96,6 +105,27 @@ def init_db():
         if columns and 'extraImages' not in columns:
             conn.execute("ALTER TABLE products ADD COLUMN extraImages TEXT")
             print("Auto-migration: Added column extraImages to products table")
+        
+        cursor_ord = conn.execute("PRAGMA table_info(orders)")
+        ord_columns = [col['name'] for col in cursor_ord.fetchall()]
+        extra_cols = {
+            'orderNumber': 'TEXT',
+            'subtotal': 'REAL DEFAULT 0',
+            'shippingCost': 'REAL DEFAULT 0',
+            'tax': 'REAL DEFAULT 0',
+            'discount': 'REAL DEFAULT 0',
+            'coupon': 'TEXT',
+            'bankTransaction': 'TEXT',
+            'shippingMethod': 'TEXT'
+        }
+        for col_name, col_type in extra_cols.items():
+            if ord_columns and col_name not in ord_columns:
+                conn.execute(f"ALTER TABLE orders ADD COLUMN {col_name} {col_type}")
+                print(f"Auto-migration: Added column {col_name} to orders table")
+
+        # Tự động chuẩn hoá: Tất cả sản phẩm tồn kho <= 0 hoặc NULL chuyển sang trạng thái Draft
+        conn.execute("UPDATE products SET status = 'Draft' WHERE stock <= 0 OR stock IS NULL")
+
         conn.commit()
         conn.close()
     except Exception as e:
@@ -259,6 +289,26 @@ def make_unique_slug(conn, base_title, current_id=None):
         candidate = f"{slug_base}-{counter}"
         counter += 1
 
+def get_dunvex_credentials(conn):
+    api_key = DUNVEX_API_KEY
+    owner_id = DUNVEX_OWNER_ID
+    order_webhook = ORDER_WEBHOOK_URL
+    try:
+        rows = conn.execute("SELECT key, value FROM settings WHERE key IN ('main', 'dunvex', 'dunvexConfig')").fetchall()
+        for r in rows:
+            if r['value']:
+                try:
+                    data = json.loads(r['value']) if isinstance(r['value'], str) else r['value']
+                    if isinstance(data, dict):
+                        api_key = data.get('dunvexApiKey') or data.get('apiKey') or api_key
+                        owner_id = data.get('dunvexOwnerId') or data.get('ownerId') or owner_id
+                        order_webhook = data.get('dunvexWebhookUrl') or data.get('orderWebhookUrl') or order_webhook
+                except:
+                    pass
+    except Exception as e:
+        print("get_dunvex_credentials error:", e)
+    return api_key, owner_id, order_webhook
+
 def get_clean_path(raw_path):
     p = raw_path.rstrip('/')
     if p.startswith('/api/zbuild'):
@@ -266,12 +316,15 @@ def get_clean_path(raw_path):
     return p
 
 class ZbuildHandler(http.server.BaseHTTPRequestHandler):
-    def respond_json(self, data, status=200):
-        self.send_response(status)
-        self.send_header('Content-Type', 'application/json; charset=utf-8')
+    def send_cors_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key')
+
+    def respond_json(self, data, status=200):
+        self.send_response(status)
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_cors_headers()
         self.end_headers()
         body = json.dumps(data, ensure_ascii=False).encode('utf-8')
         self.wfile.write(body)
@@ -342,11 +395,11 @@ class ZbuildHandler(http.server.BaseHTTPRequestHandler):
             self.respond_json({'success': True, 'count': len(products), 'products': products})
             return
 
-        # 3. Get Single Product by ID or Slug
+        # 3. Get Single Product by ID, dunvexId, or Slug
         if path.startswith('/products/'):
             pid = path.split('/products/')[1]
             conn = get_db()
-            row = conn.execute("SELECT * FROM products WHERE id = ? OR slug = ?", (pid, pid)).fetchone()
+            row = conn.execute("SELECT * FROM products WHERE id = ? OR LOWER(id) = LOWER(?) OR dunvexId = ? OR slug = ?", (pid, pid, pid, pid)).fetchone()
             conn.close()
             if row:
                 d = dict(row)
@@ -374,21 +427,42 @@ class ZbuildHandler(http.server.BaseHTTPRequestHandler):
         # 5. Get Orders
         if path == '/orders':
             user_id = qs.get('userId', [None])[0]
+            email = qs.get('email', [None])[0]
+            phone = qs.get('phone', [None])[0]
+            is_admin_flag = qs.get('isAdmin', ['false'])[0].lower() == 'true'
+
             conn = get_db()
-            if user_id:
-                rows = conn.execute("SELECT * FROM orders WHERE userId = ? ORDER BY createdAt DESC", (user_id,)).fetchall()
+            if is_admin_flag:
+                rows = conn.execute("SELECT * FROM orders ORDER BY createdAt DESC").fetchall()
+            elif user_id or email or phone:
+                conditions = []
+                params = []
+                if user_id and user_id != 'guest':
+                    conditions.append("userId = ?")
+                    params.append(user_id)
+                if email:
+                    conditions.append("userEmail = ?")
+                    params.append(email)
+                if phone:
+                    conditions.append("userPhone = ?")
+                    params.append(phone)
+                
+                if conditions:
+                    where_clause = " OR ".join(conditions)
+                    rows = conn.execute(f"SELECT * FROM orders WHERE {where_clause} ORDER BY createdAt DESC", params).fetchall()
+                else:
+                    rows = conn.execute("SELECT * FROM orders ORDER BY createdAt DESC").fetchall()
             else:
                 rows = conn.execute("SELECT * FROM orders ORDER BY createdAt DESC").fetchall()
+
             conn.close()
             orders = []
             for r in rows:
                 d = dict(r)
-                if isinstance(d.get('items'), str):
-                    try: d['items'] = json.loads(d['items'])
-                    except: pass
-                if isinstance(d.get('shippingAddress'), str):
-                    try: d['shippingAddress'] = json.loads(d['shippingAddress'])
-                    except: pass
+                for field in ['items', 'shippingAddress', 'coupon', 'bankTransaction']:
+                    if isinstance(d.get(field), str):
+                        try: d[field] = json.loads(d[field])
+                        except: pass
                 orders.append(d)
             self.respond_json({'success': True, 'orders': orders})
             return
@@ -436,6 +510,11 @@ class ZbuildHandler(http.server.BaseHTTPRequestHandler):
             else:
                 extra_imgs = []
 
+            stock_val = float(body.get('stock', 0) or 0)
+            status_val = body.get('status', 'Draft')
+            if stock_val <= 0:
+                status_val = 'Draft'
+
             conn.execute("""
                 INSERT INTO products (
                     id, dunvexId, title, slug, category, basePrice, discountPrice, price, priceBuy,
@@ -446,10 +525,10 @@ class ZbuildHandler(http.server.BaseHTTPRequestHandler):
                 pid, body.get('dunvexId', ''), title, slug, body.get('category', 'Chưa phân loại'),
                 float(body.get('basePrice', 0)), float(body.get('discountPrice', 0)),
                 float(body.get('price', 0)), float(body.get('priceBuy', 0)),
-                float(body.get('stock', 0)), body.get('specs', ''), body.get('unit', ''),
+                stock_val, body.get('specs', ''), body.get('unit', ''),
                 str(body.get('weight', '')), body.get('packaging', ''), body.get('image', ''),
                 json.dumps(extra_imgs, ensure_ascii=False), body.get('shortDescription', ''),
-                body.get('description', ''), body.get('status', 'Draft')
+                body.get('description', ''), status_val
             ))
             conn.commit()
             conn.close()
@@ -490,36 +569,89 @@ class ZbuildHandler(http.server.BaseHTTPRequestHandler):
 
         # 4. Create Order
         if path == '/orders':
-            oid = body.get('id') or ('ORD-' + str(uuid.uuid4())[:8].upper())
+            oid = body.get('id') or body.get('orderNumber') or ('ORD-' + str(uuid.uuid4())[:8].upper())
+            order_num = body.get('orderNumber') or oid
             items_str = json.dumps(body.get('items', []), ensure_ascii=False)
             addr_str = json.dumps(body.get('shippingAddress', {}), ensure_ascii=False)
+            coupon_str = json.dumps(body.get('coupon'), ensure_ascii=False) if body.get('coupon') else None
+            bank_str = json.dumps(body.get('bankTransaction'), ensure_ascii=False) if body.get('bankTransaction') else None
+
             conn = get_db()
             conn.execute("""
-                INSERT INTO orders (
-                    id, userId, userName, userEmail, userPhone, items, shippingAddress,
-                    total, status, paymentMethod, createdAt, updatedAt
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+                INSERT OR REPLACE INTO orders (
+                    id, orderNumber, userId, userName, userEmail, userPhone, items, shippingAddress,
+                    subtotal, shippingCost, tax, discount, total, status, paymentMethod, shippingMethod,
+                    coupon, bankTransaction, createdAt, updatedAt
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
             """, (
-                oid, body.get('userId', 'guest'), body.get('userName', ''), body.get('userEmail', ''),
-                body.get('userPhone', ''), items_str, addr_str, float(body.get('total', 0)),
-                body.get('status', 'pending'), body.get('paymentMethod', 'cod')
+                oid, order_num, body.get('userId', 'guest'), body.get('userName', ''), body.get('userEmail', ''),
+                body.get('userPhone', ''), items_str, addr_str, float(body.get('subtotal', 0)),
+                float(body.get('shippingCost', 0)), float(body.get('tax', 0)), float(body.get('discount', 0)),
+                float(body.get('total', 0)), body.get('status', 'pending'), body.get('paymentMethod', 'cod'),
+                body.get('shippingMethod', 'standard'), coupon_str, bank_str
             ))
             conn.commit()
             conn.close()
 
-            # Forward order to n8n Webhook / Dunvex in background
+            # Forward order to Dunvex / n8n Webhook in background
             try:
-                payload = json.dumps({
-                    'orderId': oid,
-                    'customerName': body.get('userName', ''),
-                    'customerPhone': body.get('userPhone', ''),
-                    'customerEmail': body.get('userEmail', ''),
-                    'customerAddress': body.get('shippingAddress', {}).get('street', '') if isinstance(body.get('shippingAddress'), dict) else '',
-                    'totalAmount': float(body.get('total', 0)),
-                    'items': body.get('items', [])
-                }).encode('utf-8')
-                req = urllib.request.Request(ORDER_WEBHOOK_URL, data=payload, headers={'Content-Type': 'application/json'}, method='POST')
-                urllib.request.urlopen(req, timeout=5)
+                dunvex_url = None
+                dunvex_key = None
+                owner_id = 'ng6vUtYb4ndgxXsfEwqdnMPbmrF2'
+
+                s_row = conn.execute("SELECT value FROM settings WHERE key = 'main'").fetchone()
+                if s_row:
+                    try:
+                        s_val = json.loads(s_row['value'])
+                        claw = s_val.get('openClawConfig', {})
+                        dunvex_url = claw.get('dunvexWebhookUrl') or claw.get('webhookUrl')
+                        dunvex_key = claw.get('dunvexApiKey') or claw.get('apiKey')
+                        if claw.get('ownerId'):
+                            owner_id = claw.get('ownerId')
+                    except Exception: pass
+
+                target_url = dunvex_url or ORDER_WEBHOOK_URL
+                if target_url:
+                    webhook_items = []
+                    raw_items = body.get('items', [])
+                    if isinstance(raw_items, list):
+                        for item in raw_items:
+                            if isinstance(item, dict):
+                                webhook_items.append({
+                                    'productId': item.get('dunvexId') or item.get('productId') or item.get('id'),
+                                    'productName': item.get('name', ''),
+                                    'qty': int(item.get('quantity', 1)),
+                                    'price': float(item.get('price', 0)),
+                                    'variant': item.get('variant', ''),
+                                    'note': f"K.thước: {item.get('variant')}" if item.get('variant') else ''
+                                })
+
+                    addr_obj = body.get('shippingAddress', {})
+                    addr_str = ''
+                    if isinstance(addr_obj, dict):
+                        addr_str = addr_obj.get('address') or addr_obj.get('street') or ''
+                        if addr_obj.get('city'): addr_str += f", {addr_obj.get('city')}"
+
+                    payload_dict = {
+                        'ownerId': owner_id,
+                        'customerId': body.get('customerDunvexId') or body.get('userId'),
+                        'customerName': body.get('userName', ''),
+                        'customerPhone': body.get('userPhone', ''),
+                        'customerEmail': body.get('userEmail', ''),
+                        'customerAddress': addr_str,
+                        'items': webhook_items,
+                        'shippingFee': float(body.get('shippingCost', 0)),
+                        'orderDate': datetime.now().isoformat(),
+                        'note': f"Đơn đặt từ web storefront, Mã đơn: {order_num}"
+                    }
+                    payload_bytes = json.dumps(payload_dict, ensure_ascii=False).encode('utf-8')
+
+                    headers = {'Content-Type': 'application/json'}
+                    if dunvex_key: headers['x-api-key'] = dunvex_key
+                    if owner_id: headers['x-owner-id'] = owner_id
+
+                    req = urllib.request.Request(target_url, data=payload_bytes, headers=headers, method='POST')
+                    urllib.request.urlopen(req, timeout=8)
             except Exception as e:
                 print('Order webhook forward warning:', e)
 
@@ -544,15 +676,16 @@ class ZbuildHandler(http.server.BaseHTTPRequestHandler):
         if path == '/sync/dunvex-products':
             mode = body.get('mode', 'sync_existing')
             try:
+                conn = get_db()
+                active_api_key, active_owner_id, _ = get_dunvex_credentials(conn)
                 req = urllib.request.Request(
                     f"{DUNVEX_API_URL}/products",
-                    headers={'x-api-key': DUNVEX_API_KEY, 'x-owner-id': DUNVEX_OWNER_ID}
+                    headers={'x-api-key': active_api_key, 'x-owner-id': active_owner_id}
                 )
                 with urllib.request.urlopen(req, timeout=30) as resp:
                     data = json.loads(resp.read().decode('utf-8'))
                 
                 dunvex_prods = data.get('products', [])
-                conn = get_db()
                 updated_count = 0
                 created_count = 0
                 deleted_count = 0
@@ -566,9 +699,8 @@ class ZbuildHandler(http.server.BaseHTTPRequestHandler):
                     to_delete_ids = []
                     for r in rows:
                         p_did = str(r['dunvexId'] or '').strip()
-                        p_title = (r['title'] or '').strip().lower()
-                        is_in_dunvex = (p_did and p_did in dunvex_ids) or (p_title and p_title in dunvex_titles)
-                        if not is_in_dunvex:
+                        # Nếu sản phẩm không có dunvexId (sản phẩm cũ/rác) hoặc dunvexId đó không còn trên Dunvex -> XÓA HẲN
+                        if not p_did or (p_did not in dunvex_ids):
                             to_delete_ids.append(r['id'])
 
                     if to_delete_ids:
@@ -597,7 +729,7 @@ class ZbuildHandler(http.server.BaseHTTPRequestHandler):
                             price = float(p.get('priceSell', 0) or 0)
                             price_buy = float(p.get('priceImport', 0) or 0)
                             stock = float(p.get('stock', 0) or 0)
-                            specs = str(p.get('specs') or p.get('spec') or p.get('quyCach') or '')
+                            specs = str(p.get('specification') or p.get('specs') or p.get('spec') or p.get('quyCach') or '')
                             unit = str(p.get('unit') or '')
                             weight = str(p.get('weight') or p.get('netWeight') or '')
                             packaging = str(p.get('packaging') or p.get('packing') or '')
@@ -635,7 +767,7 @@ class ZbuildHandler(http.server.BaseHTTPRequestHandler):
                         price = float(p.get('priceSell', 0) or 0)
                         price_buy = float(p.get('priceImport', 0) or 0)
                         stock = float(p.get('stock', 0) or 0)
-                        specs = str(p.get('specs') or p.get('spec') or p.get('quyCach') or '')
+                        specs = str(p.get('specification') or p.get('specs') or p.get('spec') or p.get('quyCach') or '')
                         unit = str(p.get('unit') or '')
                         weight = str(p.get('weight') or p.get('netWeight') or '')
                         packaging = str(p.get('packaging') or p.get('packing') or '')
@@ -644,16 +776,22 @@ class ZbuildHandler(http.server.BaseHTTPRequestHandler):
                         if isinstance(cat, dict): cat = cat.get('name', 'Chưa phân loại')
                         elif not cat: cat = 'Chưa phân loại'
 
-                        row = conn.execute("SELECT id, image FROM products WHERE dunvexId = ? OR title = ?", (did, title)).fetchone()
+                        row = conn.execute("""
+                            SELECT id, image, title, status FROM products 
+                            WHERE (dunvexId IS NOT NULL AND dunvexId != '' AND dunvexId = ?)
+                               OR (title IS NOT NULL AND LOWER(TRIM(title)) = LOWER(TRIM(?)))
+                        """, (did, title)).fetchone()
                         if row:
                             keep_img = row['image'] if row['image'] else img
+                            # Nếu tồn kho <= 0, bắt buộc chuyển sang Draft. Nếu có hàng (>0), giữ trạng thái hiện tại (active/Draft)
+                            new_status = 'Draft' if stock <= 0 else (row['status'] if row['status'] else 'Draft')
                             conn.execute("""
                                 UPDATE products SET
                                     dunvexId = ?, title = ?, category = ?, basePrice = ?, discountPrice = ?,
                                     price = ?, priceBuy = ?, stock = ?, specs = ?, unit = ?, weight = ?,
-                                    packaging = ?, image = ?, updatedAt = datetime('now')
+                                    packaging = ?, image = ?, status = ?, updatedAt = datetime('now')
                                 WHERE id = ?
-                            """, (did, title, cat, price, price, price, price_buy, stock, specs, unit, weight, packaging, keep_img, row['id']))
+                            """, (did, title, cat, price, price, price, price_buy, stock, specs, unit, weight, packaging, keep_img, new_status, row['id']))
                             updated_count += 1
                         else:
                             pid = str(uuid.uuid4())[:8]
@@ -666,6 +804,8 @@ class ZbuildHandler(http.server.BaseHTTPRequestHandler):
                             """, (pid, did, title, slug, cat, price, price, price, price_buy, stock, specs, unit, weight, packaging, img))
                             created_count += 1
 
+                    # Luôn chuẩn hoá: Tất cả sản phẩm tồn kho <= 0 chuyển sang Draft
+                    conn.execute("UPDATE products SET status = 'Draft' WHERE stock <= 0 OR stock IS NULL")
                     conn.commit()
                     conn.close()
                     self.respond_json({
@@ -673,7 +813,7 @@ class ZbuildHandler(http.server.BaseHTTPRequestHandler):
                         'updated': updated_count,
                         'created': created_count,
                         'totalFromDunvex': len(dunvex_prods),
-                        'message': f'Đồng bộ hoàn tất: {updated_count} cập nhật, {created_count} tạo mới.'
+                        'message': f'Đồng bộ hoàn tất: Đã cập nhật {updated_count} sản phẩm, thêm mới {created_count} sản phẩm.'
                     })
                     return
             except Exception as e:
@@ -683,28 +823,39 @@ class ZbuildHandler(http.server.BaseHTTPRequestHandler):
         # 7. SYNC CUSTOMERS FROM DUNVEX
         if path == '/sync/dunvex-customers':
             try:
+                conn = get_db()
+                active_api_key, active_owner_id, _ = get_dunvex_credentials(conn)
                 req = urllib.request.Request(
                     f"{DUNVEX_API_URL}/customers",
-                    headers={'x-api-key': DUNVEX_API_KEY, 'x-owner-id': DUNVEX_OWNER_ID}
+                    headers={'x-api-key': active_api_key, 'x-owner-id': active_owner_id}
                 )
                 with urllib.request.urlopen(req, timeout=30) as resp:
                     data = json.loads(resp.read().decode('utf-8'))
                 
                 dunvex_custs = data.get('customers', [])
-                conn = get_db()
                 synced_count = 0
 
                 for c in dunvex_custs:
-                    if not c.get('name') and not c.get('phone') and not c.get('email'): continue
-                    cid = c.get('email') or c.get('phone') or str(c.get('id', ''))
+                    name = (c.get('name') or c.get('businessName') or '').strip()
+                    phone = (c.get('phone') or '').strip()
+                    email = (c.get('email') or '').strip()
+                    if not name and not phone and not email: continue
+
+                    dunvex_id = str(c.get('id', '')).strip()
+                    # Use dunvex_id as the primary key if available to guarantee uniqueness across all customers
+                    cid = dunvex_id if dunvex_id else (email or phone or str(uuid.uuid4()))
+
+                    address = c.get('address', '') or ''
+                    if not address and c.get('route'):
+                        address = f"Tuyến: {c.get('route')}"
+
                     conn.execute("""
                         INSERT OR REPLACE INTO customers (
                             id, dunvexId, name, email, phone, address, type, status, syncedAt, createdAt, updatedAt
                         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), datetime('now'))
                     """, (
-                        cid, str(c.get('id', '')), c.get('name', ''), c.get('email', ''),
-                        c.get('phone', ''), c.get('address', ''), c.get('type', 'Khách hàng'),
-                        c.get('status', 'active')
+                        cid, dunvex_id, name, email, phone, address,
+                        c.get('type', 'Khách hàng'), c.get('status', 'Hoạt động')
                     ))
                     synced_count += 1
 
@@ -720,7 +871,7 @@ class ZbuildHandler(http.server.BaseHTTPRequestHandler):
                 self.respond_json({'success': False, 'error': str(e)}, 500)
             return
 
-        # 8. AI ENRICH PRODUCT WITH TAVILY & AI
+               # 8. AI ENRICH PRODUCT THOUGH n8n WEBHOOK
         if path == '/ai/enrich':
             product_id = body.get('productId')
             title = body.get('title') or ''
@@ -730,78 +881,49 @@ class ZbuildHandler(http.server.BaseHTTPRequestHandler):
             product_info = body.get('productInfo') or ''
             tavily_key = body.get('tavilyApiKey') or os.environ.get('TAVILY_API_KEY', '')
 
-            # 1. Search Tavily if key provided
-            search_context = ''
-            if tavily_key:
-                try:
-                    search_query = f"{title} vật liệu xây dựng {specs}".strip()
-                    t_payload = json.dumps({'query': search_query, 'max_results': 3}).encode('utf-8')
-                    t_req = urllib.request.Request(
-                        'https://api.tavily.com/search',
-                        data=t_payload,
-                        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {tavily_key}'},
-                        method='POST'
-                    )
-                    with urllib.request.urlopen(t_req, timeout=10) as t_resp:
-                        t_data = json.loads(t_resp.read().decode('utf-8'))
-                        results = t_data.get('results', [])
-                        search_context = '\n'.join([f"- {r.get('title')}: {r.get('content')}" for r in results])
-                except Exception as te:
-                    print('Tavily search notice:', te)
+            try:
+                payload_dict = {
+                    'productId': product_id,
+                    'title': title,
+                    'specs': specs,
+                    'category': category,
+                    'instructions': instructions,
+                    'productInfo': product_info,
+                    'tavilyApiKey': tavily_key
+                }
+                payload_bytes = json.dumps(payload_dict, ensure_ascii=False).encode('utf-8')
+                req = urllib.request.Request(
+                    AI_ENRICH_WEBHOOK_URL,
+                    data=payload_bytes,
+                    headers={'Content-Type': 'application/json'},
+                    method='POST'
+                )
+                with urllib.request.urlopen(req, timeout=60) as resp:
+                    res_data = json.loads(resp.read().decode('utf-8'))
+                    desc = res_data.get('description', '')
+                    
+                    if product_id and desc:
+                        conn = get_db()
+                        # Chỉ chuyển sang 'active' nếu còn hàng trong kho (stock > 0), nếu tồn kho <= 0 giữ nguyên 'Draft'
+                        cur_p = conn.execute("SELECT stock FROM products WHERE id = ? OR slug = ?", (product_id, product_id)).fetchone()
+                        target_status = 'Draft'
+                        if cur_p and cur_p['stock'] is not None and float(cur_p['stock'] or 0) > 0:
+                            target_status = 'active'
+                        conn.execute("UPDATE products SET description = ?, status = ?, updatedAt = datetime('now') WHERE id = ? OR slug = ?", (desc, target_status, product_id, product_id))
+                        conn.commit()
+                        conn.close()
 
-            # 2. Call DeepSeek AI for HTML SEO Generation
-            ai_desc = None
-            if DEEPSEEK_API_KEY:
-                try:
-                    sys_prompt, user_prompt = build_ai_product_prompt(
-                        title=title, category=category, specs=specs,
-                        search_context=search_context, instructions=instructions, product_info=product_info
-                    )
-
-                    payload = json.dumps({
-                        'model': DEEPSEEK_MODEL,
-                        'messages': [
-                            {'role': 'system', 'content': sys_prompt},
-                            {'role': 'user', 'content': user_prompt}
-                        ],
-                        'temperature': 0.6,
-                        'max_tokens': 3000
-                    }).encode('utf-8')
-
-                    req = urllib.request.Request(
-                        DEEPSEEK_ENDPOINT,
-                        data=payload,
-                        headers={
-                            'Content-Type': 'application/json',
-                            'Authorization': f'Bearer {DEEPSEEK_API_KEY}'
-                        },
-                        method='POST'
-                    )
-                    with urllib.request.urlopen(req, timeout=50) as resp:
-                        res_data = json.loads(resp.read().decode('utf-8'))
-                        raw_content = res_data['choices'][0]['message']['content']
-                        ai_desc = clean_html_content(raw_content)
-                        if ai_desc:
-                            print(f'DeepSeek AI successfully enriched HTML for {title}')
-                except Exception as aie:
-                    print('DeepSeek AI error notice:', aie)
-
-            # Fallback template if AI API fails
-            desc = ai_desc if ai_desc else get_default_html_description(title, category, specs)
-
-            if product_id:
-                conn = get_db()
-                conn.execute("UPDATE products SET description = ?, status = 'active', updatedAt = datetime('now') WHERE id = ? OR slug = ?", (desc, product_id, product_id))
-                conn.commit()
-                conn.close()
-
-            self.respond_json({
-                'success': True,
-                'productId': product_id,
-                'description': desc,
-                'aiGenerated': bool(ai_desc)
-            })
-            return
+                    self.respond_json({
+                        'success': True,
+                        'productId': product_id,
+                        'description': desc,
+                        'aiGenerated': True
+                    })
+                    return
+            except Exception as e:
+                print('Forward to n8n AI enrich webhook error:', e)
+                self.respond_json({'success': False, 'error': str(e)}, 500)
+                return
 
         # 9. AI BULK ENRICH - QUÉT & TỰ ĐỘNG VIẾT BÀI THEO THỨ TỰ CHO NHIỀU SẢN PHẨM
         if path == '/ai/bulk-enrich':
@@ -900,13 +1022,14 @@ class ZbuildHandler(http.server.BaseHTTPRequestHandler):
                     ai_content = get_default_html_description(p_title, p_cat, p_specs)
 
                 # 4. Cập nhật trực tiếp vào SQLite đúng theo ID và tên sản phẩm
+                target_status = 'active' if (p['stock'] is not None and float(p['stock'] or 0) > 0) else 'Draft'
                 conn.execute("""
                     UPDATE products SET
                         description = ?,
-                        status = 'active',
+                        status = ?,
                         updatedAt = datetime('now')
                     WHERE id = ?
-                """, (ai_content, p_id))
+                """, (ai_content, target_status, p_id))
                 conn.commit()
 
                 enriched_results.append({
@@ -989,6 +1112,16 @@ class ZbuildHandler(http.server.BaseHTTPRequestHandler):
                 return
 
             real_id = row['id']
+            # Nếu cập nhật tồn kho <= 0 hoặc nếu sản phẩm có tồn kho <= 0, bắt buộc trạng thái là Draft
+            if 'stock' in body:
+                stock_val = float(body['stock'] or 0)
+                if stock_val <= 0:
+                    body['status'] = 'Draft'
+            elif 'status' in body and (body['status'] == 'active' or body['status'] == 'Active'):
+                cur_stock = float(row['stock'] or 0) if row['stock'] is not None else 0
+                if cur_stock <= 0:
+                    body['status'] = 'Draft'
+
             fields = []
             values = []
             allowed = ['title', 'slug', 'category', 'basePrice', 'discountPrice', 'price', 'priceBuy', 'stock', 'specs', 'unit', 'weight', 'packaging', 'image', 'extraImages', 'shortDescription', 'description', 'status']

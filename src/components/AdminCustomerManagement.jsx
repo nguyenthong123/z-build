@@ -37,70 +37,90 @@ const AdminCustomerManagement = ({ onBack }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adminEmails]);
 
+  const removeAccents = (str) => {
+    if (!str) return '';
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D');
+  };
+
   const fetchCustomers = async (admins = adminEmails) => {
     setLoading(true);
     try {
-      const ordersData = await apiGetOrders();
-      const syncedCustomers = await apiGetCustomers();
+      const ordersData = (await apiGetOrders()) || [];
+      const syncedCustomers = (await apiGetCustomers()) || [];
+      const safeAdmins = (Array.isArray(admins) ? admins : []).map(a => (a || '').toLowerCase().trim());
 
       // Helper: determine customer type
       const resolveType = (email, dunvexType) => {
-        if (email && admins.some(a => a.toLowerCase().trim() === email.toLowerCase().trim())) return 'Admin';
+        if (email && safeAdmins.includes(email.toLowerCase().trim())) return 'Admin';
         if (dunvexType) return dunvexType;
         if (email && email !== 'unknown') return 'Khách hàng';
         return 'Khách vãng lai';
       };
 
-      // Aggregate by email from orders
       const customerMap = {};
-      ordersData.forEach(o => {
-        const email = o.userEmail || 'unknown';
-        if (!customerMap[email]) {
-          customerMap[email] = {
-            email,
+
+      // 1. Add synced customers from Dunvex/SQLite
+      (Array.isArray(syncedCustomers) ? syncedCustomers : []).forEach(sc => {
+        if (!sc) return;
+        const key = sc.id || sc.dunvexId || sc.email || sc.phone || `dunvex_${Math.random()}`;
+        customerMap[key] = {
+          id: sc.id || sc.dunvexId,
+          email: sc.email || '',
+          name: sc.name || sc.fullName || 'Khách hàng',
+          phone: sc.phone || '',
+          orders: [],
+          totalSpent: 0,
+          firstOrder: null,
+          lastOrder: null,
+          address: typeof sc.address === 'string' ? { street: sc.address } : (sc.address || {}),
+          dunvexType: sc.type || ''
+        };
+      });
+
+      // 2. Aggregate orders data and match with customers
+      (Array.isArray(ordersData) ? ordersData : []).forEach(o => {
+        if (!o) return;
+        const oEmail = (o.userEmail || '').toLowerCase().trim();
+        const oPhone = (o.userPhone || o.shippingAddress?.phone || '').replace(/\D/g, '');
+
+        // Find existing customer by email, phone, or id
+        let existingKey = Object.keys(customerMap).find(k => {
+          const c = customerMap[k];
+          if (oEmail && c.email && c.email.toLowerCase().trim() === oEmail) return true;
+          if (oPhone && c.phone && c.phone.replace(/\D/g, '') === oPhone && oPhone.length >= 8) return true;
+          return false;
+        });
+
+        if (!existingKey) {
+          existingKey = oEmail || oPhone || o.userId || `order_${o.id || Math.random()}`;
+          customerMap[existingKey] = {
+            id: o.userId || existingKey,
+            email: o.userEmail || '',
             name: o.userName || `${o.shippingAddress?.firstName || ''} ${o.shippingAddress?.lastName || ''}`.trim() || 'Khách vãng lai',
-            phone: o.shippingAddress?.phone || '',
+            phone: o.userPhone || o.shippingAddress?.phone || '',
             orders: [],
             totalSpent: 0,
             firstOrder: o.createdAt,
             lastOrder: o.createdAt,
-            address: o.shippingAddress,
+            address: o.shippingAddress || {},
             dunvexType: ''
           };
         }
-        customerMap[email].orders.push(o);
-        if (o.status !== 'cancelled') customerMap[email].totalSpent += (o.total || 0);
-        if (o.createdAt < customerMap[email].firstOrder) customerMap[email].firstOrder = o.createdAt;
-        if (o.createdAt > customerMap[email].lastOrder) customerMap[email].lastOrder = o.createdAt;
-        if (!customerMap[email].name || customerMap[email].name === 'Khách vãng lai') {
-          const name = o.userName || `${o.shippingAddress?.firstName || ''} ${o.shippingAddress?.lastName || ''}`.trim();
-          if (name) customerMap[email].name = name;
-        }
-        if (!customerMap[email].phone && o.shippingAddress?.phone) customerMap[email].phone = o.shippingAddress.phone;
-      });
 
-      // Merge with synced customers from Dunvex
-      syncedCustomers.forEach(sc => {
-        const email = sc.email || `dunvex_${sc.id}`;
-        if (!customerMap[email]) {
-          customerMap[email] = {
-            id: sc.id,
-            email: sc.email || '',
-            name: sc.name || 'Khách hàng từ Dunvex',
-            phone: sc.phone || '',
-            orders: [],
-            totalSpent: 0,
-            firstOrder: null,
-            lastOrder: null,
-            address: { street: sc.address || '' },
-            dunvexType: sc.type || ''
-          };
-        } else {
-          if (!customerMap[email].id) customerMap[email].id = sc.id;
-          if (!customerMap[email].dunvexType) customerMap[email].dunvexType = sc.type || '';
-          if (!customerMap[email].name || customerMap[email].name === 'Khách vãng lai') customerMap[email].name = sc.name;
-          if (!customerMap[email].phone) customerMap[email].phone = sc.phone;
+        const target = customerMap[existingKey];
+        target.orders.push(o);
+        if (o.status !== 'cancelled') target.totalSpent += (Number(o.total) || 0);
+        if (o.createdAt && (!target.firstOrder || o.createdAt < target.firstOrder)) target.firstOrder = o.createdAt;
+        if (o.createdAt && (!target.lastOrder || o.createdAt > target.lastOrder)) target.lastOrder = o.createdAt;
+        if (!target.name || target.name === 'Khách vãng lai') {
+          const name = o.userName || `${o.shippingAddress?.firstName || ''} ${o.shippingAddress?.lastName || ''}`.trim();
+          if (name) target.name = name;
         }
+        if (!target.phone && o.shippingAddress?.phone) target.phone = o.shippingAddress.phone;
       });
 
       // Build final list with type
@@ -126,7 +146,8 @@ const AdminCustomerManagement = ({ onBack }) => {
     setSyncing(true);
     try {
       const res = await apiDunvexSyncCustomers();
-      alert(`Đồng bộ thành công! Thêm mới: ${res.created || 0}, Cập nhật: ${res.updated || 0} khách hàng.`);
+      const count = res.synced ?? res.created ?? res.total ?? 0;
+      alert(res.message || `Đồng bộ thành công ${count} khách hàng từ Dunvex!`);
       await fetchCustomers();
     } catch (err) {
       console.error('Error syncing customers:', err);
@@ -153,9 +174,23 @@ const AdminCustomerManagement = ({ onBack }) => {
   };
 
   const formatCurrency = (n) => new Intl.NumberFormat('vi-VN').format(n || 0) + '₫';
-  const formatDate = (date) => {
-    if (!date) return '—';
-    return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
+  const formatDate = (dateVal) => {
+    if (!dateVal) return '—';
+    try {
+      let d;
+      if (dateVal instanceof Date) {
+        d = dateVal;
+      } else if (typeof dateVal === 'string') {
+        const isoStr = dateVal.includes(' ') ? dateVal.replace(' ', 'T') : dateVal;
+        d = new Date(isoStr);
+      } else {
+        d = new Date(dateVal);
+      }
+      if (isNaN(d.getTime())) return typeof dateVal === 'string' ? dateVal.split(' ')[0] : '—';
+      return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d);
+    } catch {
+      return '—';
+    }
   };
 
   const getStatusLabel = (s) => {
@@ -187,11 +222,18 @@ const AdminCustomerManagement = ({ onBack }) => {
   }, [lastScrollY]);
 
   const filteredCustomers = customers.filter(c => {
-    const matchSearch = searchQuery === '' ||
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (c.phone || '').includes(searchQuery);
     const matchType = typeFilter === 'all' || c.customerType === typeFilter;
+    const rawSearch = searchQuery.trim();
+    if (!rawSearch) return matchType;
+
+    const normQuery = removeAccents(rawSearch.toLowerCase());
+    const matchName = removeAccents((c.name || '').toLowerCase()).includes(normQuery);
+    const matchEmail = removeAccents((c.email || '').toLowerCase()).includes(normQuery);
+    const matchPhone = (c.phone || '').replace(/\s+/g, '').includes(normQuery.replace(/\s+/g, ''));
+    const matchTypeStr = removeAccents((c.customerType || '').toLowerCase()).includes(normQuery);
+    const matchAddress = removeAccents(typeof c.address === 'string' ? c.address.toLowerCase() : (c.address?.street || '').toLowerCase()).includes(normQuery);
+
+    const matchSearch = matchName || matchEmail || matchPhone || matchTypeStr || matchAddress;
     return matchSearch && matchType;
   });
 

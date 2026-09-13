@@ -3,7 +3,7 @@ import { apiGetOrders } from '../services/sqliteApi';
 import './OrderHistory.css';
 import AccountSidebar from './AccountSidebar';
 
-const OrderHistory = ({ user, onBack, onViewDetails, onNavigate, onLogout }) => {
+const OrderHistory = ({ user, isAdmin, onBack, onViewDetails, onNavigate, onLogout }) => {
   const [activeTab, setActiveTab] = useState('Tất cả đơn hàng');
   const [searchQuery, setSearchQuery] = useState('');
   const [orders, setOrders] = useState([]);
@@ -11,18 +11,31 @@ const OrderHistory = ({ user, onBack, onViewDetails, onNavigate, onLogout }) => 
 
   useEffect(() => {
     const fetchOrders = async () => {
-      if (!user?.uid) {
+      if (!user && !isAdmin) {
         setLoading(false);
         return;
       }
       
       try {
-        const rawOrders = await apiGetOrders(user.uid);
+        let rawOrders = [];
+        if (isAdmin) {
+          rawOrders = await apiGetOrders({ isAdmin: true });
+        } else if (user) {
+          rawOrders = await apiGetOrders({
+            userId: user.uid,
+            email: user.email,
+            phone: user.phone || user.phoneNumber
+          });
+        }
+
         const orderData = (rawOrders || []).map(data => {
           const createdAtDate = data.createdAt ? new Date(data.createdAt) : null;
           return {
             id: data.id,
             orderNumber: data.orderNumber || data.id,
+            userName: data.userName || '',
+            userEmail: data.userEmail || '',
+            userPhone: data.userPhone || '',
             date: createdAtDate ? createdAtDate.toLocaleDateString('vi-VN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A',
             status: data.status || 'pending',
             total: data.total || 0,
@@ -58,7 +71,7 @@ const OrderHistory = ({ user, onBack, onViewDetails, onNavigate, onLogout }) => 
     };
 
     fetchOrders();
-  }, [user]);
+  }, [user, isAdmin]);
 
   const getStatusLabel = (status) => {
     switch (status) {

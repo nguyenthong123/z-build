@@ -120,9 +120,16 @@ const AdminProductList = ({ onAddProduct, onEditProduct, onPreviewProduct }) => 
   
   const ITEMS_PER_PAGE = 1000;
 
-  // Load toàn bộ SP khi mount
+  // Load toàn bộ SP khi mount & lắng nghe sự kiện đồng bộ/thay đổi để tự động làm mới UI
   useEffect(() => { 
     fetchProducts(); 
+    const handleAutoRefresh = () => {
+      refreshProducts();
+    };
+    window.addEventListener('PRODUCTS_CHANGED', handleAutoRefresh);
+    return () => {
+      window.removeEventListener('PRODUCTS_CHANGED', handleAutoRefresh);
+    };
   }, []);
 
   // Debounce search: đợi 250ms sau khi gõ xong mới filter

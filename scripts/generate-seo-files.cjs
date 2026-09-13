@@ -11,13 +11,17 @@ const OUT = path.join(__dirname, '..', 'public');
 const SQLITE_PATH = path.join(__dirname, '..', 'data', 'zbuild.sqlite');
 
 async function fetchProducts() {
+  const dbCandidate = fs.existsSync(path.join(__dirname, '..', 'zbuild.db')) 
+    ? path.join(__dirname, '..', 'zbuild.db') 
+    : SQLITE_PATH;
+
   // 1. Try local SQLite database first
-  if (fs.existsSync(SQLITE_PATH)) {
+  if (fs.existsSync(dbCandidate)) {
     try {
       const { DatabaseSync } = require('node:sqlite');
-      const db = new DatabaseSync(SQLITE_PATH);
-      const rows = db.prepare("SELECT * FROM products WHERE status != 'Inactive'").all();
-      console.log(`Loaded ${rows.length} active products from local SQLite`);
+      const db = new DatabaseSync(dbCandidate);
+      const rows = db.prepare("SELECT * FROM products WHERE (status = 'active' OR status = 'Active') AND stock > 0").all();
+      console.log(`Loaded ${rows.length} active in-stock products from local SQLite`);
       return rows;
     } catch (e) {
       console.warn('Could not read local SQLite via node:sqlite:', e.message);

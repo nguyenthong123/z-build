@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, getDocs, doc, query, where, serverTimestamp, getDoc, runTransaction, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, query, where, serverTimestamp, getDoc, runTransaction, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getDunvexBaseUrl } from '../utils/dunvexSync';
 import { apiGetCustomers, apiCreateOrder, apiGetSettings } from '../services/sqliteApi';
@@ -40,14 +40,19 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
   const [selectedCustomerForOrder, setSelectedCustomerForOrder] = useState(null);
   const customerDropdownRef = React.useRef(null);
 
+  const removeAccents = (str) => {
+    if (!str) return '';
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+  };
+
   // Load customer list for admin from SQLite
   useEffect(() => {
     if (!isAdmin) return;
     const loadCustomers = async () => {
       try {
         const list = await apiGetCustomers();
-        const validList = (list || []).filter(c => c.name);
-        validList.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi'));
+        const validList = (list || []).filter(c => c.name || c.fullName || c.phone || c.email);
+        validList.sort((a, b) => ((a.name || a.fullName || '')).localeCompare((b.name || b.fullName || ''), 'vi'));
         setCustomerList(validList);
       } catch (e) { console.error('Load customers error', e); }
     };
@@ -66,12 +71,13 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
   }, []);
 
   const handleSelectCustomer = (c) => {
+    const custName = c.name || c.fullName || 'Khách hàng';
     setSelectedCustomerForOrder(c);
-    setCustomerSearch(c.name || '');
+    setCustomerSearch(custName);
     setShowCustomerDropdown(false);
     
     // Auto-fill form with customer data
-    const rawName = (c.name || '').trim();
+    const rawName = custName.trim();
     const nameParts = rawName.split(/\s+/).filter(Boolean);
     let firstName = '';
     let lastName = '';
@@ -86,7 +92,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
       lastName = 'Hàng';
     }
 
-    // Tách địa chỉ thông minh: ví dụ "Đường tỉnh 685, Xã Quảng Thành, Huyện Kiến Đức, Tỉnh Lâm Đồng, Việt Nam"
+    // Tách địa chỉ thông minh
     let addressStr = (c.address || '').trim();
     let specificAddress = addressStr;
     let cityStr = 'Kiến Đức';
@@ -100,13 +106,12 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
       }
     } else if (addressStr) {
       const parts = addressStr.split(',').map(s => s.trim()).filter(Boolean);
-      // Lọc bỏ phần 'Việt Nam' ở cuối nếu có
       const cleanParts = parts.filter(p => !p.toLowerCase().includes('việt nam') && !p.toLowerCase().includes('vietnam'));
       
       if (cleanParts.length >= 3) {
-        stateStr = cleanParts[cleanParts.length - 1]; // Tỉnh / Thành phố
-        cityStr = cleanParts[cleanParts.length - 2];  // Quận / Huyện / Xã
-        specificAddress = cleanParts.slice(0, cleanParts.length - 2).join(', '); // Địa chỉ số nhà / đường
+        stateStr = cleanParts[cleanParts.length - 1];
+        cityStr = cleanParts[cleanParts.length - 2];
+        specificAddress = cleanParts.slice(0, cleanParts.length - 2).join(', ');
       } else if (cleanParts.length === 2) {
         stateStr = cleanParts[1];
         cityStr = cleanParts[0];
@@ -116,7 +121,6 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
       }
     }
 
-    // Số điện thoại & Email
     const phoneClean = (c.phone || '').trim() || (rawName === 'Khách vãng lai' ? '0900000000' : '');
     const emailAuto = c.email || (phoneClean ? `${phoneClean.replace(/\D/g, '') || 'customer'}@zbuild.vn` : 'khachhang@zbuild.vn');
 
@@ -132,14 +136,20 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
     }));
   };
 
+  const handleClearCustomer = () => {
+    setSelectedCustomerForOrder(null);
+    setCustomerSearch('');
+    setShowCustomerDropdown(true);
+  };
+
   const filteredCustomers = customerList.filter(c => {
-    const q = customerSearch.toLowerCase();
-    return (
-      (c.name || '').toLowerCase().includes(q) ||
-      (c.phone || '').includes(q) ||
-      (c.email || '').toLowerCase().includes(q)
-    );
-  }).slice(0, 30);
+    if (!customerSearch.trim()) return true;
+    const q = removeAccents(customerSearch.trim().toLowerCase());
+    const name = removeAccents((c.name || c.fullName || '').toLowerCase());
+    const phone = (c.phone || '').toLowerCase();
+    const email = removeAccents((c.email || '').toLowerCase());
+    return name.includes(q) || phone.includes(q) || email.includes(q);
+  }).slice(0, 50);
 
   // Coupon state
   const [couponCode, setCouponCode] = useState('');
@@ -253,19 +263,18 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
   useEffect(() => {
     const fetchBankInfo = async () => {
       try {
-        const docRef = doc(db, 'storeSettings', 'main');
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data.bankInfo) {
-            setShopBankInfo(data.bankInfo);
+        let data = await apiGetSettings('main');
+        if (!data || Object.keys(data).length === 0) {
+          const docRef = doc(db, 'storeSettings', 'main');
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            data = docSnap.data();
           }
-          if (data.shippingSettings) {
-            setShippingSettings(data.shippingSettings);
-          }
-          if (data.openClawConfig) {
-            setOpenClawConfig(data.openClawConfig);
-          }
+        }
+        if (data) {
+          if (data.bankInfo) setShopBankInfo(data.bankInfo);
+          if (data.shippingSettings) setShippingSettings(data.shippingSettings);
+          if (data.openClawConfig) setOpenClawConfig(data.openClawConfig);
         }
       } catch (error) {
         console.error('Error fetching bank info:', error);
@@ -595,13 +604,19 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
         phone: formData.phone
       };
 
+      const targetUserId = selectedCustomerForOrder?.id || selectedCustomerForOrder?.dunvexId || (isAdmin ? null : user?.uid) || user?.uid || 'guest';
+      const targetEmail = formData.email || selectedCustomerForOrder?.email || user?.email || '';
+      const targetPhone = formData.phone || selectedCustomerForOrder?.phone || user?.phone || '';
+      const customerFullName = selectedCustomerForOrder?.name || selectedCustomerForOrder?.fullName || `${formData.firstName} ${formData.lastName}`.trim() || user?.name || user?.displayName || 'Khách vãng lai';
+
       const orderDocData = {
         id: orderNumber,
         orderNumber,
-        userId: user?.uid || 'guest',
-        userEmail: user?.email || formData.email,
-        userName: selectedCustomerForOrder?.name || user?.name || `${formData.firstName} ${formData.lastName}`.trim() || 'Khách vãng lai',
-        userPhone: formData.phone || '',
+        userId: targetUserId,
+        userEmail: targetEmail,
+        userName: customerFullName,
+        userPhone: targetPhone,
+        customerDunvexId: selectedCustomerForOrder?.dunvexId || null,
         items: itemsToBuy,
         shippingAddress,
         bankTransaction: bankTransactionInfo || null,
@@ -613,7 +628,8 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
         paymentMethod: formData.paymentMethod,
         coupon: appliedCoupon ? { code: appliedCoupon.code, type: appliedCoupon.type, value: appliedCoupon.value, discount: realDiscount } : null,
         discount: realDiscount,
-        status: 'pending'
+        status: 'pending',
+        createdByAdmin: isAdmin ? true : false
       };
 
       // 3. Lưu đơn hàng vào SQLite qua VPS API
@@ -634,16 +650,16 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
 
       // Send webhook to Dunvex (non-blocking)
       try {
-        if (openClawConfig && openClawConfig.ownerId) {
-          let webhookUrl = openClawConfig.dunvexWebhookUrl;
+        if (openClawConfig && (openClawConfig.ownerId || openClawConfig.dunvexApiKey)) {
+          const apiKey = openClawConfig.dunvexApiKey || openClawConfig.apiKey || '';
+          const ownerId = openClawConfig.ownerId || 'ng6vUtYb4ndgxXsfEwqdnMPbmrF2';
+          let webhookUrl = openClawConfig.dunvexWebhookUrl || openClawConfig.webhookUrl;
           if (!webhookUrl) {
-            const dunvexBase = getDunvexBaseUrl(openClawConfig);
-            if (dunvexBase) {
-              webhookUrl = `${dunvexBase}/api/order-webhook`;
-            }
+            const dunvexBase = getDunvexBaseUrl(openClawConfig) || 'https://dunvex.com';
+            webhookUrl = `${dunvexBase}/api/order-webhook`;
           }
 
-          if (webhookUrl && apiKey) {
+          if (webhookUrl) {
             const webhookItems = finalOrderData.cartItems.map(item => ({
               productId: item.dunvexId || item.productId || item.id,
               productName: item.name,
@@ -667,7 +683,7 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
 
             const customerFullName = selectedCustomerForOrder?.name || `${formData.firstName || ''} ${formData.lastName || ''}`.trim() || user?.name || user?.displayName || 'Khách Web';
             const webhookBody = {
-              ownerId: openClawConfig.ownerId,
+              ownerId: ownerId,
               customerId: selectedCustomerForOrder?.dunvexId || selectedCustomerForOrder?.id || user?.dunvexId || null,
               customerName: customerFullName,
               customerPhone: formData.phone || selectedCustomerForOrder?.phone || user?.phone || '',
@@ -683,13 +699,13 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
 
             console.log('Sending order webhook to Dunvex:', webhookUrl, webhookBody);
 
+            const headers = { 'Content-Type': 'application/json' };
+            if (apiKey) headers['x-api-key'] = apiKey;
+            if (ownerId) headers['x-owner-id'] = ownerId;
+
             fetch(webhookUrl, {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': apiKey,
-                'x-owner-id': openClawConfig.ownerId
-              },
+              headers,
               body: JSON.stringify(webhookBody)
             })
             .then(res => res.json())
@@ -700,10 +716,10 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
               console.error('Dunvex webhook error:', err);
             });
           } else {
-            console.warn('Skipping Dunvex webhook: Missing webhookUrl or apiKey in config.', { openClawConfig });
+            console.warn('Skipping Dunvex webhook: Missing webhookUrl in config.', { openClawConfig });
           }
         } else {
-          console.warn('Skipping Dunvex webhook: Missing openClawConfig or ownerId.', { openClawConfig });
+          console.warn('Skipping Dunvex webhook: Missing openClawConfig.', { openClawConfig });
         }
       } catch (webhookErr) {
         console.error('Failed to trigger Dunvex webhook:', webhookErr);
@@ -783,60 +799,100 @@ const Checkout = ({ onBack, cartItems, onOrderComplete, user, isAdmin }) => {
 
             {/* ========== ADMIN: CHỌN KHÁCH HÀNG ========== */}
             {isAdmin && (
-              <section className="form-block" style={{ marginBottom: '30px' }}>
-                <div className="block-header">
+              <section className="form-block" style={{ marginBottom: '30px', border: '1.5px solid #FFB80044', borderRadius: '12px', padding: '16px', background: '#FFFDF5' }}>
+                <div className="block-header" style={{ marginBottom: '12px' }}>
                   <span className="block-step" style={{ background: '#1a1a2e', color: '#FFB800' }}>★</span>
-                  <h3>Chọn khách hàng (Admin)</h3>
+                  <h3 style={{ color: '#1a1a2e', fontSize: '1.05rem' }}>Chọn khách hàng lên đơn hộ (Admin)</h3>
                 </div>
-                <div ref={customerDropdownRef} style={{ position: 'relative' }} className="input-group">
-                  <div style={{ position: 'relative' }}>
-                    <svg style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', zIndex: 1 }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                    <input
-                      type="text"
-                      placeholder="Tìm tên, SĐT, email khách hàng..."
-                      value={customerSearch}
-                      onChange={e => { setCustomerSearch(e.target.value); setShowCustomerDropdown(true); setSelectedCustomerForOrder(null); }}
-                      onFocus={() => setShowCustomerDropdown(true)}
-                      style={{ paddingLeft: '42px', boxSizing: 'border-box' }}
-                    />
-                    {selectedCustomerForOrder && (
-                      <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: '#4CAF50', color: '#fff', borderRadius: '20px', fontSize: '0.72rem', padding: '2px 8px', fontWeight: 600 }}>✓ Đã chọn</span>
+                
+                {selectedCustomerForOrder ? (
+                  <div style={{ background: '#E8F5E9', border: '1.5px solid #81C784', borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: '#1B5E20', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>✓</span> {selectedCustomerForOrder.name || selectedCustomerForOrder.fullName}
+                        {selectedCustomerForOrder.type && (
+                          <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '10px', background: '#C8E6C9', color: '#2E7D32', fontWeight: 600 }}>{selectedCustomerForOrder.type}</span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.82rem', color: '#388E3C', marginTop: '4px' }}>
+                        {selectedCustomerForOrder.phone && <span>📞 {selectedCustomerForOrder.phone}</span>}
+                        {selectedCustomerForOrder.email && <span style={{ marginLeft: '12px' }}>✉ {selectedCustomerForOrder.email}</span>}
+                      </div>
+                      {selectedCustomerForOrder.address && (
+                        <div style={{ fontSize: '0.8rem', color: '#4CAF50', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '380px' }}>
+                          🏠 {selectedCustomerForOrder.address}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleClearCustomer}
+                      style={{ background: '#fff', border: '1px solid #A5D6A7', color: '#2E7D32', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, flexShrink: 0 }}
+                    >
+                      ✕ Chọn khách khác
+                    </button>
+                  </div>
+                ) : (
+                  <div ref={customerDropdownRef} style={{ position: 'relative' }} className="input-group">
+                    <div style={{ position: 'relative' }}>
+                      <svg style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', zIndex: 1 }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                      <input
+                        type="text"
+                        placeholder="Tìm tên, SĐT, email khách hàng để tự động điền..."
+                        value={customerSearch}
+                        onChange={e => { setCustomerSearch(e.target.value); setShowCustomerDropdown(true); }}
+                        onFocus={() => setShowCustomerDropdown(true)}
+                        onClick={() => setShowCustomerDropdown(true)}
+                        style={{ paddingLeft: '42px', paddingRight: '36px', boxSizing: 'border-box', background: '#fff' }}
+                      />
+                      {customerSearch && (
+                        <button
+                          type="button"
+                          onClick={() => { setCustomerSearch(''); setShowCustomerDropdown(true); }}
+                          style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.1rem', padding: 0 }}
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                    {showCustomerDropdown && filteredCustomers.length > 0 && (
+                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1.5px solid #e5e7eb', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', zIndex: 1000, maxHeight: '280px', overflowY: 'auto', marginTop: '4px' }}>
+                        {filteredCustomers.map((c, i) => {
+                          const custName = c.name || c.fullName || 'Khách hàng';
+                          return (
+                            <div
+                              key={c.id || i}
+                              onClick={() => handleSelectCustomer(c)}
+                              style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '10px', transition: 'background 0.15s' }}
+                              onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                              onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+                            >
+                              <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: '#FFB30022', color: '#E65100', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1rem', flexShrink: 0 }}>
+                                {custName.charAt(0).toUpperCase()}
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontWeight: 600, fontSize: '0.92rem', color: '#1a1a2e', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{custName}</div>
+                                <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                                  {c.phone && <span>{c.phone}</span>}
+                                  {c.phone && c.email && <span style={{ margin: '0 4px' }}>·</span>}
+                                  {c.email && <span>{c.email}</span>}
+                                </div>
+                              </div>
+                              {c.type && (
+                                <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '10px', background: '#E3F2FD', color: '#1565C0', fontWeight: 500, flexShrink: 0 }}>{c.type}</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {showCustomerDropdown && customerSearch && filteredCustomers.length === 0 && (
+                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1.5px solid #e5e7eb', borderRadius: '12px', padding: '14px', textAlign: 'center', color: '#94a3b8', fontSize: '0.9rem', zIndex: 1000, marginTop: '4px' }}>
+                        Không tìm thấy khách hàng trong danh sách
+                      </div>
                     )}
                   </div>
-                  {showCustomerDropdown && filteredCustomers.length > 0 && (
-                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1.5px solid #e5e7eb', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 1000, maxHeight: '260px', overflowY: 'auto', marginTop: '4px' }}>
-                      {filteredCustomers.map((c, i) => (
-                        <div
-                          key={c.id || i}
-                          onClick={() => handleSelectCustomer(c)}
-                          style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '10px', transition: 'background 0.15s' }}
-                          onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                          onMouseLeave={e => e.currentTarget.style.background = '#fff'}
-                        >
-                          <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: '#FFB30022', color: '#E65100', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1rem', flexShrink: 0 }}>
-                            {(c.name || '?').charAt(0).toUpperCase()}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: 600, fontSize: '0.92rem', color: '#1a1a2e', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</div>
-                            <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
-                              {c.phone && <span>{c.phone}</span>}
-                              {c.phone && c.email && <span style={{ margin: '0 4px' }}>·</span>}
-                              {c.email && <span>{c.email}</span>}
-                            </div>
-                          </div>
-                          {c.type && (
-                            <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '10px', background: '#E3F2FD', color: '#1565C0', fontWeight: 500, flexShrink: 0 }}>{c.type}</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {showCustomerDropdown && customerSearch && filteredCustomers.length === 0 && (
-                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1.5px solid #e5e7eb', borderRadius: '12px', padding: '14px', textAlign: 'center', color: '#94a3b8', fontSize: '0.9rem', zIndex: 1000, marginTop: '4px' }}>
-                      Không tìm thấy khách hàng
-                    </div>
-                  )}
-                </div>
+                )}
               </section>
             )}
 

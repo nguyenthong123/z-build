@@ -526,6 +526,7 @@ function App() {
           <Route path="/orders" element={
             <OrderHistory 
               user={user} 
+              isAdmin={isAdmin}
               onBack={() => goBack('/')} 
               onViewDetails={(order) => { setSelectedOrder(order); navigate(`/order/${order.id}`); }} 
               onNavigate={setView} 
